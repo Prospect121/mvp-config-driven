@@ -1,0 +1,5 @@
+fs: s3a
+raw: s3a://raw/
+silver: s3a://silver/
+region: us-east-1
+timezone: America/Bogota

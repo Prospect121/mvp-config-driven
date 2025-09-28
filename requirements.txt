@@ -1,0 +1,6 @@
+pyyaml==6.0.2
+jsonschema==4.23.0
+# Opcionales:
+# delta-spark==3.2.0
+# great-expectations==0.18.12
+# openlineage-python==1.27.0

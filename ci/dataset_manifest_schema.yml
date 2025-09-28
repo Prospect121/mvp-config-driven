@@ -1,0 +1,11 @@
+type: object
+required: [version, id, source, schema, output]
+properties:
+  version: { type: string }
+  id: { type: string }
+  source:
+    type: object
+    required: [type, input_format, path]
+  output:
+    type: object
+    required: [silver]

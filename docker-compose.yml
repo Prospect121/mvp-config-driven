@@ -1,0 +1,65 @@
+version: "3.9"
+
+networks:
+  mvpnet:
+    name: mvp-config-driven-net
+
+services:
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - ./_minio:/data
+    networks: [mvpnet]
+
+  spark-master:
+    image: bitnami/spark:3.5.1
+    environment:
+      SPARK_MODE: master
+      SPARK_MASTER_HOST: spark-master
+      SPARK_NO_DAEMONIZE: "true"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./:/mvp
+    networks: [mvpnet]
+
+  spark-worker:
+    image: bitnami/spark:3.5.1
+    environment:
+      SPARK_MODE: worker
+      SPARK_MASTER_URL: spark://spark-master:7077
+      SPARK_WORKER_MEMORY: 2G
+      SPARK_NO_DAEMONIZE: "true"
+    depends_on: [spark-master]
+    networks: [mvpnet]
+  runner:
+    image: bitnami/spark:3.5.1
+    depends_on: [spark-master, spark-worker, minio]
+    working_dir: /mvp
+    volumes:
+      - ./:/mvp
+    entrypoint: ["/bin/bash","-lc","/mvp/scripts/runner.sh"]
+    environment:
+      # MinIO
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+
+      # HOME e Ivy (soluciona "basedir must be absolute")
+      HOME: /tmp
+      JAVA_TOOL_OPTIONS: "-Duser.home=/tmp -Divy.home=/tmp/.ivy2 -Duser.name=spark"
+      IVY_HOME: /tmp/.ivy2
+      SPARK_USER_HOME: /tmp
+      SPARK_SUBMIT_OPTS: "-Duser.home=/tmp -Divy.home=/tmp/.ivy2 -Duser.name=spark"
+
+      # Identidad explícita para Spark/Hadoop (evita "invalid null input: name")
+      USER: spark
+      HADOOP_USER_NAME: spark
+      SPARK_USER: spark
+    networks: [mvpnet]

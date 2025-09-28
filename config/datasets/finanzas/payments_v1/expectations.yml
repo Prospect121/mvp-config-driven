@@ -1,0 +1,7 @@
+expectations:
+  - name: expect_column_values_to_not_be_null
+    params: { column: payment_id }
+  - name: expect_column_values_to_be_between
+    params: { column: amount, min_value: 0 }
+  - name: expect_table_row_count_to_be_between
+    params: { min_value: 1 }
