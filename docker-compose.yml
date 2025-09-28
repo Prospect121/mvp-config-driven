@@ -1,65 +1,75 @@
 version: "3.9"
 
 networks:
-  mvpnet:
-    name: mvp-config-driven-net
+  mvp-config-driven-net:
+    name: ${NETWORK_NAME:-mvp-config-driven-net}
+    driver: bridge
 
 services:
   minio:
-    image: minio/minio:latest
-    command: server /data --console-address ":9001"
+    image: minio/minio:RELEASE.2024-09-13T20-26-02Z
+    container_name: mvp-config-driven-minio-1
+    command: server /data --console-address ":${MINIO_CONSOLE_PORT:-9001}" --address ":${MINIO_API_PORT:-9000}"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minio12345}
+      TZ: ${TZ:-America/Bogota}
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
     volumes:
-      - ./_minio:/data
-    networks: [mvpnet]
+      - minio-data:/data
+    networks: [mvp-config-driven-net]
 
   spark-master:
     image: bitnami/spark:3.5.1
+    container_name: mvp-config-driven-spark-master-1
     environment:
       SPARK_MODE: master
-      SPARK_MASTER_HOST: spark-master
-      SPARK_NO_DAEMONIZE: "true"
+      SPARK_NO_DAEMONIZE: "yes"
+      JAVA_TOOL_OPTIONS: ${JAVA_TOOL_OPTIONS}
+      TZ: ${TZ:-America/Bogota}
     ports:
-      - "8080:8080"
-    volumes:
-      - ./:/mvp
-    networks: [mvpnet]
+      - "7077:7077"
+      - "4040:4040"
+    networks: [mvp-config-driven-net]
 
-  spark-worker:
+  spark-worker-1:
     image: bitnami/spark:3.5.1
+    container_name: mvp-config-driven-spark-worker-1
     environment:
       SPARK_MODE: worker
       SPARK_MASTER_URL: spark://spark-master:7077
       SPARK_WORKER_MEMORY: 2G
-      SPARK_NO_DAEMONIZE: "true"
+      SPARK_WORKER_CORES: 2
+      JAVA_TOOL_OPTIONS: ${JAVA_TOOL_OPTIONS}
+      TZ: ${TZ:-America/Bogota}
     depends_on: [spark-master]
-    networks: [mvpnet]
+    networks: [mvp-config-driven-net]
+
   runner:
     image: bitnami/spark:3.5.1
-    depends_on: [spark-master, spark-worker, minio]
+    container_name: mvp-config-driven-runner-1
     working_dir: /mvp
+    command: ["bash", "-lc", "/mvp/scripts/runner.sh"]
+    environment:
+      - PYSPARK_PYTHON=/opt/bitnami/python/bin/python3
+      - PYSPARK_DRIVER_PYTHON=/opt/bitnami/python/bin/python3
+      - JAVA_TOOL_OPTIONS=-Duser.home=/tmp -Divy.home=/tmp/.ivy2 -Duser.name=spark
+      # credenciales S3A -> MinIO (si no estaban ya)
+      - AWS_ACCESS_KEY_ID=minio
+      - AWS_SECRET_ACCESS_KEY=minio12345
+      - AWS_REGION=us-east-1
+      # Spark-Hadoop S3A (si lo configuras via spark-defaults conf de master/worker, esto puede omitirse aquí)
+      - SPARK_DIST_CLASSPATH=/opt/bitnami/spark/jars/*
+
     volumes:
       - ./:/mvp
-    entrypoint: ["/bin/bash","-lc","/mvp/scripts/runner.sh"]
-    environment:
-      # MinIO
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    depends_on:
+      - spark-master
+      - spark-worker-1
+      - minio
+    networks: [mvp-config-driven-net]
 
-      # HOME e Ivy (soluciona "basedir must be absolute")
-      HOME: /tmp
-      JAVA_TOOL_OPTIONS: "-Duser.home=/tmp -Divy.home=/tmp/.ivy2 -Duser.name=spark"
-      IVY_HOME: /tmp/.ivy2
-      SPARK_USER_HOME: /tmp
-      SPARK_SUBMIT_OPTS: "-Duser.home=/tmp -Divy.home=/tmp/.ivy2 -Duser.name=spark"
-
-      # Identidad explícita para Spark/Hadoop (evita "invalid null input: name")
-      USER: spark
-      HADOOP_USER_NAME: spark
-      SPARK_USER: spark
-    networks: [mvpnet]
+volumes:
+  minio-data:

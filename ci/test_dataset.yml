@@ -1,0 +1,21 @@
+id: payments_test
+
+source:
+  input_format: csv
+  path: data/raw/payments/sample.csv
+  options: { header: true }
+
+schema:
+  ref: config/datasets/finanzas/payments_v1/schema.json
+  mode: warn
+
+standardization:
+  rename: []
+  casts: []
+  defaults: []
+
+output:
+  silver:
+    format: parquet
+    path: /tmp/silver/payments_test/
+    mode: overwrite

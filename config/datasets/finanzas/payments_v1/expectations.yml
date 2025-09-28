@@ -1,7 +1,15 @@
-expectations:
-  - name: expect_column_values_to_not_be_null
-    params: { column: payment_id }
-  - name: expect_column_values_to_be_between
-    params: { column: amount, min_value: 0 }
-  - name: expect_table_row_count_to_be_between
-    params: { min_value: 1 }
+rules:
+  - name: amount_positive
+    expr: "amount IS NOT NULL AND amount >= 0"
+    severity: error
+    on_fail: quarantine     # quarantine | fail | drop | warn
+
+  - name: currency_valid
+    expr: "currency IN ('CLP','USD','COP','MXN')"
+    severity: warn
+    on_fail: quarantine
+
+  - name: payment_date_window
+    expr: "payment_date >= date_sub(current_date(), 3650)"   # ~10 años
+    severity: warn
+    on_fail: quarantine

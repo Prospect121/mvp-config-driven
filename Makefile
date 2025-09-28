@@ -12,7 +12,8 @@ up:
 	docker compose up -d --build
 
 mc-alias:
-	mkdir -p .mc
+	rm -rf $(WORKDIR)/.mc
+	mkdir -p $(WORKDIR)/.mc
 	docker run --rm --network $(NET) \
 	  -v "$(WORKDIR):/mvp" \
 	  -v "$(WORKDIR)/.mc:/root/.mc" \

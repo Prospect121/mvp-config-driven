@@ -1,19 +1,15 @@
-version: 1.0.0
 id: payments_v1
-owner: finanzas@example.com
 
 source:
-  type: file
-  path: s3a://raw/payments/2025/09/26/*.csv
   input_format: csv
+  path: s3a://raw/payments/2025/09/26/*.csv
   options:
     header: true
-    delimiter: ","
-    encoding: UTF-8
+    inferSchema: false
 
 schema:
-  ref: schema.json
-  mode: strict
+  ref: config/datasets/finanzas/payments_v1/schema.json
+  mode: strict   # strict | warn | permissive
 
 standardization:
   timezone: America/Bogota
@@ -29,13 +25,13 @@ standardization:
     order_by: [updated_at desc]
 
 quality:
-  expectations_ref: expectations.yml
+  expectations_ref: config/datasets/finanzas/payments_v1/expectations.yml
   quarantine: s3a://raw/quarantine/payments_v1/
 
 output:
   silver:
+    format: parquet          # cambia a "delta" si habilitas Delta Lake
     path: s3a://silver/payments_v1/
-    format: parquet   # cambia a 'delta' si activas delta-spark
     mode: append
     partition_by: [year, month]
     merge_schema: true

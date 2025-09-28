@@ -1,15 +1,13 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "payments_v1",
   "type": "object",
   "properties": {
-    "payment_id": { "type": ["string", "integer"] },
-    "customer_id": { "type": ["string", "null"] },
-    "customerId": { "type": ["string", "null"] },
-    "amount": { "type": ["number", "string", "null"] },
-    "currency": { "type": ["string", "null"] },
-    "payment_date": { "type": ["string", "null"], "format": "date-time" },
-    "updated_at": { "type": ["string", "null"], "format": "date-time" }
+    "payment_id":   { "type": "string" },
+    "customer_id":  { "type": "string" },
+    "amount":       { "type": "number" },
+    "currency":     { "type": "string" },
+    "payment_date": { "type": ["string","null"], "format": "date-time" },
+    "updated_at":   { "type": ["string","null"], "format": "date-time" }
   },
-  "required": ["payment_id", "amount", "payment_date"]
+  "required": ["payment_id","amount","payment_date"],
+  "additionalProperties": false
 }
