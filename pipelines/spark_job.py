@@ -43,8 +43,13 @@ def safe_cast(df, col, target, fmt=None, on_error="fail"):
     elif t == "date":
         newc = F.to_date(c, fmt) if fmt else F.to_date(c)
     else:
-        newc = c.cast(t)
-    return df.withColumn(col, newc)  # on_error=null se comporta igual (Spark deja null si no parsea)
+        if on_error == "null":
+            # try_cast devuelve null si falla el parseo
+            newc = F.expr(f"try_cast({col} as {t})")
+        else:
+            newc = c.cast(t)
+    return df.withColumn(col, newc)
+
 
 # -------- helpers de esquema --------
 def load_json_schema(path):
@@ -52,18 +57,24 @@ def load_json_schema(path):
         return json.load(f)
 
 def spark_type_from_json(t):
+    # t puede ser list (union con null) o string
     if isinstance(t, list):
-        t = [x for x in t if x != "null"][0]
+        t = [x for x in t if x != "null"]
+        t = t[0] if t else "string"
     m = {
-        "string":"string", "number":"double", "integer":"bigint",
-        "boolean":"boolean", "object":"string", "array":"string"
+        "string": "string",
+        "number": "double",
+        "integer": "bigint",
+        "boolean": "boolean",
+        "object": "string",
+        "array": "string",
     }
     return m.get(t, "string")
 
 def enforce_schema(df, jsch, mode="strict"):
-    props = jsch.get("properties", {})
+    props = jsch.get("properties", {}) or {}
     required = set(jsch.get("required", []))
-    defined_cols = list(props.keys())
+    defined_cols = list(props.keys())  # mantiene orden del JSON Schema
     df_cols = set(df.columns)
 
     missing = required - df_cols
@@ -75,18 +86,37 @@ def enforce_schema(df, jsch, mode="strict"):
             raise ValueError(msg)
         print("[schema][WARN]", msg)
 
-    to_create = (set(defined_cols) - df_cols)
-    for c in to_create:
-        df = df.withColumn(c, F.lit(None).cast(spark_type_from_json(props[c]["type"])))
+    # Crear columnas ausentes con tipo aproximado desde JSON Schema
+    for c in (set(defined_cols) - df_cols):
+        df = df.withColumn(c, F.lit(None).cast(spark_type_from_json(props[c].get("type"))))
 
-    if extra and mode == "strict":
-        keep = [c for c in defined_cols if c in df.columns]
-        df = df.select(*keep)
+    # Si strict, limita al orden exacto del schema
+    if mode == "strict":
+        keep_ordered = [c for c in defined_cols if c in df.columns]
+        df = df.select(*keep_ordered)
+    else:
+        if extra and jsch.get("additionalProperties", True) is False:
+            print("[schema][WARN] Columnas adicionales presentes:", sorted(extra))
 
-    if jsch.get("additionalProperties", True) is False and extra and mode != "strict":
-        print("[schema][WARN] Columnas adicionales presentes:", sorted(extra))
+    # Casteo automático por formato si aplica (date-time -> timestamp)
+    # Nota: si ya casteaste en 'casts', esto no hace daño (Spark re-castea a mismo tipo).
+    for c in defined_cols:
+        p = props.get(c) or {}
+        fmt = (p.get("format") or "").lower()
+        # soporta JSON Schema: {"type":["string","null"], "format":"date-time"}
+        t = p.get("type")
+        t_non_null = None
+        if isinstance(t, list):
+            t_non_null = [x for x in t if x != "null"]
+            t_non_null = t_non_null[0] if t_non_null else None
+        else:
+            t_non_null = t
+
+        if fmt in ("date-time", "datetime") and c in df.columns:
+            df = df.withColumn(c, F.to_timestamp(F.col(c)))
 
     return df
+
 
 # -------- helpers de calidad --------
 def load_expectations(path):
@@ -144,10 +174,13 @@ cfg_path, env_path = sys.argv[1], sys.argv[2]
 cfg = yaml.safe_load(open(cfg_path, 'r', encoding='utf-8'))
 env = yaml.safe_load(open(env_path, 'r', encoding='utf-8'))
 
-spark = (SparkSession.builder
+spark = (
+    SparkSession.builder
     .appName(f"cfg-pipeline::{cfg['id']}")
     .config("spark.sql.session.timeZone", env.get('timezone','UTC'))
-    .getOrCreate())
+    .config("spark.sql.sources.partitionOverwriteMode", "dynamic")
+    .getOrCreate()
+)
 
 # S3A autoconfig si se usa s3a://
 def maybe_config_s3a(path_like: str):
@@ -228,12 +261,23 @@ df.printSchema()
 print("rows=", df.count())
 
 # --- write ---
-writer = (df.write
+writer = (
+    df.write
     .format(out.get('format','parquet'))
-    .mode(out.get('mode','append'))
-    .option('mergeSchema', str(out.get('merge_schema', True)).lower()))
+    .option('mergeSchema', str(out.get('merge_schema', True)).lower())
+)
+
 parts = out.get('partition_by', [])
-if parts: writer = writer.partitionBy(*parts)
+if parts:
+    writer = writer.partitionBy(*parts)
+
+mode_cfg = (out.get('mode','append') or 'append').lower()
+if mode_cfg == 'overwrite_dynamic':
+    # gracias a spark.sql.sources.partitionOverwriteMode=dynamic
+    writer.mode('overwrite').save(out['path'])
+else:
+    writer.mode('append').save(out['path'])
+
 
 writer.save(out['path'])
 print(f"OK :: wrote to {out['path']}")

@@ -1,15 +1,25 @@
 rules:
-  - name: amount_positive
-    expr: "amount IS NOT NULL AND amount >= 0"
-    severity: error
-    on_fail: quarantine     # quarantine | fail | drop | warn
-
-  - name: currency_valid
-    expr: "currency IN ('CLP','USD','COP','MXN')"
-    severity: warn
+  # payment_id con formato p-xxx
+  - name: payment_id_formato
+    expr: "payment_id RLIKE '^p-\\d{3}$'"
     on_fail: quarantine
 
-  - name: payment_date_window
-    expr: "payment_date >= date_sub(current_date(), 3650)"   # ~10 años
-    severity: warn
+  # claves y campos críticos no nulos
+  - name: not_nulls
+    expr: "payment_id IS NOT NULL AND customer_id IS NOT NULL AND payment_date IS NOT NULL"
     on_fail: quarantine
+
+  # montos válidos
+  - name: amount_valido
+    expr: "amount IS NOT NULL AND amount > 0"
+    on_fail: quarantine
+
+  # currency válida (solo CLP|USD|COP por ejemplo)
+  - name: currency_lista
+    expr: "currency IN ('CLP','USD','COP')"
+    on_fail: drop
+
+  # fechas coherentes (ejemplo: no futuras si no aplica)
+  - name: fecha_coherente
+    expr: "payment_date <= current_timestamp()"
+    on_fail: warn
