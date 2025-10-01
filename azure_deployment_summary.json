@@ -1,0 +1,28 @@
+{
+  "deployment_info": {
+    "name": "mvp-config-driven-pipeline",
+    "environment": "dev",
+    "region": "East US",
+    "generated_at": "2025-09-30T22:41:15.788626"
+  },
+  "resources_to_create": {
+    "resource_group": "rg-mvp-data-pipeline-dev",
+    "storage_account": "stmvpdatapipelinedev",
+    "sql_server": "sql-mvp-data-pipeline-dev",
+    "event_hub": "eh-mvp-data-pipeline-dev",
+    "key_vault": "kv-mvp-data-pipeline-dev",
+    "data_factory": "adf-mvp-data-pipeline-dev"
+  },
+  "estimated_monthly_cost": {
+    "budget_limit": 30,
+    "currency": "USD",
+    "note": "Estimaci\u00f3n basada en configuraci\u00f3n dev"
+  },
+  "next_steps": [
+    "Revisar terraform.tfvars generado",
+    "Configurar variables de entorno de Azure",
+    "Ejecutar terraform plan para revisar cambios",
+    "Ejecutar terraform apply para crear recursos",
+    "Seguir checklist de post-despliegue"
+  ]
+}

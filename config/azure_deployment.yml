@@ -1,0 +1,224 @@
+# =============================================================================
+# Configuración de Despliegue en Azure para MVP Config-Driven Data Pipeline
+# =============================================================================
+
+deployment:
+  name: "mvp-config-driven-pipeline"
+  environment: "dev"
+  region: "East US"
+  subscription_id: "${AZURE_SUBSCRIPTION_ID}"
+  tenant_id: "${AZURE_TENANT_ID}"
+
+# =============================================================================
+# CONFIGURACIÓN DE RECURSOS
+# =============================================================================
+resources:
+  resource_group:
+    name: "rg-mvp-data-pipeline-dev"
+    location: "East US"
+    tags:
+      Environment: "dev"
+      Project: "mvp-config-driven"
+      Owner: "DataEngineering"
+      CostCenter: "IT"
+
+  # Almacenamiento de datos
+  storage:
+    account_name: "stmvpdatapipelinedev"
+    tier: "Standard"
+    replication: "LRS"
+    containers:
+      - "raw"
+      - "bronze"
+      - "silver"
+      - "gold"
+      - "logs"
+      - "config"
+
+  # Base de datos SQL
+  sql_database:
+    server_name: "sql-mvp-data-pipeline-dev"
+    database_name: "mvp-data-db"
+    sku: "S1"
+    max_size_gb: 250
+    backup_retention_days: 7
+
+  # Event Hub para streaming
+  event_hub:
+    namespace: "eh-mvp-data-pipeline-dev"
+    sku: "Standard"
+    capacity: 1
+    hubs:
+      - name: "payment-events"
+        partitions: 4
+        retention_days: 1
+
+  # Key Vault para secretos
+  key_vault:
+    name: "kv-mvp-data-pipeline-dev"
+    sku: "standard"
+    soft_delete_retention: 7
+    purge_protection: false
+
+  # Data Factory para orquestación
+  data_factory:
+    name: "adf-mvp-data-pipeline-dev"
+    managed_identity: true
+
+  # Application Insights para monitoreo
+  app_insights:
+    name: "ai-mvp-data-pipeline-dev"
+    application_type: "web"
+
+  # Log Analytics Workspace
+  log_analytics:
+    name: "law-mvp-data-pipeline-dev"
+    sku: "PerGB2018"
+    retention_days: 30
+
+# =============================================================================
+# CONFIGURACIÓN DE SEGURIDAD
+# =============================================================================
+security:
+  rbac:
+    enable_audit: true
+    enable_policies: true
+    
+  network:
+    allowed_ip_ranges:
+      - "0.0.0.0/0"  # Cambiar por rangos específicos en producción
+    
+  encryption:
+    enable_storage_encryption: true
+    enable_sql_tde: true
+    enable_key_vault_encryption: true
+
+  # Grupos de Azure AD (crear antes del despliegue)
+  azure_ad_groups:
+    data_engineers: "DataEngineers"
+    data_scientists: "DataScientists"
+    administrators: "DataPipelineAdmins"
+
+# =============================================================================
+# CONFIGURACIÓN DE MONITOREO
+# =============================================================================
+monitoring:
+  enable_monitoring: true
+  enable_alerts: true
+  
+  alerts:
+    - name: "DataFactory-FailedRuns"
+      metric: "PipelineFailedRuns"
+      threshold: 0
+      severity: 2
+      
+    - name: "SQL-HighDTU"
+      metric: "dtu_consumption_percent"
+      threshold: 80
+      severity: 2
+      
+    - name: "Storage-HighUsage"
+      metric: "UsedCapacity"
+      threshold: 85
+      severity: 3
+
+  dashboards:
+    - name: "Pipeline-Overview"
+      type: "azure_dashboard"
+    - name: "Data-Quality"
+      type: "azure_dashboard"
+
+# =============================================================================
+# CONFIGURACIÓN DE PIPELINE
+# =============================================================================
+pipeline:
+  # Configuración de Spark en Azure
+  spark:
+    cluster_name: "spark-mvp-cluster"
+    node_size: "Standard_D3_v2"
+    min_nodes: 1
+    max_nodes: 3
+    auto_scale: true
+    
+  # Configuración de procesamiento
+  processing:
+    batch_size: 1000
+    max_retries: 3
+    timeout_minutes: 30
+    
+  # Configuración de calidad de datos
+  data_quality:
+    enable_validation: true
+    enable_profiling: true
+    enable_lineage: true
+
+# =============================================================================
+# VARIABLES DE ENTORNO PARA AZURE
+# =============================================================================
+environment_variables:
+  # Azure Storage
+  AZURE_STORAGE_ACCOUNT: "${storage.account_name}"
+  AZURE_STORAGE_KEY: "${key_vault.storage_key}"
+  
+  # Azure SQL
+  AZURE_SQL_SERVER: "${sql_database.server_name}.database.windows.net"
+  AZURE_SQL_DATABASE: "${sql_database.database_name}"
+  AZURE_SQL_USERNAME: "${key_vault.sql_username}"
+  AZURE_SQL_PASSWORD: "${key_vault.sql_password}"
+  
+  # Event Hub
+  AZURE_EVENTHUB_NAMESPACE: "${event_hub.namespace}"
+  AZURE_EVENTHUB_CONNECTION_STRING: "${key_vault.eventhub_connection_string}"
+  
+  # Application Insights
+  AZURE_APPINSIGHTS_INSTRUMENTATION_KEY: "${app_insights.instrumentation_key}"
+  
+  # Configuración general
+  ENVIRONMENT: "${deployment.environment}"
+  LOG_LEVEL: "INFO"
+  ENABLE_MONITORING: "true"
+
+# =============================================================================
+# CONFIGURACIÓN DE DESPLIEGUE
+# =============================================================================
+deployment_config:
+  terraform:
+    backend:
+      type: "azurerm"
+      storage_account: "stterraformstate"
+      container_name: "tfstate"
+      key: "mvp-data-pipeline.tfstate"
+      
+  ci_cd:
+    enable_github_actions: true
+    enable_azure_devops: false
+    
+  environments:
+    - name: "dev"
+      auto_deploy: true
+      approval_required: false
+      
+    - name: "staging"
+      auto_deploy: false
+      approval_required: true
+      
+    - name: "prod"
+      auto_deploy: false
+      approval_required: true
+
+# =============================================================================
+# CONFIGURACIÓN DE COSTOS
+# =============================================================================
+cost_management:
+  budget:
+    monthly_limit: 30  # USD
+    alert_thresholds: [50, 75, 90]  # Porcentajes
+    
+  auto_shutdown:
+    enable_vm_shutdown: true
+    shutdown_time: "19:00"
+    timezone: "Eastern Standard Time"
+    
+  resource_optimization:
+    enable_auto_scaling: true
+    enable_reserved_instances: false  # Para dev environment

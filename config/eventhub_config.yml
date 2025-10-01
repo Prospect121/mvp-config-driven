@@ -1,0 +1,243 @@
+# Configuración para Azure Event Hub
+# Archivo: config/eventhub_config.yml
+
+event_hub_namespace:
+  name: "mvp-config-driven-pipeline-dev-eh"
+  resource_group: "mvp-config-driven-pipeline-dev-rg"
+  location: "westus2"
+  sku: "Standard"
+  capacity: 1
+
+# Configuración de Event Hubs individuales
+event_hubs:
+  transaction_events:
+    name: "transaction-events"
+    partition_count: 4
+    message_retention_days: 7
+    status: "Active"
+    
+    # Grupos de consumidores
+    consumer_groups:
+      - name: "data_factory_consumer"
+        user_metadata: "Consumidor para Data Factory pipelines"
+      - name: "analytics_consumer"
+        user_metadata: "Consumidor para análisis en tiempo real"
+      - name: "backup_consumer"
+        user_metadata: "Consumidor para respaldo de datos"
+    
+    # Configuración de captura (opcional)
+    capture:
+      enabled: true
+      encoding: "Avro"
+      interval_in_seconds: 300  # 5 minutos
+      size_limit_in_bytes: 314572800  # 300 MB
+      destination:
+        storage_account: "mvpdevsa"
+        container: "eventhub-capture"
+        name_format: "{Namespace}/{EventHub}/{PartitionId}/{Year}/{Month}/{Day}/{Hour}/{Minute}/{Second}"
+  
+  telemetry_events:
+    name: "telemetry-events"
+    partition_count: 2
+    message_retention_days: 1
+    status: "Active"
+    
+    consumer_groups:
+      - name: "monitoring_consumer"
+        user_metadata: "Consumidor para monitoreo de aplicaciones"
+      - name: "alerting_consumer"
+        user_metadata: "Consumidor para sistema de alertas"
+    
+    # Sin captura para telemetría (datos de corta duración)
+    capture:
+      enabled: false
+
+# Configuración de productores de eventos
+producers:
+  transaction_producer:
+    event_hub: "transaction_events"
+    batch_size: 100
+    max_wait_time_seconds: 5
+    retry_policy:
+      max_retries: 3
+      retry_delay_seconds: 2
+      exponential_backoff: true
+    
+    # Esquema de eventos de transacción
+    event_schema:
+      type: "object"
+      properties:
+        transaction_id:
+          type: "string"
+          description: "ID único de la transacción"
+        user_id:
+          type: "string"
+          description: "ID del usuario"
+        amount:
+          type: "number"
+          description: "Monto de la transacción"
+        currency:
+          type: "string"
+          description: "Moneda de la transacción"
+        timestamp:
+          type: "string"
+          format: "date-time"
+          description: "Timestamp de la transacción"
+        merchant_id:
+          type: "string"
+          description: "ID del comerciante"
+        category:
+          type: "string"
+          description: "Categoría de la transacción"
+  
+  telemetry_producer:
+    event_hub: "telemetry_events"
+    batch_size: 50
+    max_wait_time_seconds: 1
+    
+    # Esquema de eventos de telemetría
+    event_schema:
+      type: "object"
+      properties:
+        application_id:
+          type: "string"
+          description: "ID de la aplicación"
+        metric_name:
+          type: "string"
+          description: "Nombre de la métrica"
+        metric_value:
+          type: "number"
+          description: "Valor de la métrica"
+        timestamp:
+          type: "string"
+          format: "date-time"
+          description: "Timestamp de la métrica"
+        tags:
+          type: "object"
+          description: "Etiquetas adicionales"
+
+# Configuración de consumidores
+consumers:
+  data_factory_consumer:
+    event_hub: "transaction_events"
+    consumer_group: "data_factory_consumer"
+    checkpoint_store:
+      type: "azure_blob_storage"
+      storage_account: "mvpdevsa"
+      container: "checkpoints"
+    processing:
+      batch_size: 100
+      max_wait_time_seconds: 30
+      prefetch_count: 300
+    
+  analytics_consumer:
+    event_hub: "transaction_events"
+    consumer_group: "analytics_consumer"
+    checkpoint_store:
+      type: "azure_blob_storage"
+      storage_account: "mvpdevsa"
+      container: "analytics-checkpoints"
+    processing:
+      batch_size: 50
+      max_wait_time_seconds: 10
+      prefetch_count: 150
+
+# Configuración de monitoreo
+monitoring:
+  metrics:
+    enabled: true
+    retention_days: 30
+    
+    # Métricas clave a monitorear
+    key_metrics:
+      - "IncomingMessages"
+      - "OutgoingMessages"
+      - "IncomingBytes"
+      - "OutgoingBytes"
+      - "ThrottledRequests"
+      - "ServerErrors"
+      - "UserErrors"
+      - "SuccessfulRequests"
+  
+  alerts:
+    high_throughput:
+      metric: "IncomingMessages"
+      threshold: 10000
+      time_window_minutes: 5
+      severity: "Warning"
+      
+    throttling_detected:
+      metric: "ThrottledRequests"
+      threshold: 1
+      time_window_minutes: 1
+      severity: "Critical"
+      
+    error_rate_high:
+      metric: "ServerErrors"
+      threshold: 100
+      time_window_minutes: 5
+      severity: "Error"
+
+# Configuración de seguridad
+security:
+  network_access:
+    public_network_access: "Enabled"
+    trusted_service_access: "Enabled"
+    
+  authorization:
+    default_action: "Deny"
+    
+    # Reglas de acceso
+    access_rules:
+      - name: "DataFactoryAccess"
+        principal_type: "ServicePrincipal"
+        principal_id: "a50eac3f-954e-40ce-80c4-64f1a1fcfb9f"  # Data Factory Managed Identity
+        rights: ["Send", "Listen", "Manage"]
+        
+      - name: "ApplicationAccess"
+        principal_type: "Application"
+        rights: ["Send"]
+        ip_mask: "0.0.0.0/0"  # Ajustar según necesidades
+
+# Configuración de desarrollo y testing
+development:
+  test_events:
+    transaction_sample:
+      transaction_id: "test-001"
+      user_id: "user-123"
+      amount: 99.99
+      currency: "USD"
+      timestamp: "2025-01-20T10:00:00Z"
+      merchant_id: "merchant-456"
+      category: "retail"
+    
+    telemetry_sample:
+      application_id: "app-001"
+      metric_name: "response_time"
+      metric_value: 150.5
+      timestamp: "2025-01-20T10:00:00Z"
+      tags:
+        environment: "dev"
+        service: "api"
+
+# Scripts de utilidad
+utility_scripts:
+  send_test_event: "scripts/send_test_event.py"
+  monitor_throughput: "scripts/monitor_eventhub.py"
+  setup_consumers: "scripts/setup_consumers.py"
+  
+# Configuración de entornos
+environments:
+  dev:
+    throughput_units: 1
+    auto_inflate: false
+    
+  staging:
+    throughput_units: 2
+    auto_inflate: true
+    auto_inflate_maximum: 5
+    
+  prod:
+    throughput_units: 5
+    auto_inflate: true
+    auto_inflate_maximum: 20

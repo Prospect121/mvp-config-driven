@@ -1,0 +1,53 @@
+environment: "local"
+debug: true
+log_level: "INFO"
+
+# Configuración de MinIO (simula Azure Data Lake)
+storage:
+  type: "minio"
+  endpoint: "localhost:9000"
+  access_key: "minio"
+  secret_key: "minio12345"
+  secure: false
+  bucket: "datalake"
+
+# Configuración de SQL Server (simula Azure SQL)
+database:
+  type: "sqlserver"
+  host: "localhost"
+  port: 1433
+  database: "mvp_config_driven"
+  username: "sa"
+  password: "YourStrong@Passw0rd"
+
+# Configuración de Kafka
+kafka:
+  bootstrap_servers: "localhost:9092"
+  topic: "data-pipeline-events"
+
+# Configuración de Redis
+redis:
+  host: "localhost"
+  port: 6379
+  password: ""
+
+# Configuración de Spark
+spark:
+  master: "local[*]"
+  app_name: "mvp-config-driven-pipeline"
+  
+# Configuración de monitoreo
+monitoring:
+  prometheus:
+    host: "localhost"
+    port: 9090
+  grafana:
+    host: "localhost"
+    port: 3000
+
+# Configuración de Azure (para desarrollo local, usar valores dummy)
+azure:
+  tenant_id: "dummy-tenant-id"
+  subscription_id: "dummy-subscription-id"
+  resource_group: "dummy-rg"
+  key_vault_name: "dummy-kv"

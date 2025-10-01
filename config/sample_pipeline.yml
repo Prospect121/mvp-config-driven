@@ -1,0 +1,79 @@
+id: "sample_payments_pipeline"
+pipeline:
+  name: "sample_payments_pipeline"
+  version: "1.0.0"
+  description: "Pipeline de ejemplo para procesar datos de pagos"
+  
+source:
+  type: "csv"
+  path: "data/raw/payments/sample_data.csv"
+  options:
+    header: true
+    inferSchema: true
+    delimiter: ","
+  
+schema:
+  payment_id: "string"
+  customer_id: "string"
+  amount: "double"
+  currency: "string"
+  payment_date: "timestamp"
+  status: "string"
+  payment_method: "string"
+  merchant_id: "string"
+  country: "string"
+  updated_at: "timestamp"
+
+transformations:
+  - name: "filter_completed_payments"
+    type: "filter"
+    condition: "status = 'completed'"
+    
+  - name: "add_processing_date"
+    type: "add_column"
+    column_name: "processing_date"
+    expression: "current_timestamp()"
+    
+  - name: "calculate_amount_usd"
+    type: "add_column"
+    column_name: "amount_usd"
+    expression: |
+      CASE 
+        WHEN currency = 'USD' THEN amount
+        WHEN currency = 'EUR' THEN amount * 1.1
+        WHEN currency = 'GBP' THEN amount * 1.25
+        ELSE amount
+      END
+
+data_quality:
+  rules:
+    - name: "amount_positive"
+      type: "check"
+      condition: "amount > 0"
+      severity: "error"
+      
+    - name: "valid_currency"
+      type: "check"
+      condition: "currency IN ('USD', 'EUR', 'GBP')"
+      severity: "warning"
+      
+    - name: "payment_id_not_null"
+      type: "check"
+      condition: "payment_id IS NOT NULL"
+      severity: "error"
+
+destination:
+  type: "parquet"
+  path: "data/processed/payments"
+  mode: "overwrite"
+  partitionBy: ["country", "currency"]
+
+monitoring:
+  metrics:
+    - "row_count"
+    - "processing_time"
+    - "data_quality_score"
+  alerts:
+    - condition: "row_count = 0"
+      severity: "critical"
+      message: "No data processed"

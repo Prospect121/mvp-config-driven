@@ -1,0 +1,66 @@
+# Configuración principal de Terraform para Azure Data Platform
+terraform {
+  required_version = ">= 1.0"
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 3.0"
+    }
+    azuread = {
+      source  = "hashicorp/azuread"
+      version = "~> 2.0"
+    }
+  }
+}
+
+# Configuración del proveedor Azure
+provider "azurerm" {
+  features {
+    key_vault {
+      purge_soft_delete_on_destroy    = true
+      recover_soft_deleted_key_vaults = true
+    }
+  }
+  
+  # Usar autenticación basada en identidad para storage accounts
+  storage_use_azuread = true
+}
+
+# Datos del cliente actual
+data "azurerm_client_config" "current" {}
+
+# Grupo de recursos principal
+resource "azurerm_resource_group" "main" {
+  name     = "${var.project_name}-${var.environment}-rg"
+  location = var.location
+
+  tags = local.common_tags
+}
+
+# Variables locales
+locals {
+  common_tags = {
+    Environment = var.environment
+    Project     = var.project_name
+    ManagedBy   = "Terraform"
+    Owner       = var.owner
+  }
+  
+  # Nombres de recursos
+  resource_prefix     = "${var.project_name}-${var.environment}"
+  storage_account_name = "mvp${var.environment}sa"
+  key_vault_name      = "mvp-${var.environment}-kv-v2"
+  sql_server_name     = "${var.project_name}-${var.environment}-sql-v2"
+  eventhub_namespace  = "${var.project_name}-${var.environment}-eh"
+  data_factory_name   = "${var.project_name}-${var.environment}-df"
+  allowed_ip_ranges   = var.allowed_ip_ranges
+}
+
+# Configuración de presupuesto
+module "budget" {
+  source          = "../infra/modules/budget"
+  subscription_id = "/subscriptions/${data.azurerm_client_config.current.subscription_id}"
+  name           = "${var.project_name}-${var.environment}-budget"
+  amount         = var.monthly_limit
+  contact_email  = var.budget_contact_email
+}

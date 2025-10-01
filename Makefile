@@ -5,13 +5,29 @@ ENDPOINT := http://minio:9000
 AK ?= minio
 SK ?= minio12345
 WORKDIR := $(shell pwd)
-SEED_DATE ?= 2025/09/26
 
-.PHONY: up seed run logs ps down clean mc-alias mc-buckets mc-cp
+.PHONY: up setup-dev test logs ps down clean mc-alias mc-buckets help
 
+# Default target
+help:
+	@echo "Available commands:"
+	@echo "  up           - Start all services with Docker Compose"
+	@echo "  setup-dev    - Setup development environment (MinIO buckets)"
+	@echo "  test         - Run tests"
+	@echo "  logs         - Show container logs"
+	@echo "  ps           - Show running containers"
+	@echo "  down         - Stop all services"
+	@echo "  clean        - Stop services and clean up volumes"
+
+# Start all services
 up:
 	docker compose up -d --build
 
+# Setup development environment
+setup-dev: up mc-buckets
+	@echo "Development environment ready!"
+
+# Setup MinIO alias
 mc-alias:
 	rm -rf $(WORKDIR)/.mc
 	mkdir -p $(WORKDIR)/.mc
@@ -20,6 +36,7 @@ mc-alias:
 	  -v "$(WORKDIR)/.mc:/root/.mc" \
 	  minio/mc:latest alias set $(ALIAS) $(ENDPOINT) $(AK) $(SK)
 
+# Create MinIO buckets
 mc-buckets: mc-alias
 	docker run --rm --network $(NET) \
 	  -v "$(WORKDIR):/mvp" \
@@ -29,48 +46,28 @@ mc-buckets: mc-alias
 	  -v "$(WORKDIR):/mvp" \
 	  -v "$(WORKDIR)/.mc:/root/.mc" \
 	  minio/mc:latest mb -p $(ALIAS)/silver || true
-
-mc-cp:
 	docker run --rm --network $(NET) \
 	  -v "$(WORKDIR):/mvp" \
 	  -v "$(WORKDIR)/.mc:/root/.mc" \
-	  minio/mc:latest cp /mvp/data/raw/payments/sample.csv $(ALIAS)/raw/payments/2025/09/26/sample.csv
+	  minio/mc:latest mb -p $(ALIAS)/gold || true
 
-seed:
-	@DATE=$(SEED_DATE) ./scripts/seed.sh
+# Run tests
+test:
+	python -m pytest tests/ -v
 
-seed-today:
-	@DATE=$$(date +%Y/%m/%d) ./scripts/seed.sh
-
-# --- BIG DATASET ---
-
-# Copia el big_sample.csv a MinIO (bucket raw) en una fecha separada
-seed-big: up
-	@echo ">> Seedeando big_sample.csv a MinIO (raw)"
-	docker run --rm --network $(NET) \
-	  -v "$(WORKDIR):/mvp" \
-	  -v "$(WORKDIR)/.mc:/root/.mc" \
-	  minio/mc:latest cp /mvp/data/raw/payments/big_sample.csv local/raw/payments/2025/09/28/big_sample.csv
-
-# Ejecuta el pipeline usando el config alterno dataset.big.yml
-run-big:
-	docker compose run --rm \
-	  -e CFG=/mvp/config/datasets/finanzas/payments_v1/dataset.big.yml \
-	  -e ENVF=/mvp/config/env.yml \
-	  runner
-
-
-run:
-	docker compose run --rm runner
-
+# Show logs
 logs:
 	docker compose logs -f
 
+# Show running containers
 ps:
 	docker compose ps
 
+# Stop all services
 down:
 	docker compose down -v
 
+# Clean up everything
 clean: down
 	rm -rf .mc _minio
+	docker system prune -f

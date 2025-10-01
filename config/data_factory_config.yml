@@ -1,0 +1,165 @@
+# Configuración para Azure Data Factory
+# Archivo: config/data_factory_config.yml
+
+data_factory:
+  name: "mvp-config-driven-pipeline-dev-df"
+  resource_group: "mvp-config-driven-pipeline-dev-rg"
+  location: "westus2"
+
+# Configuración de Linked Services
+linked_services:
+  storage_account:
+    name: "StorageLinkedService"
+    type: "AzureBlobStorage"
+    connection_string_secret: "storage-account-key"  # Referencia a Key Vault
+    
+  sql_database:
+    name: "SqlDatabaseLinkedService"
+    type: "AzureSqlDatabase"
+    connection_string_secret: "sql-connection-string"  # Referencia a Key Vault
+    
+  event_hub:
+    name: "EventHubLinkedService"
+    type: "AzureEventHubs"
+    connection_string_secret: "eventhub-connection-string"  # Referencia a Key Vault
+
+# Configuración de Datasets
+datasets:
+  csv_source:
+    name: "CsvSourceDataset"
+    type: "DelimitedText"
+    linked_service: "StorageLinkedService"
+    properties:
+      location:
+        type: "AzureBlobStorageLocation"
+        container: "raw-data"
+        folder_path: "csv-files"
+      format:
+        column_delimiter: ","
+        row_delimiter: "\n"
+        first_row_as_header: true
+        encoding: "UTF-8"
+        
+  sql_sink:
+    name: "SqlSinkDataset"
+    type: "AzureSqlTable"
+    linked_service: "SqlDatabaseLinkedService"
+    properties:
+      schema: "dbo"
+      table: "processed_data"
+
+# Configuración de Pipelines
+pipelines:
+  csv_ingestion:
+    name: "CsvIngestionPipeline"
+    description: "Pipeline para procesar archivos CSV desde Storage a SQL Database"
+    activities:
+      - name: "CopyCSVToSQL"
+        type: "Copy"
+        source:
+          type: "DelimitedTextSource"
+          dataset: "CsvSourceDataset"
+          settings:
+            skip_line_count: 0
+            additional_columns: []
+        sink:
+          type: "AzureSqlSink"
+          dataset: "SqlSinkDataset"
+          settings:
+            write_behavior: "insert"
+            sql_writer_use_table_lock: false
+            table_option: "autoCreate"
+        mapping:
+          - source: "id"
+            sink: "id"
+          - source: "name"
+            sink: "name"
+          - source: "category"
+            sink: "category"
+          - source: "price"
+            sink: "price"
+          - source: "timestamp"
+            sink: "timestamp"
+            
+  event_processing:
+    name: "EventProcessingPipeline"
+    description: "Pipeline para procesar eventos desde Event Hub"
+    activities:
+      - name: "ProcessEvents"
+        type: "Copy"
+        source:
+          type: "EventHubSource"
+          dataset: "EventHubDataset"
+        sink:
+          type: "AzureSqlSink"
+          dataset: "EventSinkDataset"
+
+# Configuración de Triggers
+triggers:
+  scheduled_trigger:
+    name: "DailyProcessingTrigger"
+    type: "ScheduleTrigger"
+    pipeline: "CsvIngestionPipeline"
+    schedule:
+      frequency: "Day"
+      interval: 1
+      start_time: "2025-01-20T02:00:00Z"
+      time_zone: "UTC"
+      
+  blob_trigger:
+    name: "BlobEventTrigger"
+    type: "BlobEventsTrigger"
+    pipeline: "CsvIngestionPipeline"
+    properties:
+      blob_path_begins_with: "/raw-data/csv-files/"
+      blob_path_ends_with: ".csv"
+      ignore_empty_blobs: true
+
+# Configuración de Monitoreo y Alertas
+monitoring:
+  alerts:
+    pipeline_failure:
+      enabled: true
+      notification_method: "email"
+      recipients: ["admin@company.com"]
+      
+    long_running_pipeline:
+      enabled: true
+      threshold_minutes: 30
+      notification_method: "webhook"
+      
+  logging:
+    level: "Information"
+    retention_days: 30
+    
+  metrics:
+    custom_metrics:
+      - name: "ProcessedRecordsCount"
+        description: "Número de registros procesados por pipeline"
+      - name: "ProcessingDurationMinutes"
+        description: "Duración del procesamiento en minutos"
+
+# Configuración de Seguridad
+security:
+  managed_identity:
+    enabled: true
+    type: "SystemAssigned"
+    
+  rbac_assignments:
+    - principal_type: "ServicePrincipal"
+      role: "Storage Blob Data Contributor"
+      scope: "storage_account"
+    - principal_type: "ServicePrincipal"
+      role: "SQL DB Contributor"
+      scope: "sql_database"
+    - principal_type: "ServicePrincipal"
+      role: "Azure Event Hubs Data Owner"
+      scope: "event_hub"
+
+# Variables de entorno específicas
+environment_variables:
+  ENVIRONMENT: "dev"
+  LOG_LEVEL: "INFO"
+  MAX_RETRY_COUNT: "3"
+  BATCH_SIZE: "1000"
+  TIMEOUT_MINUTES: "60"

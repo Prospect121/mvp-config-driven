@@ -1,0 +1,172 @@
+# =============================================================================
+# MVP Config-Driven Data Pipeline - Terraform Variables
+# =============================================================================
+# Copy this file to terraform.tfvars and update the values for your environment
+
+# =============================================================================
+# BASIC CONFIGURATION
+# =============================================================================
+resource_group_name = "rg-mvp-data-pipeline"
+location           = "East US"
+environment        = "dev"
+project_name       = "mvp-data-pipeline"
+
+# =============================================================================
+# AZURE AD CONFIGURATION
+# =============================================================================
+# Note: Create these Azure AD groups before running Terraform
+data_engineers_group_name  = "DataEngineers"
+data_scientists_group_name = "DataScientists"
+
+# Service Principal for automation (optional)
+# service_principal_object_id = "your-service-principal-object-id"
+
+# =============================================================================
+# SECURITY CONFIGURATION
+# =============================================================================
+# RBAC and Audit
+enable_rbac_audit     = true
+enable_azure_policies = true
+enable_mfa_for_admin  = true
+
+# Key Vault Configuration
+key_vault_sku                    = "standard"
+key_vault_soft_delete_retention  = 7
+key_vault_purge_protection       = false
+
+# Network Security
+allowed_ip_ranges = [
+  "0.0.0.0/0"  # Replace with your actual IP ranges
+]
+
+# =============================================================================
+# STORAGE CONFIGURATION
+# =============================================================================
+storage_account_tier             = "Standard"
+storage_account_replication_type = "LRS"
+storage_account_kind            = "StorageV2"
+
+# Data Lake containers
+data_lake_containers = [
+  "raw",
+  "silver", 
+  "gold",
+  "quarantine"
+]
+
+# =============================================================================
+# SQL DATABASE CONFIGURATION
+# =============================================================================
+sql_server_version                    = "12.0"
+sql_database_sku                     = "S0"
+sql_database_max_size_gb             = 10
+sql_database_backup_retention_days   = 7
+sql_database_geo_redundant_backup    = true
+sql_database_auto_pause_delay        = 60
+
+# SQL Admin Credentials (will be stored in Key Vault)
+sql_admin_username = "sqladmin"
+# sql_admin_password will be auto-generated and stored in Key Vault
+
+# =============================================================================
+# EVENT HUB CONFIGURATION
+# =============================================================================
+event_hub_sku      = "Standard"
+event_hub_capacity = 1
+
+# Event Hub instances
+event_hubs = [
+  {
+    name              = "data-pipeline-events"
+    partition_count   = 2
+    message_retention = 1
+  },
+  {
+    name              = "audit-events"
+    partition_count   = 2
+    message_retention = 7
+  }
+]
+
+# =============================================================================
+# MONITORING CONFIGURATION
+# =============================================================================
+# Application Insights
+app_insights_application_type = "web"
+app_insights_retention_days   = 30
+
+# Log Analytics Workspace
+log_analytics_sku               = "PerGB2018"
+log_analytics_retention_days    = 30
+log_analytics_daily_quota_gb    = 1
+
+# =============================================================================
+# NETWORKING CONFIGURATION
+# =============================================================================
+# Virtual Network
+vnet_address_space = ["10.0.0.0/16"]
+
+# Subnets
+subnets = {
+  "data-processing" = {
+    address_prefixes = ["10.0.1.0/24"]
+    service_endpoints = [
+      "Microsoft.Storage",
+      "Microsoft.KeyVault",
+      "Microsoft.Sql"
+    ]
+  }
+  "gateway" = {
+    address_prefixes = ["10.0.2.0/24"]
+    service_endpoints = []
+  }
+}
+
+# Application Gateway
+app_gateway_sku_name     = "Standard_v2"
+app_gateway_sku_tier     = "Standard_v2"
+app_gateway_sku_capacity = 1
+
+# =============================================================================
+# BACKUP AND DISASTER RECOVERY
+# =============================================================================
+# Backup Configuration
+enable_backup                    = true
+backup_retention_days           = 30
+backup_frequency                = "Daily"
+backup_time                     = "02:00"
+
+# Geo-replication
+enable_geo_replication          = false
+geo_replication_location        = "West US"
+
+# =============================================================================
+# COST OPTIMIZATION
+# =============================================================================
+# Auto-shutdown for development environments
+enable_auto_shutdown            = true
+auto_shutdown_time              = "19:00"
+auto_shutdown_timezone          = "UTC"
+
+# Resource tagging for cost tracking
+tags = {
+  Environment   = "dev"
+  Project      = "mvp-data-pipeline"
+  Owner        = "data-engineering-team"
+  CostCenter   = "engineering"
+  Department   = "data"
+  Application  = "data-pipeline"
+  Criticality  = "medium"
+}
+
+# =============================================================================
+# DEVELOPMENT SPECIFIC SETTINGS
+# =============================================================================
+# Set to true for development environments
+is_development_environment = true
+
+# Enable diagnostic settings
+enable_diagnostic_settings = true
+
+# Enable private endpoints (set to false for development to reduce costs)
+enable_private_endpoints = false
