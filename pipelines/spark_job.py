@@ -126,29 +126,71 @@ def load_expectations(path):
 def apply_quality(df, rules, quarantine_path, run_id):
     if not rules: return df, None, {}
 
-    bad_filters, hard_fail, drops, warns = [], [], [], []
+    quarantine_rules, hard_fail, drops, warns = [], [], [], []
     for r in rules:
         expr = r["expr"]
         on_fail = r.get("on_fail","quarantine").lower()
         name = r.get("name","rule")
         cond_bad = f"NOT ({expr})"
-        if on_fail == "quarantine": bad_filters.append(cond_bad)
+        if on_fail == "quarantine": quarantine_rules.append((name, cond_bad))
         elif on_fail == "fail":     hard_fail.append((name, cond_bad))
         elif on_fail == "drop":     drops.append(cond_bad)
         elif on_fail == "warn":     warns.append(cond_bad)
-        else:                       bad_filters.append(cond_bad)
+        else:                       quarantine_rules.append((name, cond_bad))
 
     stats = {}
     for name, cond in hard_fail:
         if df.filter(cond).limit(1).count() > 0:
             raise ValueError(f"[quality][FAIL] Regla '{name}' violada.")
 
+    # Procesar reglas de cuarentena acumulando todas las fallas por registro
     bad_df = None
-    if bad_filters:
-        any_bad = " OR ".join([f"({c})" for c in bad_filters])
-        bad_df = df.filter(any_bad)
-        stats["quarantine_count"] = bad_df.count()
-        df = df.filter(f"NOT ({any_bad})")
+    if quarantine_rules:
+        # Crear una columna para cada regla que indique si falla (True/False)
+        temp_df = df
+        for rule_name, cond in quarantine_rules:
+            temp_df = temp_df.withColumn(f"_fails_{rule_name}", F.expr(cond))
+        
+        # Crear una condición que identifique registros que fallan al menos una regla
+        any_fail_conditions = [f"_fails_{rule_name}" for rule_name, _ in quarantine_rules]
+        any_fail_expr = " OR ".join(any_fail_conditions)
+        
+        # Filtrar registros que fallan al menos una regla
+        bad_df = temp_df.filter(any_fail_expr)
+        
+        if bad_df.count() > 0:
+            # Crear una lista de reglas fallidas por registro
+            failed_rules_expr = "CASE "
+            for i, (rule_name, _) in enumerate(quarantine_rules):
+                if i == 0:
+                    failed_rules_expr += f"WHEN _fails_{rule_name} THEN '{rule_name}'"
+                else:
+                    failed_rules_expr += f" WHEN _fails_{rule_name} THEN CONCAT_WS(', ', CASE WHEN _fails_{rule_name} THEN '{rule_name}' END"
+                    # Agregar reglas anteriores si también fallan
+                    for j in range(i):
+                        prev_rule_name, _ = quarantine_rules[j]
+                        failed_rules_expr += f", CASE WHEN _fails_{prev_rule_name} THEN '{prev_rule_name}' END"
+                    failed_rules_expr += ")"
+            failed_rules_expr += " END"
+            
+            # Simplificar: usar array y array_join para concatenar todas las reglas fallidas
+            failed_rules_cases = []
+            for rule_name, _ in quarantine_rules:
+                failed_rules_cases.append(f"CASE WHEN _fails_{rule_name} THEN '{rule_name}' END")
+            
+            failed_rules_expr = f"array_join(filter(array({', '.join(failed_rules_cases)}), x -> x IS NOT NULL), ', ')"
+            
+            bad_df = bad_df.withColumn('_failed_rules', F.expr(failed_rules_expr))
+            
+            # Remover las columnas temporales de fallas
+            for rule_name, _ in quarantine_rules:
+                bad_df = bad_df.drop(f"_fails_{rule_name}")
+            
+            stats["quarantine_count"] = bad_df.count()
+            
+            # Filtrar registros buenos (que no fallan ninguna regla de cuarentena)
+            all_bad_conditions = " OR ".join([f"({cond})" for _, cond in quarantine_rules])
+            df = df.filter(f"NOT ({all_bad_conditions})")
 
     if drops:
         to_drop = " OR ".join([f"({c})" for c in drops])
@@ -159,13 +201,16 @@ def apply_quality(df, rules, quarantine_path, run_id):
         any_warn = " OR ".join([f"({c})" for c in warns])
         stats["warn_count"] = df.filter(any_warn).count()
 
-    if bad_df is not None and quarantine_path:
+    if bad_df is not None and quarantine_path and stats.get('quarantine_count', 0) > 0:
         (bad_df
-          .withColumn('_quarantine_reason', F.lit('rules_failed'))
+          .withColumn('_quarantine_reason', F.concat(F.lit('rules_failed: '), F.col('_failed_rules')))
           .withColumn('_run_id', F.lit(run_id))
           .withColumn('_ingestion_ts', F.current_timestamp())
+          .drop('_failed_rules')  # Remover columna temporal
           .write.mode('append').parquet(quarantine_path))
         print(f"[quality] Quarantine -> {quarantine_path} rows={stats.get('quarantine_count',0)}")
+    elif quarantine_rules and quarantine_path:
+        print(f"[quality] No quarantine needed - all records passed validation")
 
     return df, bad_df, stats
 

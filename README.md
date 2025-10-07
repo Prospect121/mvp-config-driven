@@ -59,66 +59,205 @@ mvp-config-driven/
 
 ## Instalación y requisitos
 
+### Prerrequisitos
+
+- **Docker** y **Docker Compose** instalados
+- **Make** (opcional, pero recomendado)
+- **Git** para clonar el repositorio
+
 ### Windows (con WSL2 + Docker Desktop)
 
-1. Instalar **Docker Desktop** y habilitar integración con WSL2.  
-2. Clonar el repositorio:  
+1. **Instalar Docker Desktop** y habilitar integración con WSL2
+2. **Clonar el repositorio**:  
 
 ```bash
 git clone https://github.com/mi-org/mvp-config-driven.git
 cd mvp-config-driven
 ```
 
-3. En WSL2, instalar dependencias:  
+3. **En WSL2, instalar dependencias**:  
 
 ```bash
 sudo apt update && sudo apt install make dos2unix -y
 ```
 
-4. Convertir scripts a formato Unix (solo una vez):  
+4. **Convertir scripts a formato Unix** (solo una vez):  
 
 ```bash
 dos2unix scripts/*.sh
 ```
 
+5. **Configurar variables de entorno**:
+
+```bash
+cp .env.example .env
+# Editar .env si es necesario (valores por defecto funcionan para desarrollo local)
+```
+
 ### Linux nativo
+
+1. **Instalar dependencias**:
+
+```bash
+sudo apt update && sudo apt install docker.io docker-compose make git -y
+```
+
+2. **Clonar el repositorio**:
 
 ```bash
 git clone https://github.com/mi-org/mvp-config-driven.git
 cd mvp-config-driven
-sudo apt update && sudo apt install docker.io docker-compose make -y
+```
+
+3. **Configurar variables de entorno**:
+
+```bash
+cp .env.example .env
+# Editar .env si es necesario
+```
+
+### macOS
+
+1. **Instalar Docker Desktop** desde [docker.com](https://www.docker.com/products/docker-desktop)
+2. **Instalar Homebrew** (si no está instalado):
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+3. **Instalar dependencias**:
+
+```bash
+brew install make git
+```
+
+4. **Clonar y configurar**:
+
+```bash
+git clone https://github.com/mi-org/mvp-config-driven.git
+cd mvp-config-driven
+cp .env.example .env
 ```
 
 ---
 
 ## Ejecución del proyecto
 
-1. Levantar infraestructura:
+### Inicio rápido
+
+#### Opción A: Usando Make (Linux/macOS/WSL2)
+
+1. **Levantar infraestructura** (Spark + MinIO):
 
 ```bash
 make up
 ```
 
-2. Ejecutar un pipeline:
+Esto iniciará:
+- **Spark Master** en `http://localhost:4040`
+- **Spark Worker**
+- **MinIO** (API en puerto 9000, UI en puerto 9001)
+
+2. **Cargar datos de ejemplo** a MinIO:
+
+```bash
+make seed
+```
+
+Este comando:
+- Crea los buckets `raw` y `silver` en MinIO
+- Copia `data/raw/payments/sample.csv` a `s3a://raw/payments/2025/09/26/`
+
+3. **Ejecutar el pipeline**:
 
 ```bash
 make run
 ```
 
-Por defecto se usa `config/datasets/finanzas/payments_v1/pipeline.yml` con `config/envs/local.yml`.
+Por defecto usa:
+- Dataset: `config/datasets/finanzas/payments_v1/dataset.yml`
+- Entorno: `config/env.yml`
 
-3. Ver resultados:
+4. **Ver resultados**:
 
-- MinIO UI: [http://localhost:9001](http://localhost:9001)  
-  Usuario: `minio`  
-  Password: `minio12345`
+- **MinIO UI**: [http://localhost:9001](http://localhost:9001)  
+  - Usuario: `minio`  
+  - Password: `minio12345`
+  - Los datos procesados estarán en el bucket `silver/payments_v1/`
 
-- Datasets procesados terminan en `s3a://silver/payments_v1/`
+- **Spark UI**: [http://localhost:4040](http://localhost:4040) (cuando el job esté ejecutándose)
 
-4. Apagar servicios:
+5. **Apagar servicios**:
 
 ```bash
 make down
+```
+
+### Comandos adicionales
+
+- **Ver logs en tiempo real**:
+```bash
+make logs
+```
+
+- **Ver estado de contenedores**:
+```bash
+make ps
+```
+
+- **Ejecutar con dataset grande**:
+```bash
+make seed-big  # Carga big_sample.csv
+make run-big   # Ejecuta con configuración para dataset grande
+```
+
+- **Limpiar todo** (contenedores + volúmenes):
+```bash
+make clean
+```
+
+#### Opción B: Usando PowerShell (Windows)
+
+Si no tienes Make instalado en Windows, puedes usar el script de PowerShell:
+
+1. **Levantar infraestructura**:
+```powershell
+.\scripts\run_pipeline.ps1 up
+```
+
+2. **Cargar datos de ejemplo**:
+```powershell
+.\scripts\run_pipeline.ps1 seed
+```
+
+3. **Ejecutar pipeline**:
+```powershell
+.\scripts\run_pipeline.ps1 run
+```
+
+4. **Ver logs**:
+```powershell
+.\scripts\run_pipeline.ps1 logs
+```
+
+5. **Ver estado**:
+```powershell
+.\scripts\run_pipeline.ps1 ps
+```
+
+6. **Apagar servicios**:
+```powershell
+.\scripts\run_pipeline.ps1 down
+```
+
+7. **Limpiar todo**:
+```powershell
+.\scripts\run_pipeline.ps1 clean
+```
+
+8. **Ver ayuda**:
+```powershell
+.\scripts\run_pipeline.ps1 help
 ```
 
 ---
@@ -186,6 +325,89 @@ expectations:
 
 ---
 
+## Troubleshooting
+
+### Problemas comunes
+
+#### 1. Error "No such file or directory" en rutas S3
+
+**Problema**: El pipeline no encuentra archivos en la ruta S3 especificada.
+
+**Solución**:
+- Verificar que los datos estén cargados: `make seed`
+- Comprobar la fecha en `dataset.yml` coincida con la fecha de seed
+- Verificar en MinIO UI que los archivos existan en la ruta correcta
+
+#### 2. Contenedores no inician correctamente
+
+**Problema**: `docker compose up` falla o los contenedores se detienen.
+
+**Solución**:
+```bash
+# Limpiar todo y reiniciar
+make clean
+make up
+
+# Ver logs para identificar el problema
+make logs
+```
+
+#### 3. Error de permisos en Windows/WSL2
+
+**Problema**: Scripts no ejecutan por permisos o formato de línea.
+
+**Solución**:
+```bash
+# Convertir formato de archivos
+dos2unix scripts/*.sh
+
+# Dar permisos de ejecución
+chmod +x scripts/*.sh
+```
+
+#### 4. Puerto ocupado
+
+**Problema**: Error "port already in use" al iniciar servicios.
+
+**Solución**:
+```bash
+# Verificar qué proceso usa el puerto
+netstat -tulpn | grep :9000
+
+# Cambiar puertos en .env si es necesario
+MINIO_API_PORT=9010
+MINIO_CONSOLE_PORT=9011
+```
+
+#### 5. Memoria insuficiente para Spark
+
+**Problema**: Jobs de Spark fallan por falta de memoria.
+
+**Solución**:
+- Aumentar memoria disponible para Docker Desktop
+- Reducir `SPARK_WORKER_MEMORY` en docker-compose.yml
+- Usar datasets más pequeños para pruebas
+
+### Verificación del entorno
+
+Para verificar que todo funciona correctamente:
+
+```bash
+# 1. Verificar servicios
+make ps
+
+# 2. Verificar conectividad a MinIO
+curl http://localhost:9000/minio/health/live
+
+# 3. Ejecutar pipeline de prueba
+make seed && make run
+
+# 4. Verificar resultados en MinIO UI
+# Ir a http://localhost:9001 y revisar bucket 'silver'
+```
+
+---
+
 ## Buenas prácticas
 
 - No usar rutas locales. Siempre referenciar `s3a://raw/...` y configurar en `envs/*.yml`.  
@@ -215,4 +437,4 @@ git checkout -b feature/nueva-funcionalidad
 
 2. Hacer cambios en configuración o código.  
 3. Validar con `make run` y `./ci/check_config.sh`.  
-4. Crear Pull Request (se ejecutan validaciones automáticas).  
+4. Crear Pull Request (se ejecutan validaciones automáticas).

@@ -2,7 +2,7 @@ id: payments_v1
 
 source:
   input_format: csv
-  path: "s3a://raw/payments/2025/09/26/*.csv"
+  path: "s3a://raw/payments/2025/09/26/*.csv"  # Fecha por defecto del seed script
   options:
     header: "true"
     inferSchema: "true"
@@ -12,14 +12,23 @@ standardization:
   rename:
     - { from: customerId, to: customer_id }
   casts:
-    - { column: amount, to: "decimal(18,2)", on_error: null }
+    - { column: amounts, to: "decimal(18,2)", on_error: null }
     - { column: payment_date, to: "timestamp", format_hint: "yyyy-MM-dd[ HH:mm:ss]" }
     - { column: updated_at, to: "timestamp", format_hint: "yyyy-MM-dd[ HH:mm:ss]" }
   defaults:
     - { column: currency, value: "CLP" }
   deduplicate:
     key: [payment_id]
-    order_by: [updated_at desc]  # ahora updated_at YA es timestamp
+    order_by: [updated_at desc]
+
+quality:
+  expectations_ref: config/datasets/finanzas/payments_v1/expectations.yml
+  quarantine: s3a://raw/quarantine/payments_v1/
+
+
+schema:
+  ref: config/datasets/finanzas/payments_v1/schema.json
+  mode: strict
 
 output:
   silver:

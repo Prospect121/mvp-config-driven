@@ -1,6 +1,16 @@
+# Dependencias principales
 pyyaml==6.0.2
 jsonschema==4.23.0
-# Opcionales:
+pyspark==3.5.1
+
+# Dependencias para desarrollo y testing
+pytest==7.4.4
+pytest-cov==4.1.0
+
+# Dependencias opcionales (descomenta según necesidad)
 # delta-spark==3.2.0
 # great-expectations==0.18.12
 # openlineage-python==1.27.0
+
+# Utilidades adicionales
+python-dotenv==1.0.0
