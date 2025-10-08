@@ -1,0 +1,49 @@
+{
+  "pipeline": {
+    "name": "MainProcessingPipeline",
+    "description": "Pipeline principal para procesamiento de datos con validaciones",
+    "version": "1.0.0"
+  },
+  "validation_rules": {
+    "file_validation": {
+      "minimum_size_bytes": 1,
+      "maximum_size_mb": 100,
+      "allowed_extensions": [".csv", ".txt"],
+      "encoding": "utf-8"
+    },
+    "data_validation": {
+      "skip_incompatible_rows": true,
+      "log_level": "Warning",
+      "max_error_percentage": 5,
+      "required_columns": [
+        "id",
+        "timestamp",
+        "value"
+      ]
+    },
+    "schema_validation": {
+      "enforce_schema": true,
+      "allow_data_truncation": true,
+      "treat_boolean_as_number": false
+    }
+  },
+  "transformation_settings": {
+    "output_format": "parquet",
+    "compression": "snappy",
+    "copy_behavior": "FlattenHierarchy",
+    "data_integration_units": 2,
+    "enable_staging": false
+  },
+  "paths": {
+    "input_path": "raw/csv",
+    "output_path": "silver/processed",
+    "quarantine_path": "quarantine",
+    "logs_path": "logs"
+  },
+  "monitoring": {
+    "enable_copy_activity_log": true,
+    "enable_reliable_logging": false,
+    "metrics_collection": true,
+    "alert_on_failure": true
+  }
+}

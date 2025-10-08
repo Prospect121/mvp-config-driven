@@ -13,7 +13,7 @@ resource "azurerm_storage_account" "adls" {
   # Configuración de seguridad
   min_tls_version                = "TLS1_2"
   allow_nested_items_to_be_public = false
-  shared_access_key_enabled       = false
+  shared_access_key_enabled       = true  # Necesario para Azure File Shares
   
   # Cifrado en reposo
   infrastructure_encryption_enabled = true
@@ -49,37 +49,43 @@ resource "azurerm_storage_account" "adls" {
   tags = local.common_tags
 }
 
-# Contenedores para diferentes capas de datos
-# Comentados temporalmente para evitar problemas de autenticación
-# resource "azurerm_storage_container" "raw" {
-#   name                  = "raw"
-#   storage_account_name  = azurerm_storage_account.adls.name
-#   container_access_type = "private"
-# }
+# Contenedores para diferentes capas de datos - Arquitectura Medallion
+# Activados según estándares corporativos Prodigio
+resource "azurerm_storage_container" "raw" {
+  name                  = "raw"
+  storage_account_name  = azurerm_storage_account.adls.name
+  container_access_type = "private"
+}
 
-# resource "azurerm_storage_container" "bronze" {
-#   name                  = "bronze"
-#   storage_account_name  = azurerm_storage_account.adls.name
-#   container_access_type = "private"
-# }
+resource "azurerm_storage_container" "bronze" {
+  name                  = "bronze"
+  storage_account_name  = azurerm_storage_account.adls.name
+  container_access_type = "private"
+}
 
-# resource "azurerm_storage_container" "silver" {
-#   name                  = "silver"
-#   storage_account_name  = azurerm_storage_account.adls.name
-#   container_access_type = "private"
-# }
+resource "azurerm_storage_container" "silver" {
+  name                  = "silver"
+  storage_account_name  = azurerm_storage_account.adls.name
+  container_access_type = "private"
+}
 
-# resource "azurerm_storage_container" "gold" {
-#   name                  = "gold"
-#   storage_account_name  = azurerm_storage_account.adls.name
-#   container_access_type = "private"
-# }
+resource "azurerm_storage_container" "gold" {
+  name                  = "gold"
+  storage_account_name  = azurerm_storage_account.adls.name
+  container_access_type = "private"
+}
 
-# resource "azurerm_storage_container" "quarantine" {
-#   name                  = "quarantine"
-#   storage_account_name  = azurerm_storage_account.adls.name
-#   container_access_type = "private"
-# }
+resource "azurerm_storage_container" "quarantine" {
+  name                  = "quarantine"
+  storage_account_name  = azurerm_storage_account.adls.name
+  container_access_type = "private"
+}
+
+resource "azurerm_storage_container" "logs" {
+  name                  = "logs"
+  storage_account_name  = azurerm_storage_account.adls.name
+  container_access_type = "private"
+}
 
 # Identidad administrada para el almacenamiento
 resource "azurerm_user_assigned_identity" "storage" {

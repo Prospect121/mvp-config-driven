@@ -598,3 +598,9 @@ git push origin feature/nueva-funcionalidad
 - **Equipo de Data Engineering:** data-engineering@company.com
 - **Soporte técnico:** tech-support@company.com
 - **Seguridad:** security@company.com
+
+
+Remover recursos:
+
+az group show --name mvp-config-driven-pipeline-dev-rg --output table
+az group delete --name mvp-config-driven-pipeline-dev-rg --yes --no-wait

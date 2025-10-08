@@ -1,0 +1,80 @@
+# Dockerfile optimizado para Azure Container Instances
+# Pipeline integrado de procesamiento de datos
+FROM python:3.11-slim
+
+# Metadatos
+LABEL maintainer="MVP Config Driven Pipeline"
+LABEL version="2.0"
+LABEL description="Integrated data processing pipeline for Azure Container Instances"
+
+# Instalar dependencias del sistema necesarias para Azure y PySpark
+RUN apt-get update && apt-get install -y \
+    curl \
+    wget \
+    unzip \
+    default-jre-headless \
+    procps \
+    git \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Configurar Java para PySpark
+ENV JAVA_HOME=/usr/lib/jvm/default-java
+
+# Crear usuario no-root para seguridad
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
+# Crear directorio de trabajo
+WORKDIR /app
+
+# Copiar archivos de requisitos primero para aprovechar cache de Docker
+COPY requirements.txt .
+
+# Instalar dependencias de Python con optimizaciones
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Copiar código fuente y configuraciones
+COPY src/ ./src/
+COPY config/ ./config/
+COPY test_data/ ./test_data/
+COPY docker/entrypoint_pipeline.py ./entrypoint_pipeline.py
+
+# Crear archivos __init__.py faltantes para importaciones correctas
+RUN touch /app/src/__init__.py && \
+    touch /app/src/pipeline/__init__.py && \
+    touch /app/src/utils/__init__.py && \
+    touch /app/src/config/__init__.py && \
+    touch /app/src/security/__init__.py
+
+# Crear directorios necesarios con permisos apropiados
+RUN mkdir -p /tmp/data /app/logs /app/output /app/input && \
+    chown -R appuser:appuser /app /tmp/data
+
+# Configurar variables de entorno para Azure Container Instances
+ENV PYTHONPATH=/app:/app/src
+ENV PYTHONUNBUFFERED=1
+ENV CONFIG_PATH="/app/config/data_factory_config.yml"
+ENV EXPECTATIONS_PATH="/app/config/expectations.yml"
+ENV LOG_LEVEL="INFO"
+ENV AZURE_CLIENT_ID=""
+ENV AZURE_CLIENT_SECRET=""
+ENV AZURE_TENANT_ID=""
+
+# Variables específicas para el pipeline
+ENV INPUT_PATH=""
+ENV OUTPUT_PATH=""
+ENV PROCESSING_MODE="batch"
+
+# Cambiar a usuario no-root
+USER appuser
+
+# Healthcheck para Azure Container Instances
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD python -c "import sys; import os; sys.path.append('/app'); sys.path.append('/app/src'); sys.exit(0)"
+
+# Hacer el script ejecutable y configurar punto de entrada
+RUN chmod +x /app/entrypoint_pipeline.py
+
+# Punto de entrada optimizado con manejo de argumentos
+ENTRYPOINT ["python", "/app/entrypoint_pipeline.py"]

@@ -237,6 +237,45 @@ services:
       - '--web.enable-lifecycle'
     networks: [mvp-config-driven-net]
 
+  # Pipeline - Servicio principal del pipeline de datos
+  pipeline:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.pipeline
+    image: mvp-pipeline:latest
+    container_name: mvp-config-driven-pipeline-1
+    hostname: pipeline
+    restart: "no"  # No reiniciar automáticamente para ejecuciones bajo demanda
+    environment:
+      # Configuración de Azure (para desarrollo local usar MinIO)
+      - AZURE_CLIENT_ID=${AZURE_CLIENT_ID:-}
+      - AZURE_CLIENT_SECRET=${AZURE_CLIENT_SECRET:-}
+      - AZURE_TENANT_ID=${AZURE_TENANT_ID:-}
+      # Configuración del pipeline
+      - INPUT_PATH=/app/input
+      - OUTPUT_PATH=/app/output
+      - CONFIG_PATH=/app/config
+      - EXPECTATIONS_PATH=/app/config/expectations.yml
+      - LOG_LEVEL=INFO
+      - PROCESSING_MODE=local
+      - TZ=${TZ:-America/Bogota}
+      # Configuración para MinIO (desarrollo local)
+      - AWS_ACCESS_KEY_ID=minio
+      - AWS_SECRET_ACCESS_KEY=minio12345
+      - AWS_ENDPOINT_URL=http://minio:9000
+      - AWS_REGION=us-east-1
+    volumes:
+      - ./test_data:/app/input:ro
+      - ./test_output:/app/output
+      - ./logs:/app/logs
+    depends_on:
+      - minio
+      - spark-master
+      - spark-worker-1
+    networks: [mvp-config-driven-net]
+    # Comando por defecto para modo interactivo
+    command: ["sleep", "infinity"]
+
   # Runner - Ejecutor de pipelines
   runner:
     image: bitnami/spark:3.5.1

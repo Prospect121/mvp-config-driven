@@ -247,7 +247,7 @@ resource "azurerm_monitor_metric_alert" "sql_high_dtu" {
 
   criteria {
     metric_namespace = "Microsoft.Sql/servers/databases"
-    metric_name      = "dtu_consumption_percent"
+    metric_name      = "cpu_percent"
     aggregation      = "Average"
     operator         = "GreaterThan"
     threshold        = 80

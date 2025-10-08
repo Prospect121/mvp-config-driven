@@ -9,7 +9,7 @@ resource "azurerm_consumption_budget_subscription" "this" {
   subscription_id = var.subscription_id
 
   time_period {
-    start_date = formatdate("YYYY-MM-DD'T'hh:mm:ssZ", timeadd(timestamp(), "0h"))
+    start_date = formatdate("YYYY-MM-01'T'00:00:00Z", timestamp())
     end_date   = formatdate("YYYY-12-31'T'23:59:59Z", timestamp()) # arbitrario
   }
 

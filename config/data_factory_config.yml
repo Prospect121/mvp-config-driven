@@ -1,6 +1,9 @@
 # Configuración para Azure Data Factory
 # Archivo: config/data_factory_config.yml
 
+# Identificador único del pipeline
+id: "mvp-config-driven-pipeline"
+
 data_factory:
   name: "mvp-config-driven-pipeline-dev-df"
   resource_group: "mvp-config-driven-pipeline-dev-rg"

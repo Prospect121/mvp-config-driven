@@ -20,6 +20,9 @@ provider "azurerm" {
       purge_soft_delete_on_destroy    = true
       recover_soft_deleted_key_vaults = true
     }
+    resource_group {
+      prevent_deletion_if_contains_resources = false
+    }
   }
   
   # Usar autenticación basada en identidad para storage accounts
@@ -31,7 +34,7 @@ data "azurerm_client_config" "current" {}
 
 # Grupo de recursos principal
 resource "azurerm_resource_group" "main" {
-  name     = "${var.project_name}-${var.environment}-rg"
+  name     = var.resource_group_name
   location = var.location
 
   tags = local.common_tags
@@ -46,13 +49,13 @@ locals {
     Owner       = var.owner
   }
   
-  # Nombres de recursos
+  # Nombres de recursos - Estándares Corporativos Prodigio
   resource_prefix     = "${var.project_name}-${var.environment}"
-  storage_account_name = "mvp${var.environment}sa"
-  key_vault_name      = "mvp-${var.environment}-kv-v2"
-  sql_server_name     = "${var.project_name}-${var.environment}-sql-v2"
-  eventhub_namespace  = "${var.project_name}-${var.environment}-eh"
-  data_factory_name   = "${var.project_name}-${var.environment}-df"
+  storage_account_name = "pdg${var.environment}sa001"
+  key_vault_name      = "pdg-${var.environment}-kv-001"
+  sql_server_name     = "${var.project_name}-${var.environment}-sql-001"
+  eventhub_namespace  = "${var.project_name}-${var.environment}-eh-001"
+  data_factory_name   = "${var.project_name}-${var.environment}-df-001"
   allowed_ip_ranges   = var.allowed_ip_ranges
 }
 
@@ -60,7 +63,7 @@ locals {
 module "budget" {
   source          = "../infra/modules/budget"
   subscription_id = "/subscriptions/${data.azurerm_client_config.current.subscription_id}"
-  name           = "${var.project_name}-${var.environment}-budget"
+  name           = "${var.project_name}-${var.environment}-budget-001"
   amount         = var.monthly_limit
   contact_email  = var.budget_contact_email
 }

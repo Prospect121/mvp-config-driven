@@ -56,51 +56,46 @@ resource "azurerm_data_factory_linked_service_key_vault" "main" {
   key_vault_id    = azurerm_key_vault.main.id
 }
 
-# Linked Service para Event Hub
-resource "azurerm_data_factory_linked_service_azure_function" "eventhub" {
-  name            = "AzureEventHub"
-  data_factory_id = azurerm_data_factory.main.id
-  url             = "https://${azurerm_eventhub_namespace.main.name}.servicebus.windows.net"
-  
-  key_vault_key {
-    linked_service_name = azurerm_data_factory_linked_service_key_vault.main.name
-    secret_name         = "eventhub-connection-string"
+
+
+# Dataset para archivos CSV de entrada - Activado para arquitectura Medallion
+resource "azurerm_data_factory_dataset_delimited_text" "csv_source" {
+  name                = "CsvSourceDataset"
+  data_factory_id     = azurerm_data_factory.main.id
+  linked_service_name = azurerm_data_factory_linked_service_azure_blob_storage.adls.name
+
+  azure_blob_storage_location {
+    container = azurerm_storage_container.raw.name
+    path      = "@dataset().folderPath"
+    filename  = "@dataset().fileName"
+  }
+
+  column_delimiter    = ","
+  row_delimiter       = "\n"
+  quote_character     = "\""
+  escape_character    = "\\"
+  first_row_as_header = true
+  null_value          = ""
+
+  parameters = {
+    folderPath = ""
+    fileName   = ""
   }
 }
 
-# Dataset para archivos CSV de entrada - Comentado temporalmente
-# resource "azurerm_data_factory_dataset_delimited_text" "csv_source" {
-#   name                = "CsvSourceDataset"
-#   data_factory_id     = azurerm_data_factory.main.id
-#   linked_service_name = azurerm_data_factory_linked_service_azure_blob_storage.adls.name
+# Dataset para archivos Parquet en ADLS - Activado para capa Silver
+resource "azurerm_data_factory_dataset_parquet" "parquet_sink" {
+  name                = "ParquetSink"
+  data_factory_id     = azurerm_data_factory.main.id
+  linked_service_name = azurerm_data_factory_linked_service_azure_blob_storage.adls.name
 
-#   azure_blob_storage_location {
-#     container = azurerm_storage_container.raw.name
-#     path      = "csv"
-#     filename  = "*.csv"
-#   }
+  azure_blob_storage_location {
+    container = azurerm_storage_container.silver.name
+    path      = "processed"
+  }
 
-#   column_delimiter    = ","
-#   row_delimiter       = "\n"
-#   quote_character     = "\""
-#   escape_character    = "\\"
-#   first_row_as_header = true
-#   null_value          = ""
-# }
-
-# Dataset para archivos Parquet en ADLS - Comentado temporalmente
-# resource "azurerm_data_factory_dataset_parquet" "parquet_sink" {
-#   name                = "ParquetSink"
-#   data_factory_id     = azurerm_data_factory.main.id
-#   linked_service_name = azurerm_data_factory_linked_service_azure_blob_storage.adls.name
-
-#   azure_blob_storage_location {
-#     container = azurerm_storage_container.silver.name
-#     path      = "processed"
-#   }
-
-#   compression_codec = "snappy"
-# }
+  compression_codec = "snappy"
+}
 
 # Dataset para SQL Database
 resource "azurerm_data_factory_dataset_sql_server_table" "sql_table" {
@@ -110,92 +105,83 @@ resource "azurerm_data_factory_dataset_sql_server_table" "sql_table" {
   table_name          = "ProcessedData"
 }
 
-# Pipeline principal de procesamiento - Comentado temporalmente
-# resource "azurerm_data_factory_pipeline" "main_processing" {
-#   name            = "MainProcessingPipeline"
-#   data_factory_id = azurerm_data_factory.main.id
-#   description     = "Pipeline principal para procesamiento de datos"
+# Pipeline principal de procesamiento con validaciones mejoradas
+resource "azurerm_data_factory_pipeline" "main_processing" {
+  name            = "MainProcessingPipeline"
+  data_factory_id = azurerm_data_factory.main.id
+  description     = "Pipeline principal para procesamiento de datos con validaciones y transformaciones"
 
-#   activities_json = jsonencode([
-#     {
-#       name = "CopyFromCSVToParquet"
-#       type = "Copy"
-#       typeProperties = {
-#         source = {
-#           type = "DelimitedTextSource"
-#           storeSettings = {
-#             type = "AzureBlobStorageReadSettings"
-#             recursive = true
-#             wildcardFileName = "*.csv"
-#           }
-#         }
-#         sink = {
-#           type = "ParquetSink"
-#           storeSettings = {
-#             type = "AzureBlobStorageWriteSettings"
-#           }
-#         }
-#         enableStaging = false
-#       }
-#       inputs = [
-#         {
-#           referenceName = azurerm_data_factory_dataset_delimited_text.csv_source.name
-#           type = "DatasetReference"
-#         }
-#       ]
-#       outputs = [
-#         {
-#           referenceName = azurerm_data_factory_dataset_parquet.parquet_sink.name
-#           type = "DatasetReference"
-#         }
-#       ]
-#     },
-#     {
-#       name = "ExecuteSparkJob"
-#       type = "SparkJob"
-#       dependsOn = [
-#         {
-#           activity = "CopyFromCSVToParquet"
-#           dependencyConditions = ["Succeeded"]
-#         }
-#       ]
-#       typeProperties = {
-#         sparkJobLinkedService = {
-#           referenceName = "SparkLinkedService"
-#           type = "LinkedServiceReference"
-#         }
-#         rootPath = "abfss://${azurerm_storage_container.silver.name}@${azurerm_storage_account.adls.name}.dfs.core.windows.net/"
-#         entryFilePath = "spark_jobs/spark_pipeline.py"
-#         sparkConfig = {
-#           "spark.sql.adaptive.enabled" = "true"
-#           "spark.sql.adaptive.coalescePartitions.enabled" = "true"
-#         }
-#       }
-#     }
-#   ])
+  activities_json = jsonencode([
+    {
+      name = "CopyDataToProcessed"
+      type = "Copy"
+      typeProperties = {
+        source = {
+          type = "DelimitedTextSource"
+          storeSettings = {
+            type = "AzureBlobFSReadSettings"
+            recursive = true
+          }
+          formatSettings = {
+            type = "DelimitedTextReadSettings"
+          }
+        }
+        sink = {
+          type = "ParquetSink"
+          storeSettings = {
+            type = "AzureBlobFSWriteSettings"
+          }
+          formatSettings = {
+            type = "ParquetWriteSettings"
+          }
+        }
+        enableStaging = false
+      }
+      inputs = [
+        {
+          referenceName = azurerm_data_factory_dataset_delimited_text.csv_source.name
+          type = "DatasetReference"
+          parameters = {
+            folderPath = "@split(pipeline().parameters.inputPath, '/')[0]"
+            fileName   = "@split(pipeline().parameters.inputPath, '/')[1]"
+          }
+        }
+      ]
+      outputs = [
+        {
+          referenceName = azurerm_data_factory_dataset_parquet.parquet_sink.name
+          type = "DatasetReference"
+        }
+      ]
+    }
+  ])
 
-#   parameters = {
-#     inputPath  = "raw/csv"
-#     outputPath = "silver/processed"
-#   }
-# }
+  parameters = {
+    inputPath  = "raw/csv"
+    outputPath = "silver/processed"
+  }
 
-# Trigger para ejecutar el pipeline diariamente - Comentado temporalmente
-# resource "azurerm_data_factory_trigger_schedule" "daily" {
-#   name            = "DailyTrigger"
-#   data_factory_id = azurerm_data_factory.main.id
-#   pipeline_name   = azurerm_data_factory_pipeline.main_processing.name
+  variables = {
+    ProcessingMetrics = ""
+  }
+}
 
-#   frequency = "Day"
-#   interval  = 1
+# Trigger para ejecutar el pipeline diariamente - Activado para automatización
+resource "azurerm_data_factory_trigger_schedule" "daily" {
+  name            = "DailyTrigger"
+  data_factory_id = azurerm_data_factory.main.id
+  pipeline_name   = azurerm_data_factory_pipeline.main_processing.name
+
+  frequency = "Day"
+  interval  = 1
   
-#   schedule {
-#     hours   = [2]
-#     minutes = [0]
-#   }
+  schedule {
+    hours   = [2]
+    minutes = [0]
+  }
 
-#   activated = true
-# }
+  activated = true
+}
 
 # Asignaciones de rol para Data Factory
 resource "azurerm_role_assignment" "df_storage_contributor" {

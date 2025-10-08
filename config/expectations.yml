@@ -1,0 +1,121 @@
+# Configuración de expectativas de calidad de datos
+# Este archivo define las reglas de validación que se aplicarán a los datos
+
+metadata:
+  version: "1.0"
+  description: "Reglas de calidad de datos para el pipeline MVP"
+  created_by: "Data Engineering Team"
+  last_updated: "2024-01-15"
+
+# Reglas de calidad de datos
+rules:
+  # Validación de campos obligatorios
+  - name: "required_fields_validation"
+    type: "not_null"
+    description: "Validar que los campos críticos no sean nulos"
+    columns:
+      - "transaction_id"
+      - "customer_id"
+      - "amount"
+      - "transaction_date"
+    severity: "critical"
+    action: "quarantine"
+
+  # Validación de unicidad
+  - name: "transaction_uniqueness"
+    type: "unique"
+    description: "Validar unicidad de transacciones"
+    columns:
+      - "transaction_id"
+    severity: "critical"
+    action: "reject"
+
+  # Validación de rangos de valores
+  - name: "amount_range_validation"
+    type: "range"
+    description: "Validar que los montos estén en rango válido"
+    column: "amount"
+    min: 0.01
+    max: 1000000.00
+    severity: "high"
+    action: "quarantine"
+
+  # Validación de fechas
+  - name: "date_range_validation"
+    type: "range"
+    description: "Validar que las fechas estén en rango válido"
+    column: "transaction_date"
+    min: "2020-01-01"
+    max: "2030-12-31"
+    severity: "high"
+    action: "quarantine"
+
+  # Validación de formato de email
+  - name: "email_format_validation"
+    type: "regex"
+    description: "Validar formato de email"
+    column: "customer_email"
+    pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+    severity: "medium"
+    action: "flag"
+
+  # Validación de códigos de país
+  - name: "country_code_validation"
+    type: "in_list"
+    description: "Validar códigos de país válidos"
+    column: "country_code"
+    values: ["US", "CA", "MX", "GB", "DE", "FR", "ES", "IT", "BR", "AR"]
+    severity: "medium"
+    action: "quarantine"
+
+  # Validación de estado de transacción
+  - name: "transaction_status_validation"
+    type: "in_list"
+    description: "Validar estados de transacción válidos"
+    column: "status"
+    values: ["pending", "completed", "failed", "cancelled", "refunded"]
+    severity: "high"
+    action: "quarantine"
+
+  # Validación personalizada con SQL
+  - name: "business_logic_validation"
+    type: "custom_sql"
+    description: "Validar lógica de negocio específica"
+    sql: "amount > 0 AND (status = 'completed' OR status = 'pending')"
+    severity: "critical"
+    action: "quarantine"
+
+# Configuración de acciones
+actions:
+  quarantine:
+    enabled: true
+    path: "/data/quarantine"
+    retention_days: 30
+    
+  reject:
+    enabled: true
+    log_level: "ERROR"
+    
+  flag:
+    enabled: true
+    log_level: "WARNING"
+
+# Configuración de métricas
+metrics:
+  enabled: true
+  track_quality_score: true
+  alert_thresholds:
+    critical_failure_rate: 0.05  # 5%
+    high_failure_rate: 0.10      # 10%
+    medium_failure_rate: 0.20    # 20%
+
+# Configuración de notificaciones
+notifications:
+  enabled: true
+  channels:
+    - type: "email"
+      recipients: ["data-team@company.com"]
+      severity_levels: ["critical", "high"]
+    - type: "slack"
+      webhook_url: "${SLACK_WEBHOOK_URL}"
+      severity_levels: ["critical"]

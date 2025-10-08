@@ -1,0 +1,26 @@
+id,nombre,email,fecha_registro,edad,ciudad,pais,estado,ingresos_anuales,categoria_cliente,departamento,fecha_ultima_compra
+1,Juan Pérez,juan.perez@email.com,2024-01-15,28,Madrid,España,activo,45000,premium,ventas,2024-10-01
+2,María García,maria.garcia@email.com,2024-01-16,34,Barcelona,España,activo,52000,premium,marketing,2024-09-28
+3,Carlos López,carlos.lopez@email.com,2024-01-17,29,Valencia,España,activo,38000,standard,IT,2024-10-05
+4,Ana Martínez,ana.martinez@email.com,2024-01-18,31,Sevilla,España,activo,41000,standard,finanzas,2024-09-30
+5,Luis Rodríguez,luis.rodriguez@email.com,2024-01-19,26,Bilbao,España,activo,35000,standard,operaciones,2024-10-02
+6,Carmen Sánchez,carmen.sanchez@email.com,2024-01-20,33,Málaga,España,activo,48000,premium,ventas,2024-10-03
+7,Miguel Torres,miguel.torres@email.com,2024-01-21,30,Zaragoza,España,activo,39000,standard,IT,2024-09-25
+8,Isabel Ruiz,isabel.ruiz@email.com,2024-01-22,27,Murcia,España,activo,36000,standard,marketing,2024-10-04
+9,Francisco Jiménez,francisco.jimenez@email.com,2024-01-23,35,Palma,España,activo,55000,premium,finanzas,2024-10-01
+10,Pilar Moreno,pilar.moreno@email.com,2024-01-24,32,Las Palmas,España,activo,43000,standard,operaciones,2024-09-29
+11,Antonio Álvarez,antonio.alvarez@email.com,2024-01-25,29,Valladolid,España,inactivo,37000,standard,ventas,2024-08-15
+12,Rosa Romero,rosa.romero@email.com,2024-01-26,28,Córdoba,España,activo,40000,standard,IT,2024-10-06
+13,José Navarro,jose.navarro@email.com,2024-01-27,36,Vigo,España,activo,51000,premium,marketing,2024-10-02
+14,Dolores Ramos,dolores.ramos@email.com,2024-01-28,31,Gijón,España,activo,42000,standard,finanzas,2024-09-27
+15,Manuel Herrera,manuel.herrera@email.com,2024-01-29,33,Hospitalet,España,activo,46000,premium,operaciones,2024-10-05
+16,Concepción Peña,concepcion.pena@email.com,2024-01-30,30,Vitoria,España,activo,38000,standard,ventas,2024-10-01
+17,Rafael Flores,rafael.flores@email.com,2024-02-01,27,Granada,España,activo,35000,standard,IT,2024-09-26
+18,Josefa Benítez,josefa.benitez@email.com,2024-02-02,34,Elche,España,activo,49000,premium,marketing,2024-10-04
+19,Javier Rivera,javier.rivera@email.com,2024-02-03,29,Oviedo,España,activo,37000,standard,finanzas,2024-10-03
+20,Laura Castillo,laura.castillo@email.com,2024-02-04,31,Santander,España,activo,44000,premium,operaciones,2024-10-07
+21,Pedro Ortega,pedro.ortega@email.com,2024-02-05,28,Pamplona,España,activo,39000,standard,ventas,2024-09-28
+22,Cristina Delgado,cristina.delgado@email.com,2024-02-06,33,Logroño,España,activo,47000,premium,IT,2024-10-02
+23,Alberto Vega,alberto.vega@email.com,2024-02-07,30,Albacete,España,inactivo,36000,standard,marketing,2024-07-20
+24,Mónica Serrano,monica.serrano@email.com,2024-02-08,29,Cáceres,España,activo,41000,standard,finanzas,2024-10-06
+25,Raúl Blanco,raul.blanco@email.com,2024-02-09,32,Badajoz,España,activo,45000,premium,operaciones,2024-10-01

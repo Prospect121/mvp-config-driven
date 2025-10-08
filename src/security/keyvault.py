@@ -112,15 +112,24 @@ class SecretManager:
         """
         if self.environment == 'local':
             # Configuración para MinIO/S3A local
-            storage_creds = self.get_storage_credentials()
-            spark_session.conf.set("spark.hadoop.fs.s3a.endpoint", 
-                                 os.getenv('S3A_ENDPOINT', 'http://localhost:9000'))
-            spark_session.conf.set("spark.hadoop.fs.s3a.access.key", 
-                                 storage_creds.get('account_name', 'minio'))
-            spark_session.conf.set("spark.hadoop.fs.s3a.secret.key", 
-                                 storage_creds.get('account_key', 'minio12345'))
-            spark_session.conf.set("spark.hadoop.fs.s3a.path.style.access", "true")
-            spark_session.conf.set("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
+            try:
+                storage_creds = self.get_storage_credentials()
+                access_key = storage_creds.get('account_name', 'minio')
+                secret_key = storage_creds.get('account_key', 'minio12345')
+                
+                # Solo configurar si tenemos credenciales válidas
+                if access_key and secret_key:
+                    spark_session.conf.set("spark.hadoop.fs.s3a.endpoint", 
+                                         os.getenv('S3A_ENDPOINT', 'http://localhost:9000'))
+                    spark_session.conf.set("spark.hadoop.fs.s3a.access.key", access_key)
+                    spark_session.conf.set("spark.hadoop.fs.s3a.secret.key", secret_key)
+                    spark_session.conf.set("spark.hadoop.fs.s3a.path.style.access", "true")
+                    spark_session.conf.set("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
+                    logger.info("Configuración S3A aplicada para entorno local")
+                else:
+                    logger.warning("Credenciales S3A no disponibles, omitiendo configuración")
+            except Exception as e:
+                logger.warning(f"Error configurando S3A para entorno local: {e}")
         else:
             # Configuración para Azure Data Lake Storage Gen2
             storage_creds = self.get_storage_credentials()

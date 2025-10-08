@@ -1,0 +1,20 @@
+# Azure Function requirements
+azure-functions>=1.18.0
+azure-storage-blob>=12.19.0
+azure-identity>=1.15.0
+azure-keyvault-secrets>=4.7.0
+
+# Data processing
+pandas>=2.1.0
+pyarrow>=14.0.0
+numpy>=1.24.0
+
+# Configuration and validation
+pyyaml>=6.0.1
+jsonschema>=4.19.0
+
+# Logging and monitoring
+azure-monitor-opentelemetry>=1.2.0
+
+# Optional: For advanced data processing (if needed)
+# pyspark>=3.5.0  # Uncomment if Spark processing is needed

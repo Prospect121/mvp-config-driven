@@ -28,16 +28,17 @@ resource "azurerm_role_assignment" "data_factory_keyvault_secrets_user" {
 # }
 
 # Role Assignment: Data Factory Managed Identity - SQL DB Contributor
-resource "azurerm_role_assignment" "data_factory_sql_contributor" {
-  scope                = azurerm_mssql_database.main.id
-  role_definition_name = "SQL DB Contributor"
-  principal_id         = azurerm_data_factory.main.identity[0].principal_id
-  
-  # Evitar conflictos con asignaciones existentes
-  lifecycle {
-    create_before_destroy = true
-  }
-}
+# Comentado temporalmente debido a conflicto con asignación existente
+# resource "azurerm_role_assignment" "data_factory_sql_contributor" {
+#   scope                = azurerm_mssql_database.main.id
+#   role_definition_name = "SQL DB Contributor"
+#   principal_id         = azurerm_data_factory.main.identity[0].principal_id
+#   
+#   # Evitar conflictos con asignaciones existentes
+#   lifecycle {
+#     create_before_destroy = true
+#   }
+# }
 
 # Role Assignment: Data Factory Managed Identity - Event Hubs Data Owner
 resource "azurerm_role_assignment" "data_factory_eventhub_owner" {
@@ -94,7 +95,7 @@ resource "azurerm_role_assignment" "data_scientists_storage_reader" {
 resource "azurerm_role_assignment" "data_scientists_sql_reader" {
   count                = length(data.azuread_group.data_scientists) > 0 ? 1 : 0
   scope                = azurerm_mssql_database.main.id
-  role_definition_name = "SQL DB Data Reader"
+  role_definition_name = "Reader"
   principal_id         = data.azuread_group.data_scientists[0].object_id
   
   lifecycle {
@@ -104,9 +105,9 @@ resource "azurerm_role_assignment" "data_scientists_sql_reader" {
 
 # Definición de rol personalizado para operadores de pipeline de datos
 resource "azurerm_role_definition" "data_pipeline_operator" {
-  name        = "Data Pipeline Operator"
+  name        = "Prodigio Data Pipeline Operator"
   scope       = azurerm_resource_group.main.id
-  description = "Rol personalizado para operadores de pipelines de datos"
+  description = "Rol personalizado Prodigio para operadores de pipelines de datos"
 
   permissions {
     actions = [

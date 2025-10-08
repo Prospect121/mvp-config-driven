@@ -157,6 +157,8 @@ resource "azurerm_key_vault_secret" "sql_admin_password" {
   tags = local.common_tags
 }
 
+
+
 # Endpoint privado para Key Vault (opcional)
 resource "azurerm_private_endpoint" "keyvault" {
   count               = var.enable_private_endpoints ? 1 : 0

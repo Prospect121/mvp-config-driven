@@ -15,11 +15,25 @@ from pyspark.sql import SparkSession, DataFrame, functions as F
 from pyspark.sql.window import Window
 from pyspark.sql.types import StructType
 
-from ..config.settings import config_manager
-from ..security.keyvault import secret_manager
-from ..utils.logging_config import setup_logging
-from ..utils.data_quality import DataQualityValidator
-from ..utils.schema_utils import SchemaManager
+try:
+    from ..config.settings import config_manager
+    from ..security.keyvault import secret_manager
+    from ..utils.logging_config import setup_logging
+    from ..utils.data_quality import DataQualityValidator
+    from ..utils.schema_utils import SchemaManager
+except ImportError:
+    try:
+        from config.settings import config_manager
+        from security.keyvault import secret_manager
+        from utils.logging_config import setup_logging
+        from utils.data_quality import DataQualityValidator
+        from utils.schema_utils import SchemaManager
+    except ImportError:
+        from src.config.settings import config_manager
+        from src.security.keyvault import secret_manager
+        from src.utils.logging_config import setup_logging
+        from src.utils.data_quality import DataQualityValidator
+        from src.utils.schema_utils import SchemaManager
 
 logger = logging.getLogger(__name__)
 
@@ -35,8 +49,9 @@ class SparkPipelineProcessor:
         self.schema_manager = SchemaManager()
         self.quality_validator = DataQualityValidator()
         
-        # Configurar credenciales de almacenamiento
-        secret_manager.set_spark_configs(self.spark)
+        # Configurar credenciales de almacenamiento (solo si no estamos en modo de prueba)
+        if not os.getenv('TEST_MODE', 'false').lower() == 'true':
+            secret_manager.set_spark_configs(self.spark)
         
     def _load_dataset_config(self) -> Dict[str, Any]:
         """Carga configuración del dataset"""
