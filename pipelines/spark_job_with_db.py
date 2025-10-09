@@ -53,56 +53,95 @@ def load_expectations(path):
         return yaml.safe_load(f)
 
 def apply_quality(df, rules, quarantine_path, run_id):
-    stats = {"total": df.count(), "passed": 0, "quarantined": 0, "dropped": 0}
-    quarantined_rows = []
-    
-    for rule in rules:
-        rule_name = rule.get("name", "unnamed")
-        condition = rule.get("condition")
-        on_fail = rule.get("on_fail", "warn")
+    if not rules: return df, None, {}
+
+    quarantine_rules, hard_fail, drops, warns = [], [], [], []
+    for r in rules:
+        expr = r["expr"]
+        on_fail = r.get("on_fail","quarantine").lower()
+        name = r.get("name","rule")
+        cond_bad = f"NOT ({expr})"
+        if on_fail == "quarantine": quarantine_rules.append((name, cond_bad))
+        elif on_fail == "fail":     hard_fail.append((name, cond_bad))
+        elif on_fail == "drop":     drops.append(cond_bad)
+        elif on_fail == "warn":     warns.append(cond_bad)
+        else:                       quarantine_rules.append((name, cond_bad))
+
+    stats = {}
+    for name, cond in hard_fail:
+        if df.filter(cond).limit(1).count() > 0:
+            raise ValueError(f"[quality][FAIL] Regla '{name}' violada.")
+
+    # Procesar reglas de cuarentena acumulando todas las fallas por registro
+    bad_df = None
+    if quarantine_rules:
+        # Crear una columna para cada regla que indique si falla (True/False)
+        temp_df = df
+        for rule_name, cond in quarantine_rules:
+            temp_df = temp_df.withColumn(f"_fails_{rule_name}", F.expr(cond))
         
-        if not condition:
-            continue
+        # Crear una condición que identifique registros que fallan al menos una regla
+        any_fail_conditions = [f"_fails_{rule_name}" for rule_name, _ in quarantine_rules]
+        any_fail_expr = " OR ".join(any_fail_conditions)
         
-        try:
-            valid_df = df.filter(F.expr(condition))
-            invalid_df = df.filter(~F.expr(condition))
-            invalid_count = invalid_df.count()
-            
-            if invalid_count > 0:
-                print(f"[quality] Rule '{rule_name}' failed for {invalid_count} rows")
-                
-                if on_fail == "quarantine" and quarantine_path:
-                    invalid_with_meta = invalid_df.withColumn("_rule_failed", F.lit(rule_name)) \
-                                                   .withColumn("_quarantine_ts", F.current_timestamp()) \
-                                                   .withColumn("_run_id", F.lit(run_id))
-                    quarantined_rows.append(invalid_with_meta)
-                    stats["quarantined"] += invalid_count
-                    df = valid_df
-                elif on_fail == "drop":
-                    df = valid_df
-                    stats["dropped"] += invalid_count
-                elif on_fail == "warn":
-                    print(f"[quality] WARNING: {invalid_count} rows failed rule '{rule_name}'")
+        # Filtrar registros que fallan al menos una regla
+        bad_df = temp_df.filter(any_fail_expr)
+        
+        if bad_df.count() > 0:
+            # Crear una lista de reglas fallidas por registro
+            failed_rules_expr = "CASE "
+            for i, (rule_name, _) in enumerate(quarantine_rules):
+                if i == 0:
+                    failed_rules_expr += f"WHEN _fails_{rule_name} THEN '{rule_name}'"
                 else:
-                    raise ValueError(f"Rule '{rule_name}' failed for {invalid_count} rows")
+                    failed_rules_expr += f" WHEN _fails_{rule_name} THEN CONCAT_WS(', ', CASE WHEN _fails_{rule_name} THEN '{rule_name}' END"
+                    # Agregar reglas anteriores si también fallan
+                    for j in range(i):
+                        prev_rule_name, _ = quarantine_rules[j]
+                        failed_rules_expr += f", CASE WHEN _fails_{prev_rule_name} THEN '{prev_rule_name}' END"
+                    failed_rules_expr += ")"
+            failed_rules_expr += " END"
             
-        except Exception as e:
-            print(f"[quality] Error applying rule '{rule_name}': {e}")
-            if on_fail not in ["warn", "ignore"]:
-                raise
-    
-    # Save quarantined data
-    if quarantined_rows and quarantine_path:
-        quarantine_df = quarantined_rows[0]
-        for qdf in quarantined_rows[1:]:
-            quarantine_df = quarantine_df.union(qdf)
-        
-        quarantine_df.write.mode("append").parquet(quarantine_path)
-        print(f"[quality] Quarantined {stats['quarantined']} rows to {quarantine_path}")
-    
-    stats["passed"] = df.count()
-    return df, quarantined_rows, stats
+            # Simplificar: usar array y array_join para concatenar todas las reglas fallidas
+            failed_rules_cases = []
+            for rule_name, _ in quarantine_rules:
+                failed_rules_cases.append(f"CASE WHEN _fails_{rule_name} THEN '{rule_name}' END")
+            
+            failed_rules_expr = f"array_join(filter(array({', '.join(failed_rules_cases)}), x -> x IS NOT NULL), ', ')"
+            
+            bad_df = bad_df.withColumn('_failed_rules', F.expr(failed_rules_expr))
+            
+            # Remover las columnas temporales de fallas
+            for rule_name, _ in quarantine_rules:
+                bad_df = bad_df.drop(f"_fails_{rule_name}")
+            
+            stats["quarantine_count"] = bad_df.count()
+            
+            # Filtrar registros buenos (que no fallan ninguna regla de cuarentena)
+            all_bad_conditions = " OR ".join([f"({cond})" for _, cond in quarantine_rules])
+            df = df.filter(f"NOT ({all_bad_conditions})")
+
+    if drops:
+        to_drop = " OR ".join([f"({c})" for c in drops])
+        stats["dropped_count"] = df.filter(to_drop).count()
+        df = df.filter(f"NOT ({to_drop})")
+
+    if warns:
+        any_warn = " OR ".join([f"({c})" for c in warns])
+        stats["warn_count"] = df.filter(any_warn).count()
+
+    if bad_df is not None and quarantine_path and stats.get('quarantine_count', 0) > 0:
+        (bad_df
+          .withColumn('_quarantine_reason', F.concat(F.lit('rules_failed: '), F.col('_failed_rules')))
+          .withColumn('_run_id', F.lit(run_id))
+          .withColumn('_ingestion_ts', F.current_timestamp())
+          .drop('_failed_rules')  # Remover columna temporal
+          .write.mode('append').parquet(quarantine_path))
+        print(f"[quality] Quarantine -> {quarantine_path} rows={stats.get('quarantine_count',0)}")
+    elif quarantine_rules and quarantine_path:
+        print(f"[quality] No quarantine needed - all records passed validation")
+
+    return df, bad_df, stats
 
 def load_database_config(db_config_path: str, environment: str = "default"):
     """Load database configuration and return DatabaseManager instance"""
@@ -235,7 +274,8 @@ def write_to_gold_database(df, dataset_id: str, schema_path: str, db_manager, ta
         
         # Write data to table
         write_mode = table_settings.get("default_write_mode", "append")
-        success = db_manager.write_dataframe(df_filtered, table_name, write_mode)
+        upsert_keys = table_settings.get("upsert_keys", None)
+        success = db_manager.write_dataframe(df_filtered, table_name, write_mode, upsert_keys)
         
         if success:
             print(f"[gold] Successfully wrote data to table '{table_name}' in {write_mode} mode")
@@ -328,10 +368,18 @@ def main():
         # Apply standardization
         std = cfg.get('standardization', {})
         
-        # Rename columns
+        # Rename columns FIRST - before any validations
         for r in std.get('rename', []) or []:
-            if r['from'] in df.columns:
-                df = df.withColumnRenamed(r['from'], r['to'])
+            from_col = r['from']
+            to_col = r['to']
+            
+            # Handle nested fields (e.g., metadata.session_id)
+            if '.' in from_col:
+                # Extract nested field using col() function
+                df = df.withColumn(to_col, F.col(from_col))
+            elif from_col in df.columns:
+                # Regular column rename
+                df = df.withColumnRenamed(from_col, to_col)
         
         # Enforce schema if specified
         if 'schema' in cfg and cfg['schema'].get('ref'):
@@ -346,7 +394,12 @@ def main():
         # Apply defaults
         for d in std.get('defaults', []) or []:
             col, val = d['column'], d['value']
-            df = df.withColumn(col, F.when(F.col(col).isNull(), F.lit(val)).otherwise(F.col(col)))
+            if col in df.columns:
+                # Column exists, apply default for null values
+                df = df.withColumn(col, F.when(F.col(col).isNull(), F.lit(val)).otherwise(F.col(col)))
+            else:
+                # Column doesn't exist, create it with the default value
+                df = df.withColumn(col, F.lit(val))
         
         # Deduplicate
         if 'deduplicate' in std:

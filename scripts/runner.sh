@@ -27,7 +27,7 @@ echo "PYTHONPATH=${PYTHONPATH}"
 # ------------- Ejecutar el job ------------- 
 /opt/bitnami/spark/bin/spark-submit \
   --master spark://spark-master:7077 \
-  --jars /mvp/postgresql-42.7.2.jar,/mvp/jars/hadoop-aws-3.3.4.jar,/mvp/jars/aws-java-sdk-bundle-1.12.262.jar \
+  --jars /mvp/jars/postgresql-42.7.2.jar,/mvp/jars/hadoop-aws-3.3.4.jar,/mvp/jars/aws-java-sdk-bundle-1.12.262.jar \
   --conf spark.pyspark.python=${PYSPARK_PYTHON} \
   --conf spark.pyspark.driver.python=${PYSPARK_DRIVER_PYTHON} \
   --conf spark.hadoop.fs.s3a.impl=org.apache.hadoop.fs.s3a.S3AFileSystem \

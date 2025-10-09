@@ -66,7 +66,8 @@ table_settings:
   auto_migrate: false          # Set to true for automatic schema migrations
   
   # Write behavior
-  default_write_mode: "append"  # Default mode for writing data (append/overwrite)
+  default_write_mode: "overwrite"  # Default mode for writing data (append/overwrite)
+  upsert_keys: [] # Default upsert keys for MERGE/UPSERT operations (empty = disabled)
   
   # Global transformations (can be overridden by dataset-specific config)
   default_transformations:

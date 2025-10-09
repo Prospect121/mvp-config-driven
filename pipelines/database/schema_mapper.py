@@ -240,18 +240,21 @@ class SchemaMapper:
         return True
 
     def generate_create_table_ddl(self, table_name: str, schema_or_columns, 
-                                 schema_version: Optional[str] = None) -> str:
+                                 schema_version: Optional[str] = None, 
+                                 full_schema: Optional[Dict] = None) -> str:
         """Generar DDL CREATE TABLE statement
         
         Args:
             table_name: Nombre de la tabla a crear
             schema_or_columns: Ya sea un dict de JSON schema o List[ColumnDefinition]
             schema_version: Versión opcional del schema para seguimiento
+            full_schema: Esquema completo para extraer restricciones únicas
         """
         # Manejar tanto dict de schema como lista de columnas
         if isinstance(schema_or_columns, dict):
             # Es un JSON schema
             columns = self.schema_to_columns(schema_or_columns)
+            full_schema = schema_or_columns  # Usar el esquema pasado
         else:
             # Ya es una lista de ColumnDefinition
             columns = schema_or_columns
@@ -285,6 +288,15 @@ class SchemaMapper:
         for column in columns:
             for constraint in column.constraints:
                 table_elements.append(f"    {constraint}")
+        
+        # Agregar restricciones únicas del esquema JSON
+        if full_schema and "uniqueConstraints" in full_schema:
+            for unique_constraint in full_schema["uniqueConstraints"]:
+                constraint_name = unique_constraint.get("name", "")
+                constraint_columns = unique_constraint.get("columns", [])
+                if constraint_columns:
+                    unique_constraint_ddl = f"    CONSTRAINT {constraint_name} UNIQUE ({', '.join(constraint_columns)})"
+                    table_elements.append(unique_constraint_ddl)
         
         # Construir DDL final
         ddl = f"CREATE TABLE IF NOT EXISTS {table_name} (\n"
@@ -341,7 +353,7 @@ class SchemaMapper:
                      schema_version: Optional[str] = None) -> str:
         """Convert JSON schema dictionary to DDL statement"""
         columns = self.schema_to_columns(schema_dict)
-        return self.generate_create_table_ddl(table_name, columns, schema_version)
+        return self.generate_create_table_ddl(table_name, columns, schema_version, schema_dict)
     
     def validate_json_type(self, json_type: str) -> bool:
         """Validar si un tipo JSON es válido según la configuración"""

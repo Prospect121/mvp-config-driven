@@ -231,10 +231,15 @@ class DatabaseManager:
             logger.error(f"Error al crear tabla {qualified_table_name}: {e}")
             return False
 
-    def write_dataframe(self, df: DataFrame, table_name: str, mode: str = "append") -> bool:
-        """Escribir DataFrame de Spark a tabla de base de datos"""
+    def write_dataframe(self, df: DataFrame, table_name: str, mode: str = "append", 
+                       upsert_keys: Optional[List[str]] = None) -> bool:
+        """Escribir DataFrame de Spark a tabla de base de datos con soporte para UPSERT"""
         try:
-            # Obtener nombre de tabla cualificado con esquema
+            # Si se especifican claves de upsert y el modo es append, usar lógica de upsert
+            if upsert_keys and mode == "append":
+                return self.write_dataframe_upsert(df, table_name, upsert_keys)
+            
+            # Comportamiento original para otros casos
             qualified_table_name = self.get_qualified_table_name(table_name, "data_schema")
             
             # Get database connection properties for Spark
@@ -257,6 +262,96 @@ class DatabaseManager:
         except Exception as e:
             logger.error(f"Failed to write DataFrame to table {table_name}: {e}")
             return False
+
+    def write_dataframe_upsert(self, df: DataFrame, table_name: str, upsert_keys: List[str]) -> bool:
+        """Escribir DataFrame usando lógica UPSERT (INSERT ... ON CONFLICT para PostgreSQL)"""
+        try:
+            qualified_table_name = self.get_qualified_table_name(table_name, "data_schema")
+            
+            # Crear tabla temporal para los nuevos datos
+            temp_table_name = f"{qualified_table_name}_temp_{int(datetime.now().timestamp())}"
+            
+            # Escribir datos a tabla temporal
+            df.write \
+                .format("jdbc") \
+                .option("url", self.config.get_jdbc_connection_string()) \
+                .option("dbtable", temp_table_name) \
+                .option("user", self.config.username) \
+                .option("password", self.config.password) \
+                .option("driver", "org.postgresql.Driver") \
+                .mode("overwrite") \
+                .save()
+            
+            # Obtener columnas del DataFrame
+            df_columns = df.columns
+            
+            # Construir query UPSERT para PostgreSQL
+            upsert_query = self._build_upsert_query(
+                target_table=qualified_table_name,
+                temp_table=temp_table_name,
+                columns=df_columns,
+                upsert_keys=upsert_keys
+            )
+            
+            # Ejecutar UPSERT
+            with self.engine.connect() as conn:
+                conn.execute(text(upsert_query))
+                conn.commit()
+                
+                # Limpiar tabla temporal
+                conn.execute(text(f"DROP TABLE IF EXISTS {temp_table_name}"))
+                conn.commit()
+            
+            logger.info(f"DataFrame upserted to table {qualified_table_name} using keys: {upsert_keys}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to upsert DataFrame to table {table_name}: {e}")
+            # Intentar limpiar tabla temporal en caso de error
+            try:
+                with self.engine.connect() as conn:
+                    conn.execute(text(f"DROP TABLE IF EXISTS {temp_table_name}"))
+                    conn.commit()
+            except:
+                pass
+            return False
+
+    def _build_upsert_query(self, target_table: str, temp_table: str, 
+                           columns: List[str], upsert_keys: List[str]) -> str:
+        """Construir query UPSERT para PostgreSQL usando INSERT ... ON CONFLICT"""
+        
+        # Columnas para INSERT
+        columns_str = ", ".join(columns)
+        
+        # Columnas para SELECT desde tabla temporal
+        select_columns = ", ".join([f"temp.{col}" for col in columns])
+        
+        # Claves de conflicto
+        conflict_keys = ", ".join(upsert_keys)
+        
+        # Columnas para UPDATE (excluir las claves de upsert)
+        update_columns = [col for col in columns if col not in upsert_keys]
+        update_set = ", ".join([f"{col} = EXCLUDED.{col}" for col in update_columns])
+        
+        # Construir query completa
+        if update_set:  # Si hay columnas para actualizar
+            upsert_query = f"""
+            INSERT INTO {target_table} ({columns_str})
+            SELECT {select_columns}
+            FROM {temp_table} temp
+            ON CONFLICT ({conflict_keys})
+            DO UPDATE SET {update_set}
+            """
+        else:  # Solo claves primarias, usar DO NOTHING
+            upsert_query = f"""
+            INSERT INTO {target_table} ({columns_str})
+            SELECT {select_columns}
+            FROM {temp_table} temp
+            ON CONFLICT ({conflict_keys})
+            DO NOTHING
+            """
+        
+        return upsert_query
 
     def _get_spark_connection_properties(self) -> Dict[str, str]:
         """Obtener propiedades de conexión para JDBC de Spark con PostgreSQL"""

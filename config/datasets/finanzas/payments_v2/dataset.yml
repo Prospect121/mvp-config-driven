@@ -49,9 +49,9 @@ output:
     exclude_columns: ["_run_id", "_ingestion_ts"]
     
     # Optional: Add business-specific columns
-    add_columns:
-      - { name: "data_source", value: "payments_system", type: "string" }
-      - { name: "processed_at", value: "current_timestamp()", type: "timestamp" }
+    # add_columns: NO WORKS
+    #   - { name: "data_source", value: "payments_system", type: "string" }
+    #   - { name: "processed_at", value: "current_timestamp()", type: "timestamp" }
     
     # Reglas de negocio específicas del dataset
     business_rules:

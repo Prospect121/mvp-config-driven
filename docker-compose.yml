@@ -84,7 +84,7 @@ services:
       # Spark-Hadoop S3A
       - SPARK_DIST_CLASSPATH=/opt/bitnami/spark/jars/*
       # Spark Submit Options for PostgreSQL JDBC Driver
-      - SPARK_SUBMIT_OPTIONS=--jars /mvp/postgresql-42.7.2.jar
+      # - SPARK_SUBMIT_OPTIONS=--jars /mvp/postgresql-42.7.2.jar
       # PostgreSQL Database Configuration
       - DB_HOST=postgres
       - DB_PORT=5432
@@ -94,7 +94,7 @@ services:
 
     volumes:
       - ./:/mvp
-      - ./postgresql-42.7.2.jar:/mvp/postgresql-42.7.2.jar
+      # - ./postgresql-42.7.2.jar:/mvp/postgresql-42.7.2.jar
       - ./jars:/mvp/jars
       - ivy-cache:/tmp/.ivy2
     depends_on:
