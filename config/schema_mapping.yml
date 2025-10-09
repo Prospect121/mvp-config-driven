@@ -60,4 +60,4 @@ metadata_tables:
 default_schemas:
   postgresql:
     metadata_schema: "metadata"
-    data_schema: "public"
+    data_schema: "gold"

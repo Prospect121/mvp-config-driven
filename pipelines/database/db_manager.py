@@ -105,9 +105,15 @@ class DatabaseManager:
 
     def _ensure_schema_tracking_table(self):
         """Crear tabla de seguimiento de versiones de schema si no existe"""
+        # Crear esquemas por defecto si no existen
+        self._ensure_default_schemas()
+        
+        # Obtener nombre de tabla desde configuración
+        table_name = self.schema_mapper.get_metadata_table_name("schema_versions")
+        
         # PostgreSQL DDL for schema tracking
-        tracking_table_ddl = """
-        CREATE TABLE IF NOT EXISTS schema_versions (
+        tracking_table_ddl = f"""
+        CREATE TABLE IF NOT EXISTS {table_name} (
             id SERIAL PRIMARY KEY,
             table_name VARCHAR(255) NOT NULL,
             schema_hash VARCHAR(64) NOT NULL,
@@ -133,9 +139,10 @@ class DatabaseManager:
 
     def get_current_schema_version(self, table_name: str) -> Optional[SchemaVersion]:
         """Obtener versión actual del schema para una tabla"""
-        query = """
+        schema_versions_table = self.schema_mapper.get_metadata_table_name("schema_versions")
+        query = f"""
         SELECT table_name, schema_hash, schema_version, created_at, schema_content
-        FROM schema_versions 
+        FROM {schema_versions_table} 
         WHERE table_name = :table_name 
         ORDER BY created_at DESC 
         LIMIT 1
@@ -160,8 +167,9 @@ class DatabaseManager:
     def save_schema_version(self, table_name: str, schema_hash: str, 
                            schema_version: str, schema_content: str):
         """Guardar información de versión del schema"""
-        query = """
-        INSERT INTO schema_versions (table_name, schema_hash, schema_version, schema_content)
+        schema_versions_table = self.schema_mapper.get_metadata_table_name("schema_versions")
+        query = f"""
+        INSERT INTO {schema_versions_table} (table_name, schema_hash, schema_version, schema_content)
         VALUES (:table_name, :schema_hash, :schema_version, :schema_content)
         """
         
@@ -192,18 +200,21 @@ class DatabaseManager:
     def create_table_from_schema(self, table_name: str, schema_dict: Dict, schema_version: str = "1.0.0") -> bool:
         """Crear tabla desde schema JSON"""
         try:
+            # Obtener nombre de tabla cualificado con esquema
+            qualified_table_name = self.get_qualified_table_name(table_name, "data_schema")
+            
             # Calcular hash del schema
             schema_hash = self.calculate_schema_hash(json.dumps(schema_dict, sort_keys=True))
             
             # Verificar si la tabla existe y el schema ha cambiado
-            current_version = self.get_current_schema_version(table_name)
+            current_version = self.get_current_schema_version(qualified_table_name)
             if current_version and current_version.schema_hash == schema_hash:
-                logger.info(f"Tabla {table_name} ya existe con el mismo schema")
+                logger.info(f"Tabla {qualified_table_name} ya existe con el mismo schema")
                 return True
             
             # Generar DDL usando SchemaMapper
             mapper = SchemaMapper(self.config.engine_type)
-            ddl = mapper.schema_to_ddl(schema_dict, table_name, schema_version)
+            ddl = mapper.schema_to_ddl(schema_dict, qualified_table_name, schema_version)
             
             # Ejecutar DDL
             with self.engine.connect() as conn:
@@ -211,18 +222,21 @@ class DatabaseManager:
                 conn.commit()
             
             # Guardar versión del schema
-            self.save_schema_version(table_name, schema_hash, schema_version, json.dumps(schema_dict))
+            self.save_schema_version(qualified_table_name, schema_hash, schema_version, json.dumps(schema_dict))
             
-            logger.info(f"Tabla {table_name} creada exitosamente")
+            logger.info(f"Tabla {qualified_table_name} creada exitosamente")
             return True
             
         except Exception as e:
-            logger.error(f"Error al crear tabla {table_name}: {e}")
+            logger.error(f"Error al crear tabla {qualified_table_name}: {e}")
             return False
 
     def write_dataframe(self, df: DataFrame, table_name: str, mode: str = "append") -> bool:
         """Escribir DataFrame de Spark a tabla de base de datos"""
         try:
+            # Obtener nombre de tabla cualificado con esquema
+            qualified_table_name = self.get_qualified_table_name(table_name, "data_schema")
+            
             # Get database connection properties for Spark
             connection_props = self._get_spark_connection_properties()
             
@@ -230,14 +244,14 @@ class DatabaseManager:
             df.write \
                 .format("jdbc") \
                 .option("url", self.config.get_jdbc_connection_string()) \
-                .option("dbtable", table_name) \
+                .option("dbtable", qualified_table_name) \
                 .option("user", self.config.username) \
                 .option("password", self.config.password) \
                 .option("driver", "org.postgresql.Driver") \
                 .mode(mode) \
                 .save()
             
-            logger.info(f"DataFrame written to table {table_name} in {mode} mode")
+            logger.info(f"DataFrame written to table {qualified_table_name} in {mode} mode")
             return True
             
         except Exception as e:
@@ -268,18 +282,57 @@ class DatabaseManager:
             self.engine.dispose()
             self.engine = None
             logger.info("Conexión a base de datos cerrada")
+    
+    def _ensure_default_schemas(self):
+        """Crear esquemas por defecto si no existen"""
+        try:
+            metadata_schema = self.schema_mapper.get_default_schema("metadata_schema")
+            data_schema = self.schema_mapper.get_default_schema("data_schema")
+            
+            # Crear esquema de metadata
+            if metadata_schema and metadata_schema != "public":
+                self._create_schema_if_not_exists(metadata_schema)
+            
+            # Crear esquema de datos
+            if data_schema and data_schema != "public":
+                self._create_schema_if_not_exists(data_schema)
+                
+        except Exception as e:
+            logger.error(f"Error al crear esquemas por defecto: {e}")
+            # No lanzar excepción para no interrumpir la inicialización
+    
+    def _create_schema_if_not_exists(self, schema_name: str):
+        """Crear esquema si no existe"""
+        try:
+            query = f"CREATE SCHEMA IF NOT EXISTS {schema_name}"
+            with self.engine.connect() as conn:
+                conn.execute(text(query))
+                conn.commit()
+            logger.info(f"Esquema '{schema_name}' creado o ya existe")
+        except Exception as e:
+            logger.error(f"Error al crear esquema '{schema_name}': {e}")
+            raise
+    
+    def get_qualified_table_name(self, table_name: str, schema_type: str = "data_schema") -> str:
+        """Obtener nombre completo de tabla con esquema"""
+        schema = self.schema_mapper.get_default_schema(schema_type)
+        if schema and schema != "public":
+            return f"{schema}.{table_name}"
+        return table_name
 
     def log_pipeline_execution(self, dataset_name: str, pipeline_type: str = "etl", 
                              status: str = "started", error_message: str = None,
                              execution_id: str = None) -> str:
         """Registrar ejecución del pipeline en metadata.pipeline_executions"""
         try:
+            pipeline_executions_table = self.schema_mapper.get_metadata_table_name("pipeline_executions")
+            
             if execution_id is None:
                 execution_id = f"{dataset_name}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S_%f')}"
             
             if status == "started":
-                query = """
-                INSERT INTO metadata.pipeline_executions 
+                query = f"""
+                INSERT INTO {pipeline_executions_table} 
                 (execution_id, dataset_name, pipeline_type, status, started_at)
                 VALUES (:execution_id, :dataset_name, :pipeline_type, :status, :started_at)
                 """
@@ -291,8 +344,8 @@ class DatabaseManager:
                     "started_at": datetime.utcnow()
                 }
             else:
-                query = """
-                UPDATE metadata.pipeline_executions 
+                query = f"""
+                UPDATE {pipeline_executions_table} 
                 SET status = :status, ended_at = :ended_at, error_message = :error_message
                 WHERE execution_id = :execution_id
                 """
@@ -318,8 +371,9 @@ class DatabaseManager:
                           record_count: int = None, file_size_bytes: int = None) -> bool:
         """Registrar versión del dataset en metadata.dataset_versions"""
         try:
-            query = """
-            INSERT INTO metadata.dataset_versions 
+            dataset_versions_table = self.schema_mapper.get_metadata_table_name("dataset_versions")
+            query = f"""
+            INSERT INTO {dataset_versions_table} 
             (dataset_name, version, schema_path, record_count, file_size_bytes, created_at)
             VALUES (:dataset_name, :version, :schema_path, :record_count, :file_size_bytes, :created_at)
             """
@@ -346,8 +400,9 @@ class DatabaseManager:
     def get_latest_dataset_version(self, dataset_name: str) -> Optional[str]:
         """Obtener la última versión registrada de un dataset"""
         try:
-            query = """
-            SELECT version FROM metadata.dataset_versions 
+            dataset_versions_table = self.schema_mapper.get_metadata_table_name("dataset_versions")
+            query = f"""
+            SELECT version FROM {dataset_versions_table} 
             WHERE dataset_name = :dataset_name 
             ORDER BY created_at DESC 
             LIMIT 1
@@ -364,9 +419,10 @@ class DatabaseManager:
     def get_pipeline_execution_status(self, execution_id: str) -> Optional[Dict[str, Any]]:
         """Obtener estado de una ejecución del pipeline"""
         try:
-            query = """
+            pipeline_executions_table = self.schema_mapper.get_metadata_table_name("pipeline_executions")
+            query = f"""
             SELECT execution_id, dataset_name, pipeline_type, status, started_at, ended_at, error_message
-            FROM metadata.pipeline_executions 
+            FROM {pipeline_executions_table} 
             WHERE execution_id = :execution_id
             """
             with self.engine.connect() as conn:

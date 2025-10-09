@@ -173,8 +173,18 @@ def apply_gold_transformations(df, gold_config: dict, table_settings: dict):
             col_value = col_def['value']
             col_type = col_def.get('type', 'string')
             
-            df = df.withColumn(col_name, 
-                             F.lit(col_value).cast(col_type))
+            # Handle special functions like current_timestamp()
+            if col_value == "current_timestamp()":
+                df = df.withColumn(col_name, F.current_timestamp())
+            elif col_value == "current_date()":
+                df = df.withColumn(col_name, F.current_date())
+            elif col_value.startswith("uuid()"):
+                # Generate UUID using monotonically_increasing_id as a simple alternative
+                df = df.withColumn(col_name, F.monotonically_increasing_id().cast("string"))
+            else:
+                # Regular literal values
+                df = df.withColumn(col_name, F.lit(col_value).cast(col_type))
+            
             print(f"[gold] Added column '{col_name}' with value '{col_value}' as {col_type}")
     
     # Apply business rules using separate function

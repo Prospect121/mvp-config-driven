@@ -36,3 +36,25 @@ output:
     mode: append
     merge_schema: true
     partition_by: [year, month]
+    partition_from: payment_date
+
+  # Configuración para Gold layer (Base de datos)
+  gold:
+    enabled: true
+    database_config: "config/database.yml"
+    environment: "development"  # default, development, production
+    
+    # Transformaciones específicas del dataset para Gold layer
+    # Remover columnas técnicas antes de escribir a Gold
+    exclude_columns: ["_run_id", "_ingestion_ts"]
+    
+    # Optional: Add business-specific columns
+    add_columns:
+      - { name: "data_source", value: "payments_system", type: "string" }
+      - { name: "processed_at", value: "current_timestamp()", type: "timestamp" }
+    
+    # Reglas de negocio específicas del dataset
+    business_rules:
+      - { condition: "amount > 0", action: "filter" }
+      - { condition: "currency IS NOT NULL", action: "filter" }
+      

@@ -52,6 +52,11 @@ class SchemaMapper:
         self.limits = self.config["limits"]
         self.pk_config = self.config["primary_key_detection"]
         self.format_mappings = self.config["format_mappings"]
+        
+        # Load validation and metadata configurations
+        self.validation_config = self.config.get("validation", {})
+        self.metadata_tables = self.config.get("metadata_tables", {})
+        self.default_schemas = self.config.get("default_schemas", {})
 
     def _load_config(self, config_path: str) -> Dict[str, Any]:
         """Cargar configuración desde archivo YAML"""
@@ -97,6 +102,21 @@ class SchemaMapper:
                 "email": "VARCHAR(255)",
                 "uri": "VARCHAR(500)",
                 "uuid": "UUID"
+            },
+            "validation": {
+                "valid_json_types": ["string", "number", "integer", "boolean", "array", "object", "null"],
+                "supported_engines": ["postgresql"]
+            },
+            "metadata_tables": {
+                "schema_versions": "schema_versions",
+                "pipeline_executions": "metadata.pipeline_executions",
+                "dataset_versions": "metadata.dataset_versions"
+            },
+            "default_schemas": {
+                "postgresql": {
+                    "metadata_schema": "metadata",
+                    "data_schema": "gold"
+                }
             }
         }
 
@@ -322,6 +342,60 @@ class SchemaMapper:
         """Convert JSON schema dictionary to DDL statement"""
         columns = self.schema_to_columns(schema_dict)
         return self.generate_create_table_ddl(table_name, columns, schema_version)
+    
+    def validate_json_type(self, json_type: str) -> bool:
+        """Validar si un tipo JSON es válido según la configuración"""
+        valid_types = self.validation_config.get("valid_json_types", [])
+        return json_type in valid_types
+    
+    def validate_engine_support(self, engine: str) -> bool:
+        """Validar si un motor de base de datos es soportado"""
+        supported_engines = self.validation_config.get("supported_engines", [])
+        return engine in supported_engines
+    
+    def get_metadata_table_name(self, table_type: str) -> str:
+        """Obtener el nombre de tabla de metadata según la configuración"""
+        return self.metadata_tables.get(table_type, table_type)
+    
+    def get_default_schema(self, schema_type: str) -> str:
+        """Obtener el esquema por defecto según la configuración"""
+        engine_schemas = self.default_schemas.get(self.engine.value, {})
+        return engine_schemas.get(schema_type, schema_type)
+    
+    def validate_schema(self, schema: Dict[str, Any]) -> List[str]:
+        """Validar un schema JSON y retornar lista de errores"""
+        errors = []
+        
+        # Validar que el schema tenga la estructura básica
+        if not isinstance(schema, dict):
+            errors.append("Schema debe ser un diccionario")
+            return errors
+        
+        # Validar propiedades
+        properties = schema.get("properties", {})
+        if not isinstance(properties, dict):
+            errors.append("'properties' debe ser un diccionario")
+            return errors
+        
+        # Validar tipos de cada propiedad
+        for prop_name, prop_def in properties.items():
+            if not isinstance(prop_def, dict):
+                errors.append(f"Propiedad '{prop_name}' debe ser un diccionario")
+                continue
+            
+            json_type = prop_def.get("type")
+            if json_type:
+                if isinstance(json_type, list):
+                    # Validar cada tipo en la lista
+                    for t in json_type:
+                        if not self.validate_json_type(t):
+                            errors.append(f"Tipo JSON inválido '{t}' en propiedad '{prop_name}'")
+                else:
+                    # Validar tipo único
+                    if not self.validate_json_type(json_type):
+                        errors.append(f"Tipo JSON inválido '{json_type}' en propiedad '{prop_name}'")
+        
+        return errors
 
 
 def json_schema_to_ddl(schema_path: str, table_name: str, engine: DatabaseEngine = DatabaseEngine.POSTGRESQL) -> str:

@@ -1,11 +1,11 @@
 {
   "type": "object",
   "additionalProperties": false,
-  "required": ["payment_id", "customer_id", "amounts", "payment_date"],
+  "required": ["payment_id", "customer_id", "amount", "payment_date"],
   "properties": {
     "payment_id": { "type": "string", "pattern": "^p-[0-9]+$" },
     "customer_id": { "type": "string" },
-    "amounts": { "type": "number" },
+    "amount": { "type": "number" },
     "currency": { "type": ["string","null"] },
     "payment_date": { "type": ["string","null"], "format": "date-time" },
     "updated_at": { "type": ["string","null"], "format": "date-time" }

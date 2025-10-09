@@ -10,7 +10,9 @@ CREATE TABLE IF NOT EXISTS metadata.dataset_versions (
     id SERIAL PRIMARY KEY,
     dataset_name VARCHAR(255) NOT NULL,
     version VARCHAR(50) NOT NULL,
-    schema_hash VARCHAR(64) NOT NULL,
+    schema_path VARCHAR(500),
+    record_count INTEGER,
+    file_size_bytes BIGINT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(dataset_name, version)
@@ -21,12 +23,14 @@ CREATE TABLE IF NOT EXISTS metadata.pipeline_executions (
     id SERIAL PRIMARY KEY,
     dataset_name VARCHAR(255) NOT NULL,
     execution_id VARCHAR(255) NOT NULL,
+    pipeline_type VARCHAR(50) NOT NULL DEFAULT 'etl',
     status VARCHAR(50) NOT NULL,
     records_processed INTEGER,
     records_inserted INTEGER,
     records_updated INTEGER,
     started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     completed_at TIMESTAMP,
+    ended_at TIMESTAMP,
     error_message TEXT
 );
 

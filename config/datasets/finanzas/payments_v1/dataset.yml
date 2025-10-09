@@ -12,7 +12,7 @@ standardization:
   rename:
     - { from: customerId, to: customer_id }
   casts:
-    - { column: amounts, to: "decimal(18,2)", on_error: null }
+    - { column: amount, to: "decimal(18,2)", on_error: null }
     - { column: payment_date, to: "timestamp", format_hint: "yyyy-MM-dd[ HH:mm:ss]" }
     - { column: updated_at, to: "timestamp", format_hint: "yyyy-MM-dd[ HH:mm:ss]" }
   defaults:

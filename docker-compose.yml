@@ -95,6 +95,8 @@ services:
     volumes:
       - ./:/mvp
       - ./postgresql-42.7.2.jar:/mvp/postgresql-42.7.2.jar
+      - ./jars:/mvp/jars
+      - ivy-cache:/tmp/.ivy2
     depends_on:
       postgres:
         condition: service_healthy
@@ -109,3 +111,4 @@ services:
 volumes:
   postgres-data:
   minio-data:
+  ivy-cache:

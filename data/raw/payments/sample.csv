@@ -1,4 +1,4 @@
-payment_id,customer_id,amounts,currency,payment_date,updated_at
+payment_id,customer_id,amount,currency,payment_date,updated_at
 p-001,cust_001,1500.50,USD,2025-01-15 10:30:00,2025-01-15 10:30:00
 p-002,cust_002,2750.75,EUR,2025-01-15 11:45:00,2025-01-15 11:45:00
 p-003,cust_003,999.99,CLP,2025-01-15 14:20:00,2025-01-15 14:20:00
