@@ -1,440 +1,251 @@
-# MVP Config Driven Data Pipeline
+# MVP Config-Driven Data Pipeline
 
-Este proyecto implementa un **pipeline de datos dinámico y flexible**, basado en **Apache Spark + MinIO + configuración YAML/JSON**, diseñado para adaptarse a distintos entornos (local, Docker, WSL2, CI/CD) y soportar cambios en datasets sin necesidad de modificar código.
+Este proyecto implementa un **pipeline de datos dinámico y flexible** basado en **Apache Spark + PostgreSQL**, diseñado para procesar datos a través de múltiples capas (Source → Silver → Gold) con configuración completamente externalizada.
 
----
+## 🎯 Características Principales
 
-## Objetivos del proyecto
+- ✅ **Pipeline Multi-Capa**: Source → Silver (Parquet) → Gold (PostgreSQL)
+- ✅ **Configuración Externalizada**: Esquemas JSON, reglas de calidad YAML
+- ✅ **Validación de Calidad**: Reglas configurables con cuarentena automática
+- ✅ **Esquemas Dinámicos**: Creación automática de tablas desde JSON Schema
+- ✅ **Particionado Inteligente**: Por fecha con columnas automáticas
+- ✅ **Transformaciones Configurables**: Renombrado, casting, valores por defecto
+- ✅ **Deduplicación**: Basada en claves y ordenamiento configurables
+- ✅ **Containerizado**: Docker Compose para desarrollo y producción
 
-- Procesar datos en **CSV, JSON y Parquet** de forma **configurable**.  
-- Definir **esquemas, estándares y reglas de calidad** en archivos de configuración.  
-- Adaptarse a cambios de columnas, tipos de datos y flujos mediante **metadata-driven pipelines**.  
-- Estandarizar datasets en capas (`raw → silver`).  
-- Ser portable y ejecutable en:
-  - **Windows** (con WSL2 + Docker Desktop).
-  - **Linux** nativo.
-  - **Entornos de CI/CD**.
+## 🏗️ Arquitectura
 
----
-
-## Arquitectura
+```
+┌─────────────┐    ┌──────────────┐    ┌─────────────┐
+│   Source    │───▶│    Silver    │───▶│    Gold     │
+│   (CSV)     │    │  (Parquet)   │    │(PostgreSQL) │
+└─────────────┘    └──────────────┘    └─────────────┘
+       │                   │                   │
+       ▼                   ▼                   ▼
+┌─────────────┐    ┌──────────────┐    ┌─────────────┐
+│ Validación  │    │Particionado  │    │ Esquemas    │
+│ de Calidad  │    │por Fecha     │    │ Dinámicos   │
+└─────────────┘    └──────────────┘    └─────────────┘
+```
 
 ```
 mvp-config-driven/
-├─ config/                   
-│   ├─ datasets/
-│   │   └─ finanzas/
-│   │       └─ payments_v1/
-│   │           ├─ schema.json           
-│   │           ├─ expectations.yml      
-│   │           └─ pipeline.yml          
-│   └─ envs/
-│       ├─ local.yml
-│       ├─ dev.yml
-│       └─ prod.yml
-├─ pipelines/
-│   └─ spark_job.py          
-├─ scripts/
-│   ├─ run_pipeline.ps1      
-│   └─ runner.sh             
-├─ ci/                       
-│   ├─ check_config.sh
-│   ├─ lint.yml
-│   ├─ test_dataset.yml
-│   └─ README.md
-├─ docker-compose.yml        
-├─ Makefile                  
-└─ README.md                 
+├── config/
+│   ├── env.yml                    # Variables de entorno
+│   ├── database.yml               # Configuración de PostgreSQL
+│   └── datasets/                  # Configuraciones de datasets
+│       └── finanzas/
+│           ├── payments_v1/       # Dataset payments versión 1
+│           │   ├── dataset.yml    # Configuración del pipeline
+│           │   ├── dataset_with_gold.yml  # Configuración con BD
+│           │   ├── schema.json    # Esquema JSON del dataset
+│           │   └── expectations.yml # Reglas de calidad
+│           └── payments_v2/       # Dataset payments versión 2
+├── data/                          # Datos de entrada
+│   └── raw/
+│       └── payments/              # Archivos CSV de pagos
+│   └── sample_payments.csv        # Datos de ejemplo
+├── pipelines/
+│   ├── spark_job_with_db.py       # Pipeline principal
+│   ├── db_manager.py              # Gestor de base de datos
+│   └── schema_mapper.py           # Mapeo de esquemas
+├── scripts/
+│   └── run_pipeline.py            # Script de ejecución
+├── docs/
+│   ├── MANUAL_TESTING_GUIDE.md    # Guía de pruebas manuales
+│   └── PROJECT_STRUCTURE.md       # Documentación del proyecto
+└── docker-compose.yml             # Servicios Docker
 ```
 
-### Servicios principales
-
-| Servicio       | Rol |
-|----------------|---------------------------------------------------|
-| Spark Master/Worker | Motor de procesamiento distribuido |
-| MinIO          | Almacenamiento S3-compatible para raw/silver/quarantine |
-| Runner         | Contenedor que ejecuta los pipelines Spark con configs dinámicas |
-
----
-
-## Instalación y requisitos
+## 🚀 Inicio Rápido
 
 ### Prerrequisitos
 
-- **Docker** y **Docker Compose** instalados
-- **Make** (opcional, pero recomendado)
-- **Git** para clonar el repositorio
+- **Docker** y **Docker Compose**
+- **Python 3.8+** con PySpark
+- **DBeaver** (opcional, para visualización)
 
-### Windows (con WSL2 + Docker Desktop)
-
-1. **Instalar Docker Desktop** y habilitar integración con WSL2
-2. **Clonar el repositorio**:  
+### 1. Levantar la Infraestructura
 
 ```bash
-git clone https://github.com/mi-org/mvp-config-driven.git
-cd mvp-config-driven
+# Iniciar PostgreSQL
+docker-compose up -d
+
+# Verificar que esté funcionando
+docker-compose ps
 ```
 
-3. **En WSL2, instalar dependencias**:  
+### 2. Ejecutar el Pipeline
 
 ```bash
-sudo apt update && sudo apt install make dos2unix -y
-```
-
-4. **Convertir scripts a formato Unix** (solo una vez):  
+# Ejecutar pipeline completo
+python pipelines/spark_job_with_db.py config/datasets/finanzas/payments_v1/dataset_with_gold.yml config/env.yml config/database.yml development
 
 ```bash
-dos2unix scripts/*.sh
+docker-compose exec runner python pipelines/spark_job_with_db.py config/datasets/finanzas/payments_v1/dataset_with_gold.yml config/env.yml config/database.yml development
 ```
-
-5. **Configurar variables de entorno**:
+### 3. Verificar Resultados
 
 ```bash
-cp .env.example .env
-# Editar .env si es necesario (valores por defecto funcionan para desarrollo local)
+# Conectar a PostgreSQL y verificar datos
+docker exec -it mvp-postgres psql -U testuser -d testdb -c "SELECT * FROM test_payments_v1 LIMIT 5;"
 ```
 
-### Linux nativo
+## 📋 Documentación Completa
 
-1. **Instalar dependencias**:
+- **[Guía de Pruebas Manuales](docs/MANUAL_TESTING_GUIDE.md)**: Instrucciones paso a paso para probar el pipeline
+- **[Estructura del Proyecto](docs/PROJECT_STRUCTURE.md)**: Documentación detallada de la arquitectura
 
-```bash
-sudo apt update && sudo apt install docker.io docker-compose make git -y
+## 🔧 Configuración
+
+### Variables de Entorno (`config/env.yml`)
+
+```yaml
+spark:
+  app_name: "ConfigDrivenPipeline"
+  master: "local[*]"
+  
+paths:
+  silver_base: "./silver_data"
+  quarantine_base: "./quarantine_data"
 ```
 
-2. **Clonar el repositorio**:
+### Configuración de Base de Datos (`config/database.yml`)
 
-```bash
-git clone https://github.com/mi-org/mvp-config-driven.git
-cd mvp-config-driven
+```yaml
+postgresql:
+  host: localhost
+  port: 5432
+  database: testdb
+  username: testuser
+  password: testpass
 ```
 
-3. **Configurar variables de entorno**:
+## 🎯 Casos de Uso
 
-```bash
-cp .env.example .env
-# Editar .env si es necesario
-```
+### Agregar Nuevo Dataset
 
-### macOS
+1. Crear directorio en `config/datasets/[categoria]/[dataset_name]/`
+2. Crear esquema JSON en `schema.json`
+3. Definir reglas de calidad en `expectations.yml`
+4. Configurar pipeline en `dataset.yml` o `dataset_with_gold.yml`
+5. Ejecutar pipeline
 
-1. **Instalar Docker Desktop** desde [docker.com](https://www.docker.com/products/docker-desktop)
-2. **Instalar Homebrew** (si no está instalado):
+### Modificar Transformaciones
 
-```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-```
+1. Actualizar archivo de configuración del dataset con nuevas reglas
+2. Ejecutar pipeline sin cambios de código
 
-3. **Instalar dependencias**:
+### Conectar Nueva Base de Datos
 
-```bash
-brew install make git
-```
+1. Actualizar `config/database.yml`
+2. Modificar `db_manager.py` si es necesario
 
-4. **Clonar y configurar**:
+## 🛠️ Desarrollo y Extensión
 
-```bash
-git clone https://github.com/mi-org/mvp-config-driven.git
-cd mvp-config-driven
-cp .env.example .env
-```
+### Agregar Nuevas Transformaciones
 
----
-
-## Ejecución del proyecto
-
-### Inicio rápido
-
-#### Opción A: Usando Make (Linux/macOS/WSL2)
-
-1. **Levantar infraestructura** (Spark + MinIO):
-
-```bash
-make up
-```
-
-Esto iniciará:
-- **Spark Master** en `http://localhost:4040`
-- **Spark Worker**
-- **MinIO** (API en puerto 9000, UI en puerto 9001)
-
-2. **Cargar datos de ejemplo** a MinIO:
-
-```bash
-make seed
-```
-
-Este comando:
-- Crea los buckets `raw` y `silver` en MinIO
-- Copia `data/raw/payments/sample.csv` a `s3a://raw/payments/2025/09/26/`
-
-3. **Ejecutar el pipeline**:
-
-```bash
-make run
-```
-
-Por defecto usa:
-- Dataset: `config/datasets/finanzas/payments_v1/dataset.yml`
-- Entorno: `config/env.yml`
-
-4. **Ver resultados**:
-
-- **MinIO UI**: [http://localhost:9001](http://localhost:9001)  
-  - Usuario: `minio`  
-  - Password: `minio12345`
-  - Los datos procesados estarán en el bucket `silver/payments_v1/`
-
-- **Spark UI**: [http://localhost:4040](http://localhost:4040) (cuando el job esté ejecutándose)
-
-5. **Apagar servicios**:
-
-```bash
-make down
-```
-
-### Comandos adicionales
-
-- **Ver logs en tiempo real**:
-```bash
-make logs
-```
-
-- **Ver estado de contenedores**:
-```bash
-make ps
-```
-
-- **Ejecutar con dataset grande**:
-```bash
-make seed-big  # Carga big_sample.csv
-make run-big   # Ejecuta con configuración para dataset grande
-```
-
-- **Limpiar todo** (contenedores + volúmenes):
-```bash
-make clean
-```
-
-#### Opción B: Usando PowerShell (Windows)
-
-Si no tienes Make instalado en Windows, puedes usar el script de PowerShell:
-
-1. **Levantar infraestructura**:
-```powershell
-.\scripts\run_pipeline.ps1 up
-```
-
-2. **Cargar datos de ejemplo**:
-```powershell
-.\scripts\run_pipeline.ps1 seed
-```
-
-3. **Ejecutar pipeline**:
-```powershell
-.\scripts\run_pipeline.ps1 run
-```
-
-4. **Ver logs**:
-```powershell
-.\scripts\run_pipeline.ps1 logs
-```
-
-5. **Ver estado**:
-```powershell
-.\scripts\run_pipeline.ps1 ps
-```
-
-6. **Apagar servicios**:
-```powershell
-.\scripts\run_pipeline.ps1 down
-```
-
-7. **Limpiar todo**:
-```powershell
-.\scripts\run_pipeline.ps1 clean
-```
-
-8. **Ver ayuda**:
-```powershell
-.\scripts\run_pipeline.ps1 help
-```
-
----
-
-## Modificación de un pipeline
-
-### Esquema
-
-En `config/datasets/.../schema.json` se define cada columna con nombre, tipo y si es requerida:
-
-```json
-{
-  "type": "object",
-  "properties": {
-    "payment_id": { "type": "string" },
-    "amount": { "type": "number" },
-    "payment_date": { "type": ["string", "null"], "format": "date-time" },
-    "updated_at": { "type": ["string", "null"], "format": "date-time" }
-  },
-  "required": ["payment_id", "amount"]
-}
-```
-
-### Estándar de columnas
-
-En `pipeline.yml`:
+Editar archivo de configuración del dataset (ej. `config/datasets/finanzas/payments_v1/dataset.yml`):
 
 ```yaml
 standardization:
-  timezone: America/Bogota
   rename:
-    - { from: customerId, to: customer_id }
+    - { from: "old_column", to: "new_column" }
   casts:
-    - { column: amount, to: "decimal(18,2)", on_error: null }
-    - { column: payment_date, to: "timestamp", format_hint: "yyyy-MM-dd[ HH:mm:ss]" }
+    - { column: "amount", to: "decimal(18,2)", on_error: "null" }
   defaults:
-    - { column: currency, value: "CLP" }
-  deduplicate:
-    key: [payment_id]
-    order_by: [updated_at desc]
+    - { column: "currency", value: "USD" }
 ```
 
-### Reglas de calidad
+### Modificar Reglas de Calidad
 
-En `expectations.yml` se definen validaciones:
+Editar archivo de expectations del dataset (ej. `config/datasets/finanzas/payments_v1/expectations.yml`):
 
 ```yaml
 expectations:
-  - { column: amount, rule: ">= 0", action: quarantine }
-  - { column: payment_date, rule: "not null", action: reject }
+  - column: "amount"
+    rule: ">= 0"
+    action: "quarantine"
+  - column: "payment_id"
+    rule: "not null"
+    action: "reject"
 ```
+
+### Cambiar Esquema de Base de Datos
+
+1. Actualizar <mcfile name="schema.json" path="test_data/schema.json"></mcfile>
+2. El pipeline creará automáticamente la tabla con el nuevo esquema
+
+## 🔍 Monitoreo y Logs
+
+### Ver Logs del Pipeline
+
+```bash
+# Logs de Spark
+python pipelines/spark_job_with_db.py ... --verbose
+
+# Logs de PostgreSQL
+docker logs mvp-postgres
+```
+
+### Verificar Estado de la Base de Datos
+
+```bash
+# Conectar a PostgreSQL
+docker exec -it mvp-postgres psql -U testuser -d testdb
+
+# Ver tablas
+\dt
+
+# Ver datos
+SELECT * FROM test_payments_v1 LIMIT 10;
+```
+
+## 🚨 Troubleshooting
+
+### Problemas Comunes
+
+#### 1. Error de Conexión a PostgreSQL
+
+```bash
+# Verificar que el contenedor esté ejecutándose
+docker-compose ps
+
+# Reiniciar servicios
+docker-compose down && docker-compose up -d
+```
+
+#### 2. Error de Esquema JSON
+
+- Verificar que el archivo `schema.json` del dataset tenga formato válido
+- Usar herramientas online para validar JSON
+
+#### 3. Datos No Aparecen en la Base de Datos
+
+- Verificar que el archivo CSV en `data/raw/` tenga datos válidos
+- Revisar logs del pipeline para errores de calidad
+- Verificar que las reglas de `expectations.yml` del dataset no rechacen todos los datos
+
+## 📈 Próximos Pasos
+
+- [ ] **Orquestación**: Integración con Apache Airflow
+- [ ] **Streaming**: Soporte para Apache Kafka
+- [ ] **Monitoreo**: Dashboard con métricas del pipeline
+- [ ] **Alertas**: Notificaciones automáticas en caso de fallos
+- [ ] **Escalabilidad**: Despliegue en Kubernetes
+
+## 🤝 Contribuciones
+
+1. Fork del repositorio
+2. Crear rama feature: `git checkout -b feature/nueva-funcionalidad`
+3. Commit cambios: `git commit -am 'Agregar nueva funcionalidad'`
+4. Push a la rama: `git push origin feature/nueva-funcionalidad`
+5. Crear Pull Request
+
+## 📄 Licencia
+
+Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más detalles.
 
 ---
 
-## Pruebas y CI/CD
-
-- Validación de configuraciones:
-
-```bash
-./ci/check_config.sh
-```
-
-- Workflow de GitHub Actions (`ci/lint.yml`) valida que todo YAML/JSON sea correcto antes de hacer merge.  
-- `ci/test_dataset.yml` permite correr pruebas con un dataset mínimo.
-
----
-
-## Troubleshooting
-
-### Problemas comunes
-
-#### 1. Error "No such file or directory" en rutas S3
-
-**Problema**: El pipeline no encuentra archivos en la ruta S3 especificada.
-
-**Solución**:
-- Verificar que los datos estén cargados: `make seed`
-- Comprobar la fecha en `dataset.yml` coincida con la fecha de seed
-- Verificar en MinIO UI que los archivos existan en la ruta correcta
-
-#### 2. Contenedores no inician correctamente
-
-**Problema**: `docker compose up` falla o los contenedores se detienen.
-
-**Solución**:
-```bash
-# Limpiar todo y reiniciar
-make clean
-make up
-
-# Ver logs para identificar el problema
-make logs
-```
-
-#### 3. Error de permisos en Windows/WSL2
-
-**Problema**: Scripts no ejecutan por permisos o formato de línea.
-
-**Solución**:
-```bash
-# Convertir formato de archivos
-dos2unix scripts/*.sh
-
-# Dar permisos de ejecución
-chmod +x scripts/*.sh
-```
-
-#### 4. Puerto ocupado
-
-**Problema**: Error "port already in use" al iniciar servicios.
-
-**Solución**:
-```bash
-# Verificar qué proceso usa el puerto
-netstat -tulpn | grep :9000
-
-# Cambiar puertos en .env si es necesario
-MINIO_API_PORT=9010
-MINIO_CONSOLE_PORT=9011
-```
-
-#### 5. Memoria insuficiente para Spark
-
-**Problema**: Jobs de Spark fallan por falta de memoria.
-
-**Solución**:
-- Aumentar memoria disponible para Docker Desktop
-- Reducir `SPARK_WORKER_MEMORY` en docker-compose.yml
-- Usar datasets más pequeños para pruebas
-
-### Verificación del entorno
-
-Para verificar que todo funciona correctamente:
-
-```bash
-# 1. Verificar servicios
-make ps
-
-# 2. Verificar conectividad a MinIO
-curl http://localhost:9000/minio/health/live
-
-# 3. Ejecutar pipeline de prueba
-make seed && make run
-
-# 4. Verificar resultados en MinIO UI
-# Ir a http://localhost:9001 y revisar bucket 'silver'
-```
-
----
-
-## Buenas prácticas
-
-- No usar rutas locales. Siempre referenciar `s3a://raw/...` y configurar en `envs/*.yml`.  
-- Mantener actualizado `schema.json` al cambiar columnas.  
-- Agregar reglas de calidad en `expectations.yml` para prevenir datos incorrectos en silver.  
-- Versionar datasets mediante carpetas (`payments_v1`, `payments_v2`, etc.).  
-
----
-
-## Estado actual
-
-- [x] Ingesta dinámica de CSV/JSON/Parquet  
-- [x] Estandarización configurable (renames, casts, defaults, deduplicación)  
-- [x] Enriquecimiento automático (timestamp, run_id, particiones por fecha)  
-- [x] CI/CD con validación de configs  
-- [ ] Futuro: capa `gold` y orquestación con Airflow/n8n  
-
----
-
-## Contribuciones
-
-1. Crear una nueva rama:
-
-```bash
-git checkout -b feature/nueva-funcionalidad
-```
-
-2. Hacer cambios en configuración o código.  
-3. Validar con `make run` y `./ci/check_config.sh`.  
-4. Crear Pull Request (se ejecutan validaciones automáticas).
+**¿Necesitas ayuda?** Consulta la [Guía de Pruebas Manuales](docs/MANUAL_TESTING_GUIDE.md) para instrucciones detalladas paso a paso.

@@ -5,4 +5,4 @@ services:
     environment:
       CI: "true"
     volumes:
-      - ./ci/test_data:/mvp/data/raw/payments
+      - ./data:/mvp/data

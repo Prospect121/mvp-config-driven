@@ -3,6 +3,12 @@ pyyaml==6.0.2
 jsonschema==4.23.0
 pyspark==3.5.1
 
+# Dependencias para base de datos (Gold layer)
+sqlalchemy==2.0.23
+psycopg2-binary==2.9.9  # PostgreSQL
+
+
+
 # Dependencias para desarrollo y testing
 pytest==7.4.4
 pytest-cov==4.1.0

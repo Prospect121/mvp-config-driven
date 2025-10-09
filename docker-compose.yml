@@ -6,6 +6,27 @@ networks:
     driver: bridge
 
 services:
+  # PostgreSQL Database for Gold Layer
+  postgres:
+    image: postgres:15-alpine
+    container_name: mvp-config-driven-postgres-1
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-data_warehouse}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
+      TZ: ${TZ:-America/Bogota}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./scripts/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks: [mvp-config-driven-net]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-data_warehouse}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   minio:
     image: minio/minio:RELEASE.2024-09-13T20-26-02Z
     container_name: mvp-config-driven-minio-1
@@ -56,20 +77,35 @@ services:
       - PYSPARK_PYTHON=/opt/bitnami/python/bin/python3
       - PYSPARK_DRIVER_PYTHON=/opt/bitnami/python/bin/python3
       - JAVA_TOOL_OPTIONS=-Duser.home=/tmp -Divy.home=/tmp/.ivy2 -Duser.name=spark
-      # credenciales S3A -> MinIO (si no estaban ya)
+      # credenciales S3A -> MinIO
       - AWS_ACCESS_KEY_ID=minio
       - AWS_SECRET_ACCESS_KEY=minio12345
       - AWS_REGION=us-east-1
-      # Spark-Hadoop S3A (si lo configuras via spark-defaults conf de master/worker, esto puede omitirse aquí)
+      # Spark-Hadoop S3A
       - SPARK_DIST_CLASSPATH=/opt/bitnami/spark/jars/*
+      # Spark Submit Options for PostgreSQL JDBC Driver
+      - SPARK_SUBMIT_OPTIONS=--jars /mvp/postgresql-42.7.2.jar
+      # PostgreSQL Database Configuration
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${POSTGRES_DB:-data_warehouse}
+      - DB_USER=${POSTGRES_USER:-postgres}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-postgres123}
 
     volumes:
       - ./:/mvp
+      - ./postgresql-42.7.2.jar:/mvp/postgresql-42.7.2.jar
     depends_on:
-      - spark-master
-      - spark-worker-1
-      - minio
+      postgres:
+        condition: service_healthy
+      spark-master:
+        condition: service_started
+      spark-worker-1:
+        condition: service_started
+      minio:
+        condition: service_started
     networks: [mvp-config-driven-net]
 
 volumes:
+  postgres-data:
   minio-data:

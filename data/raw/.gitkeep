@@ -1,0 +1,2 @@
+# Este archivo mantiene la estructura del directorio data/raw en el control de versiones
+# Los archivos de datos reales están excluidos por .gitignore

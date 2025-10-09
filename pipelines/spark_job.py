@@ -1,54 +1,10 @@
-import sys, os, yaml, re, json
+import sys, os, yaml, json
 from datetime import datetime
 from pyspark.sql import SparkSession, functions as F
 from pyspark.sql.window import Window
 
-# -------- helpers de tipos --------
-DECIMAL_FULL = re.compile(r"^decimal\(\s*(\d+)\s*,\s*(\d+)\s*\)$", re.IGNORECASE)
-DECIMAL_PREC = re.compile(r"^decimal\(\s*(\d+)\s*\)$", re.IGNORECASE)
-ALIASES = {
-    "string":"string","str":"string","varchar":"string","char":"string",
-    "int":"int","integer":"int","bigint":"bigint","long":"bigint",
-    "double":"double","float":"double","boolean":"boolean","bool":"boolean",
-    "date":"date","datetime":"timestamp","timestamp":"timestamp","timestamptz":"timestamp",
-    "number":"double","numeric":"double","decimal":"decimal(38,18)"
-}
-def norm_type(t: str) -> str:
-    raw = (t or "").strip().lower()
-    m = DECIMAL_FULL.match(raw)
-    if m:
-        p, s = int(m.group(1)), int(m.group(2))
-        if s > p: raise ValueError(f"decimal({p},{s}) inválido: scale>precision")
-        return f"decimal({p},{s})"
-    m = DECIMAL_PREC.match(raw)
-    if m: return f"decimal({int(m.group(1))},0)"
-    if raw in ALIASES: return ALIASES[raw]
-    if raw.startswith("decimal(") and raw.endswith(")"):
-        return raw
-    raise ValueError(f"Tipo no reconocido: {t}")
-
-def parse_order(exprs):
-    out = []
-    for e in (exprs or []):
-        p = e.strip().split()
-        col = p[0]; desc = len(p)>1 and p[1].lower()=="desc"
-        out.append(F.col(col).desc() if desc else F.col(col).asc())
-    return out
-
-def safe_cast(df, col, target, fmt=None, on_error="fail"):
-    t = norm_type(target)
-    c = F.col(col)
-    if t == "timestamp":
-        newc = F.to_timestamp(c, fmt) if fmt else F.to_timestamp(c)
-    elif t == "date":
-        newc = F.to_date(c, fmt) if fmt else F.to_date(c)
-    else:
-        if on_error == "null":
-            # try_cast devuelve null si falla el parseo
-            newc = F.expr(f"try_cast({col} as {t})")
-        else:
-            newc = c.cast(t)
-    return df.withColumn(col, newc)
+# Importar funciones comunes
+from common import norm_type, parse_order, safe_cast, maybe_config_s3a
 
 
 # -------- helpers de esquema --------
@@ -227,24 +183,12 @@ spark = (
     .getOrCreate()
 )
 
-# S3A autoconfig si se usa s3a://
-def maybe_config_s3a(path_like: str):
-    if not path_like.startswith("s3a://"): return
-    ak = os.getenv("MINIO_ROOT_USER") or os.getenv("AWS_ACCESS_KEY_ID")
-    sk = os.getenv("MINIO_ROOT_PASSWORD") or os.getenv("AWS_SECRET_ACCESS_KEY")
-    endpoint = env.get("s3a_endpoint") or os.getenv("S3A_ENDPOINT") or "http://minio:9000"
-    if ak and sk:
-        h = spark._jsc.hadoopConfiguration()
-        h.set("fs.s3a.endpoint", endpoint)
-        h.set("fs.s3a.path.style.access","true")
-        h.set("fs.s3a.impl","org.apache.hadoop.fs.s3a.S3AFileSystem")
-        h.set("fs.s3a.access.key", ak)
-        h.set("fs.s3a.secret.key", sk)
+# S3A autoconfig se maneja desde el módulo común
 
 src = cfg['source']
 out = cfg['output']['silver']
-maybe_config_s3a(src['path'])
-maybe_config_s3a(out['path'])
+maybe_config_s3a(spark, src['path'], env)
+maybe_config_s3a(spark, out['path'], env)
 
 reader = spark.read.options(**src.get('options', {}))
 fmt = src['input_format']
@@ -284,9 +228,36 @@ if 'deduplicate' in std:
     w = Window.partitionBy(*key).orderBy(*order) if order else Window.partitionBy(*key)
     df = df.withColumn("_rn", F.row_number().over(w)).filter(F.col("_rn")==1).drop("_rn")
 
-# --- particiones por fecha ---
-if 'payment_date' in df.columns:
-    df = df.withColumn('year', F.year('payment_date')).withColumn('month', F.month('payment_date'))
+# # --- particiones por fecha ---
+# if 'payment_date' in df.columns:
+#     df = df.withColumn('year', F.year('payment_date')).withColumn('month', F.month('payment_date'))
+
+# --- particiones por configuración ---
+# Si en la configuración se especifica `output.silver.partition_by`,
+# generamos columnas de partición derivadas de una columna base.
+# La columna base puede definirse como `output.silver.partition_from`.
+# Si no se define, se usa `payment_date` si existe.
+parts = out.get('partition_by', [])
+if parts:
+    base_col_name = out.get('partition_from')
+    base_col = None
+    if base_col_name and base_col_name in df.columns:
+        base_col = F.col(base_col_name)
+
+    # Crear columnas de partición comunes si faltan y hay columna base
+    if base_col is not None:
+        for p in parts:
+            if p not in df.columns:
+                lp = p.lower()
+                if lp == 'year':
+                    df = df.withColumn('year', F.year(base_col))
+                elif lp == 'month':
+                    df = df.withColumn('month', F.month(base_col))
+                elif lp == 'day':
+                    df = df.withColumn('day', F.dayofmonth(base_col))
+                elif lp == 'date':
+                    df = df.withColumn('date', F.to_date(base_col))
+                # Otros nombres de partición se asumen ya presentes en el DF
 
 # --- auditoría ---
 run_id = datetime.utcnow().strftime("%Y%m%dT%H%M%S%fZ")
@@ -297,7 +268,7 @@ if 'quality' in cfg and cfg['quality'].get('expectations_ref'):
     q = load_expectations(cfg['quality']['expectations_ref'])
     rules = q.get('rules', [])
     quarantine_path = cfg['quality'].get('quarantine')
-    maybe_config_s3a(quarantine_path or "")
+    maybe_config_s3a(spark, quarantine_path or "", env)
     df, _, stats = apply_quality(df, rules, quarantine_path, run_id)
     print("[quality] stats:", stats)
 

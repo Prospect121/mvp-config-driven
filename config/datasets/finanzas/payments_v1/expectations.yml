@@ -11,7 +11,7 @@ rules:
 
   # montos válidos (permitir 0 o positivos, ya que defaults se aplicaron)
   - name: amount_valido
-    expr: "amounts IS NOT NULL AND amounts >= 100"
+    expr: "amount IS NOT NULL AND amount >= 0"
     on_fail: quarantine
 
   # currency válida (incluir CLP como default aplicado)

@@ -25,7 +25,6 @@ quality:
   expectations_ref: config/datasets/finanzas/payments_v1/expectations.yml
   quarantine: s3a://raw/quarantine/payments_v1/
 
-
 schema:
   ref: config/datasets/finanzas/payments_v1/schema.json
   mode: strict
@@ -37,3 +36,25 @@ output:
     partition_by: [year, month]
     merge_schema: true
     mode: overwrite_dynamic     # <--- activa overwrite dinámico
+    partition_from: payment_date
+
+  # Configuración para Gold layer (Base de datos)
+  gold:
+    enabled: true
+    database_config: "config/database.yml"
+    environment: "development"  # default, development, production
+    
+    # Transformaciones específicas del dataset para Gold layer
+    # Remover columnas técnicas antes de escribir a Gold
+    exclude_columns: ["_run_id", "_ingestion_ts"]
+    
+    # Optional: Add business-specific columns
+    add_columns:
+      - { name: "data_source", value: "payments_system", type: "string" }
+      - { name: "processed_at", value: "current_timestamp()", type: "timestamp" }
+    
+    # Reglas de negocio específicas del dataset
+    business_rules:
+      - { condition: "amount > 0", action: "filter" }
+      - { condition: "currency IS NOT NULL", action: "filter" }
+      
