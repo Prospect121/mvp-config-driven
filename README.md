@@ -155,6 +155,35 @@ standardization:
     - { column: "amount", to: "decimal(18,2)", on_error: "null" }
   defaults:
     - { column: "currency", value: "USD" }
+
+### Transformaciones Declarativas (transforms.yml)
+
+Para aplicar transformaciones sin cambiar código, define `transforms_ref` en tu `dataset.yml` y crea el archivo `transforms.yml` con expresiones SQL de Spark:
+
+```yaml
+# dataset.yml
+transforms_ref: config/datasets/finanzas/payments_v1/transforms.yml
+
+# transforms.yml
+on_error: null  # null | skip | fail
+transforms:
+  - target_column: amount_abs
+    expr: "abs(amount)"
+    mode: create
+    type: "decimal(18,2)"
+  - target_column: payment_year_month
+    expr: "date_format(payment_date, 'yyyy-MM')"
+    mode: create
+    type: "string"
+```
+
+Notas:
+- `target_column`: nombre de la columna a crear o reemplazar.
+- `expr`: expresión SQL válida de Spark.
+- `mode`: `create` o `replace`.
+- `type`: tipo Spark para casteo final; usa `safe_cast` con `on_error`.
+- `on_error`: comportamiento ante errores (`null`, `skip`, `fail`).
+- Las transformaciones se aplican antes del particionado y de las reglas de calidad.
 ```
 
 ### Modificar Reglas de Calidad

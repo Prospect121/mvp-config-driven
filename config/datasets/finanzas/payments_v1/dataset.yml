@@ -7,6 +7,9 @@ source:
     header: "true"
     inferSchema: "true"
 
+# Transformaciones declarativas externas
+transforms_ref: config/datasets/finanzas/payments_v1/transforms.yml
+
 standardization:
   timezone: America/Bogota
   rename:
@@ -15,6 +18,7 @@ standardization:
     - { column: amount, to: "decimal(18,2)", on_error: null }
     - { column: payment_date, to: "timestamp", format_hint: "yyyy-MM-dd[ HH:mm:ss]" }
     - { column: updated_at, to: "timestamp", format_hint: "yyyy-MM-dd[ HH:mm:ss]" }
+    - { column: IVA, to: "decimal(10,2)", on_error: null }
   defaults:
     - { column: currency, value: "CLP" }
   deduplicate:

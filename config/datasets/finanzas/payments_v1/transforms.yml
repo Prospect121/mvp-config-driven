@@ -1,2 +1,14 @@
-sql: []
-udf: []
+on_error: null  # null | skip | fail
+transforms:
+  - target_column: amount_with_iva
+    expr: "cast(amount as decimal(18,2)) + (cast(amount as decimal(18,2)) * (coalesce(cast(IVA as decimal(10,2)), 0) / 100))"
+    mode: create
+    type: "decimal(18,2)"
+
+udf:
+  - target_column: customer_id_normalized
+    function: normalize_id
+    args: [customer_id]
+    mode: create
+    type: "string"
+    on_error: null

@@ -8,6 +8,9 @@
     "amount": { "type": "number" },
     "currency": { "type": ["string","null"] },
     "payment_date": { "type": ["string","null"], "format": "date-time" },
-    "updated_at": { "type": ["string","null"], "format": "date-time" }
+    "updated_at": { "type": ["string","null"], "format": "date-time" },
+    "amount_with_iva": { "type": ["number","null"] },
+    "IVA": { "type": ["number","null"] },
+    "customer_id_normalized": { "type": ["string","null"] }
   }
 }

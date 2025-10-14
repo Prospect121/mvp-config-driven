@@ -43,7 +43,10 @@ services:
     networks: [mvp-config-driven-net]
 
   spark-master:
-    image: bitnami/spark:3.5.1
+    image: mvp-spark:3.5.1-pandas
+    build:
+      context: .
+      dockerfile: docker/spark-pandas-udf/Dockerfile
     container_name: mvp-config-driven-spark-master-1
     environment:
       SPARK_MODE: master
@@ -56,7 +59,10 @@ services:
     networks: [mvp-config-driven-net]
 
   spark-worker-1:
-    image: bitnami/spark:3.5.1
+    image: mvp-spark:3.5.1-pandas
+    build:
+      context: .
+      dockerfile: docker/spark-pandas-udf/Dockerfile
     container_name: mvp-config-driven-spark-worker-1
     environment:
       SPARK_MODE: worker
@@ -69,14 +75,20 @@ services:
     networks: [mvp-config-driven-net]
 
   runner:
-    image: bitnami/spark:3.5.1
+    image: mvp-spark:3.5.1-pandas
+    build:
+      context: .
+      dockerfile: docker/spark-pandas-udf/Dockerfile
     container_name: mvp-config-driven-runner-1
+    user: "root"
     working_dir: /mvp
-    command: ["bash", "-lc", "/mvp/scripts/runner.sh"]
+    # command: ["bash", "-lc", "/mvp/scripts/runner.sh"]
+    command: ["bash","-lc","find /mvp/scripts -type f -name '*.sh' -exec sed -i 's/\\r$//' {} + && bash /mvp/scripts/runner.sh"]
     environment:
       - PYSPARK_PYTHON=/opt/bitnami/python/bin/python3
       - PYSPARK_DRIVER_PYTHON=/opt/bitnami/python/bin/python3
       - JAVA_TOOL_OPTIONS=-Duser.home=/tmp -Divy.home=/tmp/.ivy2 -Duser.name=spark
+      - USE_PANDAS_UDF=1
       # credenciales S3A -> MinIO
       - AWS_ACCESS_KEY_ID=minio
       - AWS_SECRET_ACCESS_KEY=minio12345
@@ -97,6 +109,8 @@ services:
       # - ./postgresql-42.7.2.jar:/mvp/postgresql-42.7.2.jar
       - ./jars:/mvp/jars
       - ivy-cache:/tmp/.ivy2
+      - pydeps:/tmp/pydeps
+      - pip-cache:/tmp/pip-cache
     depends_on:
       postgres:
         condition: service_healthy
@@ -112,3 +126,5 @@ volumes:
   postgres-data:
   minio-data:
   ivy-cache:
+  pydeps:
+  pip-cache:
