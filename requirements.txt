@@ -4,6 +4,7 @@ jsonschema==4.23.0
 pyspark==3.5.1
 pyarrow>=14.0.0
 pandas>=2.0.0
+requests>=2.31.0
 
 # Dependencias para base de datos (Gold layer)
 sqlalchemy==2.0.23

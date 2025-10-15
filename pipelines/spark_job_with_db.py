@@ -14,6 +14,7 @@ from database.schema_mapper import DatabaseEngine
 
 # Importar funciones comunes
 from common import norm_type, parse_order, safe_cast, maybe_config_s3a
+from sources import load_source, flatten_json, sanitize_nulls, project_columns
 from udf_catalog import get_udf
 
 def load_json_schema(path):
@@ -489,25 +490,71 @@ def main():
         # Configure source and output paths
         src = cfg['source']
         out = cfg['output']['silver']
-        maybe_config_s3a(spark, src['path'], env)
         maybe_config_s3a(spark, out['path'], env)
-        
-        # Read data
-        reader = spark.read.options(**src.get('options', {}))
-        fmt = src['input_format']
-        if fmt == 'csv':
-            df = reader.csv(src['path'])
-        elif fmt in ('json', 'jsonl'):
-            df = reader.json(src['path'])
-        elif fmt == 'parquet':
-            df = reader.parquet(src['path'])
-        else:
-            raise ValueError(f"Formato no soportado: {fmt}")
-        
-        print(f"[source] Loaded {df.count()} rows from {src['path']}")
+
+        # Read data via unified source loader
+        df = load_source(cfg, spark, env)
+        print(f"[source] Loaded {df.count()} rows from {src.get('path', src.get('jdbc',{}).get('table','<jdbc>'))}")
+
+        # Optional Bronze step: convert Raw to Parquet before validations/transforms
+        bronze_cfg = cfg.get('bronze', {})
+        if bronze_cfg.get('enabled', False):
+            bronze_path = bronze_cfg.get('path')
+            bronze_format = (bronze_cfg.get('format') or 'parquet').lower()
+            bronze_mode = (bronze_cfg.get('mode') or 'overwrite').lower()
+            compression = bronze_cfg.get('compression', 'snappy')
+            part_cols = bronze_cfg.get('partition_by', []) or []
+            base_col_name = bronze_cfg.get('partition_from')
+            base_col = F.col(base_col_name) if base_col_name and base_col_name in df.columns else None
+
+            if bronze_path:
+                maybe_config_s3a(spark, bronze_path, env)
+                writer = df.write.mode(bronze_mode).option('compression', compression)
+                if part_cols:
+                    # Add partitioning columns if needed
+                    if base_col is not None:
+                        for p in part_cols:
+                            if p not in df.columns:
+                                lp = p.lower()
+                                if lp == 'year':
+                                    df = df.withColumn('year', F.year(base_col))
+                                elif lp == 'month':
+                                    df = df.withColumn('month', F.month(base_col))
+                                elif lp == 'day':
+                                    df = df.withColumn('day', F.dayofmonth(base_col))
+                                elif lp == 'date':
+                                    df = df.withColumn('date', F.to_date(base_col))
+                    writer = writer.partitionBy(*part_cols)
+
+                if bronze_format == 'parquet':
+                    writer.parquet(bronze_path)
+                else:
+                    # Fallback a parquet si formato no soportado
+                    print(f"[bronze] Formato '{bronze_format}' no soportado, usando parquet")
+                    writer.parquet(bronze_path)
+
+                # Releer desde Bronze para continuar con Silver
+                df = spark.read.parquet(bronze_path)
+                print(f"[bronze] Wrote and reloaded Bronze dataset at {bronze_path}")
         
         # Apply standardization
         std = cfg.get('standardization', {})
+
+        # Optional: flatten nested JSON structures
+        json_norm = cfg.get('json_normalization', {})
+        if json_norm.get('flatten', True) and src.get('input_format') in ('json','jsonl'):
+            paths = json_norm.get('paths')
+            df = flatten_json(df, paths)
+
+        # Optional: handle nulls
+        nulls_cfg = cfg.get('null_handling', {})
+        if nulls_cfg:
+            df = sanitize_nulls(df, fills=nulls_cfg.get('fills'), drop_if_null=nulls_cfg.get('drop_if_null'))
+
+        # Optional: project columns
+        keep_cols = cfg.get('select_columns')
+        if keep_cols:
+            df = project_columns(df, keep_cols)
         
         # Rename columns FIRST - before any validations
         for r in std.get('rename', []) or []:
