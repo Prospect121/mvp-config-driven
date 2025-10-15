@@ -328,9 +328,11 @@ def apply_gold_transformations(df, gold_config: dict, table_settings: dict):
         DataFrame transformado
     """
     
-    # Get exclude columns from dataset config or default from table_settings
-    exclude_columns = gold_config.get('exclude_columns', 
-                                    table_settings.get('default_transformations', {}).get('exclude_columns', []))
+    # Defaults from global table settings
+    default_transforms = table_settings.get('default_transformations', {})
+
+    # Exclude columns: dataset-specific overrides, else global defaults
+    exclude_columns = gold_config.get('exclude_columns', default_transforms.get('exclude_columns', []))
     
     # Exclusión de columnas mejorada
     if exclude_columns:
@@ -339,8 +341,10 @@ def apply_gold_transformations(df, gold_config: dict, table_settings: dict):
             df = df.drop(*existing_exclude_cols)
             print(f"[gold] Excluded columns: {existing_exclude_cols}")
     
-    # Adición de columnas
-    add_cols = gold_config.get('add_columns', [])
+    # Adición de columnas: usar del dataset, o por defecto desde database.yml
+    add_cols = gold_config.get('add_columns')
+    if not add_cols:
+        add_cols = default_transforms.get('add_columns', [])
     for col_def in add_cols:
         if isinstance(col_def, dict) and 'name' in col_def and 'value' in col_def:
             col_name = col_def['name']
@@ -352,7 +356,7 @@ def apply_gold_transformations(df, gold_config: dict, table_settings: dict):
                 df = df.withColumn(col_name, F.current_timestamp())
             elif col_value == "current_date()":
                 df = df.withColumn(col_name, F.current_date())
-            elif col_value.startswith("uuid()"):
+            elif isinstance(col_value, str) and col_value.startswith("uuid()"):
                 # Generate UUID using monotonically_increasing_id as a simple alternative
                 df = df.withColumn(col_name, F.monotonically_increasing_id().cast("string"))
             else:
@@ -361,8 +365,10 @@ def apply_gold_transformations(df, gold_config: dict, table_settings: dict):
             
             print(f"[gold] Added column '{col_name}' with value '{col_value}' as {col_type}")
     
-    # Apply business rules using separate function
-    business_rules = gold_config.get('business_rules', [])
+    # Reglas de negocio: usar del dataset, o por defecto desde database.yml
+    business_rules = gold_config.get('business_rules')
+    if not business_rules:
+        business_rules = default_transforms.get('business_rules', [])
     df = apply_business_rules(df, business_rules)
     
     return df
@@ -644,15 +650,28 @@ def main():
             
             print(f"[gold] Starting Gold layer processing for dataset: {dataset_id}")
             
-            # Apply transformations (exclude columns)
-            gold_df = apply_gold_transformations(df, gold_config, table_settings)
+            # Construir configuración efectiva (dataset.yml tiene prioridad sobre database.yml)
+            effective_table_settings = dict(table_settings) if table_settings else {}
+            # Overrides de dataset para comportamiento de escritura
+            if gold_config.get('write_mode'):
+                effective_table_settings['default_write_mode'] = gold_config['write_mode']
+            if gold_config.get('upsert_keys'):
+                effective_table_settings['upsert_keys'] = gold_config['upsert_keys']
+            # Overrides opcionales de nombre de tabla
+            if gold_config.get('table_prefix'):
+                effective_table_settings['table_prefix'] = gold_config['table_prefix']
+            if gold_config.get('table_suffix'):
+                effective_table_settings['table_suffix'] = gold_config['table_suffix']
+
+            # Apply transformations (dataset overrides + global defaults)
+            gold_df = apply_gold_transformations(df, gold_config, effective_table_settings)
             
             success = write_to_gold_database(
                 df=gold_df,
                 dataset_id=dataset_id,
                 schema_path=schema_path,
                 db_manager=db_manager,
-                table_settings=table_settings
+                table_settings=effective_table_settings
             )
             
             if success:

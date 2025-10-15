@@ -1,16 +1,65 @@
 {
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "payments_v1 schema",
   "type": "object",
   "additionalProperties": false,
   "required": ["payment_id", "customer_id", "amount", "payment_date"],
   "properties": {
-    "payment_id": { "type": "string", "pattern": "^p-[0-9]+$" },
-    "customer_id": { "type": "string" },
-    "amount": { "type": "number" },
-    "currency": { "type": ["string","null"] },
-    "payment_date": { "type": ["string","null"], "format": "date-time" },
-    "updated_at": { "type": ["string","null"], "format": "date-time" },
-    "amount_with_iva": { "type": ["number","null"] },
-    "IVA": { "type": ["number","null"] },
-    "customer_id_normalized": { "type": ["string","null"] }
-  }
+    "payment_id": {
+      "type": "string",
+      "description": "Identificador único de pago"
+    },
+    "customer_id": {
+      "type": "string",
+      "description": "Identificador de cliente"
+    },
+    "amount": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Monto del pago"
+    },
+    "currency": {
+      "type": ["string", "null"],
+      "enum": ["CLP", "USD", "COP"],
+      "description": "Moneda del pago"
+    },
+    "payment_date": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Fecha de ejecución del pago"
+    },
+    "updated_at": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Última fecha de actualización"
+    },
+    "iva": {
+      "type": ["number", "null"],
+      "description": "Impuesto aplicado (IVA)"
+    },
+    "amount_with_iva": {
+      "type": ["number", "null"],
+      "description": "Monto con IVA aplicado (transformación)"
+    },
+    "customer_id_normalized": {
+      "type": ["string", "null"],
+      "description": "ID de cliente normalizado (UDF)"
+    },
+    "data_source": {
+      "type": "string",
+      "description": "Fuente de datos agregada en Gold"
+    },
+    "processed_at": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Timestamp de procesamiento en Gold"
+    }
+  },
+  "uniqueConstraints": [
+    {
+      "name": "uk_payment_customer_test",
+      "columns": ["payment_id", "customer_id"],
+      "description": "Restricción única compuesta para payment_id y customer_id para evitar duplicados"
+    }
+  ]
 }

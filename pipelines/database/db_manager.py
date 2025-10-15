@@ -209,6 +209,15 @@ class DatabaseManager:
             # Verificar si la tabla existe y el schema ha cambiado
             current_version = self.get_current_schema_version(qualified_table_name)
             if current_version and current_version.schema_hash == schema_hash:
+                # Aunque el schema coincida, aseguramos la constraint UNIQUE/PK para ON CONFLICT
+                try:
+                    mapper = SchemaMapper(self.config.engine_type)
+                    columns_defs = mapper.schema_to_columns(schema_dict)
+                    pk_cols = [c.name for c in columns_defs if c.primary_key]
+                    if pk_cols:
+                        self._ensure_unique_constraint_for_keys(qualified_table_name, pk_cols)
+                except Exception as e:
+                    logger.warning(f"No se pudo asegurar constraint única para {qualified_table_name}: {e}")
                 logger.info(f"Tabla {qualified_table_name} ya existe con el mismo schema")
                 return True
             
@@ -220,7 +229,16 @@ class DatabaseManager:
             with self.engine.connect() as conn:
                 conn.execute(text(ddl))
                 conn.commit()
-            
+
+            # Asegurar constraint UNIQUE/PK para claves detectadas (soporte ON CONFLICT)
+            try:
+                columns_defs = mapper.schema_to_columns(schema_dict)
+                pk_cols = [c.name for c in columns_defs if c.primary_key]
+                if pk_cols:
+                    self._ensure_unique_constraint_for_keys(qualified_table_name, pk_cols)
+            except Exception as e:
+                logger.warning(f"No se pudo asegurar constraint única para {qualified_table_name}: {e}")
+
             # Guardar versión del schema
             self.save_schema_version(qualified_table_name, schema_hash, schema_version, json.dumps(schema_dict))
             
@@ -267,12 +285,21 @@ class DatabaseManager:
         """Escribir DataFrame usando lógica UPSERT (INSERT ... ON CONFLICT para PostgreSQL)"""
         try:
             qualified_table_name = self.get_qualified_table_name(table_name, "data_schema")
+            # Asegurar constraint UNIQUE/PK para las claves de upsert en la tabla destino
+            try:
+                self._ensure_unique_constraint_for_keys(qualified_table_name, upsert_keys)
+            except Exception as e:
+                logger.warning(f"No se pudo asegurar constraint única para {qualified_table_name}: {e}")
             
             # Crear tabla temporal para los nuevos datos
             temp_table_name = f"{qualified_table_name}_temp_{int(datetime.now().timestamp())}"
             
+            # Normalizar nombres de columnas a minúsculas para evitar problemas de case-sensitivity en PostgreSQL
+            # Esto asegura que columnas como 'IVA' se manejen como 'iva' en la tabla temporal y en el UPSERT
+            df_temp = df.toDF(*[c.lower() for c in df.columns])
+
             # Escribir datos a tabla temporal
-            df.write \
+            df_temp.write \
                 .format("jdbc") \
                 .option("url", self.config.get_jdbc_connection_string()) \
                 .option("dbtable", temp_table_name) \
@@ -283,7 +310,7 @@ class DatabaseManager:
                 .save()
             
             # Obtener columnas del DataFrame
-            df_columns = df.columns
+            df_columns = df_temp.columns
             
             # Construir query UPSERT para PostgreSQL
             upsert_query = self._build_upsert_query(
@@ -360,6 +387,52 @@ class DatabaseManager:
             "password": self.config.password,
             "driver": "org.postgresql.Driver"
         }
+
+    def _ensure_unique_constraint_for_keys(self, qualified_table_name: str, keys: List[str]):
+        """Agregar constraint UNIQUE para claves si no existe, necesario para ON CONFLICT.
+
+        Nota: Si la tabla ya tiene PRIMARY KEY sobre las mismas columnas, no se hace nada.
+        """
+        try:
+            # Separar esquema y nombre de tabla
+            if "." in qualified_table_name:
+                schema_name, table_name = qualified_table_name.split(".", 1)
+            else:
+                schema_name, table_name = "public", qualified_table_name
+            cols_list = ", ".join(keys)
+
+            # Verificar si existe PK/UNIQUE para las columnas
+            check_query = f"""
+            SELECT tc.constraint_name, tc.constraint_type, kcu.column_name
+            FROM information_schema.table_constraints tc
+            JOIN information_schema.key_column_usage kcu
+              ON tc.constraint_name = kcu.constraint_name
+             AND tc.table_schema = kcu.table_schema
+            WHERE tc.table_schema = :schema
+              AND tc.table_name = :table
+              AND tc.constraint_type IN ('PRIMARY KEY','UNIQUE')
+            """
+            params = {"schema": schema_name, "table": table_name}
+
+            with self.engine.connect() as conn:
+                rows = conn.execute(text(check_query), params).fetchall()
+                constraints = {}
+                for name, ctype, col in rows:
+                    constraints.setdefault(name, {"type": ctype, "cols": set()})
+                    constraints[name]["cols"].add(col)
+                keys_set = set(keys)
+                # Debe existir una constraint EXACTA sobre las columnas indicadas.
+                # Una UNIQUE compuesta (p.ej. payment_id, customer_id) NO satisface ON CONFLICT (payment_id).
+                exists = any(keys_set == info["cols"] for info in constraints.values())
+                if not exists:
+                    constraint_name = f"{table_name}_" + "_".join(keys) + "_uniq"
+                    add_query = f"ALTER TABLE {qualified_table_name} ADD CONSTRAINT {constraint_name} UNIQUE ({cols_list})"
+                    conn.execute(text(add_query))
+                    conn.commit()
+                    logger.info(f"Constraint UNIQUE agregado: {qualified_table_name} ({cols_list})")
+        except Exception as e:
+            # No interrumpir el flujo principal; loguear y continuar
+            logger.warning(f"No se pudo agregar UNIQUE({cols_list}) en {qualified_table_name}: {e}")
 
     def execute_query(self, query: str, params: Optional[Dict] = None) -> List[Tuple]:
         """Ejecutar consulta y retornar resultados"""
