@@ -17,15 +17,15 @@ standardization:
   timezone: UTC
   
   rename:
-    - { from: "id", to: event_id }
-    - { from: "timestamp", to: event_timestamp }
+    - { from: id, to: event_id }
+    - { from: timestamp, to: event_timestamp }
     # user_id y event_type ya tienen los nombres correctos
     # Mapear campos anidados del metadata
     - { from: "metadata.session_id", to: session_id }
     # Campos que no existen en los datos generados se manejarán con defaults
   
   casts:
-    - { column: event_timestamp, to: "timestamp", format_hint: "yyyy-MM-dd[ HH:mm:ss]", on_error: null }
+    - { column: event_timestamp, to: "timestamp", format_hint: "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'", on_error: null }
     - { column: user_id, to: "string", on_error: null }
   
   defaults:
@@ -33,29 +33,30 @@ standardization:
     - { column: device_info, value: "{}" }
     - { column: location_data, value: "{}" }
     - { column: custom_properties, value: "{}" }
-    - { column: experiment_id, value: 0 }
-    - { column: variant_id, value: 0 }
   
   deduplicate:
     key: [event_id, user_id, session_id]
-    order_by: ["event_timestamp desc", "experiment_id desc"]
+    order_by: ["event_timestamp desc"]
 
 quality:
   expectations_ref: config/datasets/casos_uso/events_multiformat_expectations.yml
-  quarantine: s3a://raw/quarantine/events-multiformat/
+  quarantine: "s3a://raw/quarantine/events-multiformat/"
 
 schema:
   ref: config/datasets/casos_uso/events_multiformat_schema.json
   mode: strict
 
+# Transformaciones declarativas (SQL/UDF) para derivar campos desde JSON anidado
+transforms_ref: config/datasets/casos_uso/events_multiformat_transforms.yml
+
 output:
   silver:
     format: parquet
     path: "s3a://silver/events-multiformat/"
-    # partition_by: [year, month]
+    partition_by: [year, month]
     merge_schema: true
     mode: overwrite_dynamic
-    # partition_from: event_timestamp
+    partition_from: event_timestamp
     
     # Optimizaciones para datos complejos
     options:

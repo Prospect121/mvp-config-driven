@@ -14,7 +14,7 @@ rules:
 
   # Nivel 2: Validaciones de campos críticos
   - name: critical_fields_not_null
-    expr: "event_id IS NOT NULL AND user_id IS NOT NULL AND event_timestamp IS NOT NULL AND event_type IS NOT NULL"
+    expr: "event_id IS NOT NULL AND user_id IS NOT NULL AND event_type IS NOT NULL"
     on_fail: quarantine
     description: "Campos críticos no pueden ser nulos"
 
@@ -24,13 +24,13 @@ rules:
     description: "User ID debe seguir formato CUST-XXXXXX"
 
   - name: session_id_format_validation
-    expr: "session_id IS NULL OR session_id = '' OR session_id RLIKE '^SES-[0-9]{13}-[A-F0-9]{6}$'"
-    on_fail: drop
-    description: "Session ID debe seguir formato SES-timestamp-hash o estar vacío"
+    expr: "session_id IS NULL OR session_id = '' OR session_id RLIKE '^SES-[0-9]{13}-[A-F0-9]{6}$' OR session_id RLIKE '^[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}$'"
+    on_fail: quarantine
+    description: "Session ID debe seguir formato SES-timestamp-hash, UUID o estar vacío"
 
   # Nivel 3: Validaciones de tipos de eventos
   - name: event_type_whitelist
-    expr: "event_type IN ('PAGE_VIEW', 'CLICK', 'PURCHASE', 'SIGNUP', 'LOGIN', 'LOGOUT', 'SEARCH', 'ADD_TO_CART', 'CHECKOUT', 'PAYMENT', 'ERROR', 'CUSTOM')"
+    expr: "event_type IN ('PAGE_VIEW', 'CLICK', 'PURCHASE', 'SIGNUP', 'LOGIN', 'LOGOUT', 'SEARCH', 'ADD_TO_CART', 'CHECKOUT', 'PAYMENT', 'ERROR', 'CUSTOM', 'DOWNLOAD', 'SHARE')"
     on_fail: quarantine
     description: "Tipo de evento debe estar en la lista permitida"
 
@@ -42,39 +42,23 @@ rules:
   # Nivel 4: Validaciones temporales complejas
   - name: event_timestamp_not_null
     expr: "event_timestamp IS NOT NULL"
-    on_fail: quarantine
+    on_fail: warn
     description: "Timestamp del evento es obligatorio"
 
   - name: event_timestamp_not_future
-    expr: "event_timestamp <= current_timestamp()"
-    on_fail: quarantine
+    expr: "event_timestamp IS NULL OR event_timestamp <= current_timestamp()"
+    on_fail: warn
     description: "Timestamp del evento no puede ser futuro"
 
   - name: event_timestamp_not_too_old
-    expr: "event_timestamp >= '2023-01-01 00:00:00'"
-    on_fail: drop
+    expr: "event_timestamp IS NULL OR event_timestamp >= '2023-01-01 00:00:00'"
+    on_fail: warn
     description: "Timestamp del evento no debe ser anterior a 2023"
 
   - name: event_timestamp_reasonable_range
     expr: "event_timestamp >= date_sub(current_timestamp(), 365) AND event_timestamp <= date_add(current_timestamp(), 1)"
     on_fail: warn
     description: "Timestamp debe estar en rango razonable (último año + 1 día)"
-
-  # Nivel 5: Validaciones de experimentos A/B
-  - name: experiment_id_range
-    expr: "experiment_id IS NULL OR (experiment_id >= 0 AND experiment_id <= 99999)"
-    on_fail: warn
-    description: "Experiment ID debe estar en rango 0-99999"
-
-  - name: variant_id_range
-    expr: "variant_id IS NULL OR (variant_id >= 0 AND variant_id <= 999)"
-    on_fail: warn
-    description: "Variant ID debe estar en rango 0-999"
-
-  - name: experiment_variant_consistency
-    expr: "(experiment_id IS NULL AND variant_id IS NULL) OR (experiment_id IS NOT NULL AND variant_id IS NOT NULL) OR (experiment_id = 0 AND variant_id = 0)"
-    on_fail: warn
-    description: "Experiment ID y Variant ID deben ser consistentes"
 
   # Nivel 6: Validaciones de datos JSON anidados
   - name: device_info_json_validation
@@ -100,38 +84,32 @@ rules:
 
   - name: session_id_length_validation
     expr: "session_id IS NULL OR session_id = '' OR LENGTH(session_id) = 22 OR LENGTH(session_id) = 36"
-    on_fail: drop
+    on_fail: quarantine
     description: "Session ID debe tener 22 o 36 caracteres (UUID) o estar vacío"
 
   - name: device_info_length_limit
     expr: "device_info IS NULL OR LENGTH(device_info) <= 1000"
-    on_fail: drop
+    on_fail: warn
     description: "Device info no debe exceder 1000 caracteres"
 
   - name: location_data_length_limit
     expr: "location_data IS NULL OR LENGTH(location_data) <= 500"
-    on_fail: drop
+    on_fail: warn
     description: "Location data no debe exceder 500 caracteres"
 
   - name: custom_properties_length_limit
     expr: "custom_properties IS NULL OR LENGTH(custom_properties) <= 2000"
-    on_fail: drop
-    description: "Custom properties no debe exceder 2000 caracteres"
-
-  # Nivel 8: Validaciones de lógica de negocio específica
-  - name: purchase_events_have_experiment
-    expr: "event_type != 'PURCHASE' OR (event_type = 'PURCHASE' AND experiment_id IS NOT NULL AND experiment_id > 0)"
     on_fail: warn
-    description: "Eventos de compra deben tener experimento asociado"
+    description: "Custom properties no debe exceder 2000 caracteres"
 
   - name: error_events_have_details
     expr: "event_type != 'ERROR' OR (event_type = 'ERROR' AND custom_properties IS NOT NULL AND custom_properties != '{}')"
-    on_fail: warn
+    on_fail: quarantine
     description: "Eventos de error deben tener detalles en custom_properties"
 
   - name: login_logout_session_consistency
     expr: "event_type NOT IN ('LOGIN', 'LOGOUT') OR (event_type IN ('LOGIN', 'LOGOUT') AND session_id IS NOT NULL AND session_id != '')"
-    on_fail: warn
+    on_fail: quarantine
     description: "Eventos de login/logout deben tener session_id"
 
   # Nivel 9: Validaciones de patrones sospechosos

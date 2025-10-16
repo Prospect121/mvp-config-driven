@@ -1,0 +1,79 @@
+# Dataset de ejemplo: payments_v3
+# Organización: este archivo, junto con schema.yml y transforms.yml,
+# vive en la carpeta dedicada config/datasets/finanzas/payments_v3/.
+#
+# Uso: se referencia este dataset.yml al ejecutar el job:
+#   python pipelines/spark_job_with_db.py config/datasets/finanzas/payments_v3/dataset.yml config/env.yml config/database.yml development
+
+id: payments_v3
+description: "Pagos - versión v3. Estructura organizada en carpeta dedicada."
+
+source:
+  input_format: csv
+  path: s3a://raw/payments_v3/*.csv
+  options:
+    header: "true"
+    inferSchema: "true"
+    sep: ","
+    encoding: "UTF-8"
+
+# Estandarización básica previa a particionado, calidad y escritura
+standardization:
+  timezone: America/Bogota
+  casts:
+    - { column: amount, to: "decimal(18,2)", on_error: null }
+    - { column: payment_date, to: timestamp, format_hint: "yyyy-MM-dd[ HH:mm:ss]", on_error: null }
+  defaults:
+    - { column: currency, value: "USD" }
+  deduplicate:
+    key: [payment_id, customer_id]
+    order_by: [payment_date desc]
+
+# Proyección explícita de columnas útiles
+select_columns:
+  - payment_id
+  - customer_id
+  - amount
+  - currency
+  - payment_date
+  - status
+  - method
+
+# Referencia de schema (ahora en YAML) y modo de aplicación
+schema:
+  ref: config/datasets/finanzas/payments_v3/schema.yml
+  mode: permissive  # strict|permissive: en permissive crea columnas requeridas faltantes como NULL
+
+# Transformaciones declarativas (SQL y UDFs) aplicadas en Silver
+transforms_ref: config/datasets/finanzas/payments_v3/transforms.yml
+
+quality:
+  expectations_ref: config/datasets/finanzas/payments_v3/expectations.yml
+  quarantine: s3a://raw/quarantine/payments_v3/
+
+# Capas de salida
+output:
+  silver:
+    format: parquet
+    path:  s3a://silver/payments_v3/
+    partition_by: ["year", "month"]
+    partition_from: payment_date
+    merge_schema: true
+    mode: overwrite_dynamic
+    compression: snappy
+  gold:
+    enabled: true
+    database_config: "config/database.yml"
+    environment: development
+    write_mode: append
+    upsert_keys: [payment_id, customer_id]
+    # Transformaciones específicas de Gold layer
+    exclude_columns: ["_run_id", "_ingestion_ts"]
+    add_columns:
+      - { name: "data_source", value: "payments_v3", type: "string" }
+      - { name: "processed_at", value: "current_timestamp()", type: "timestamp" }
+    business_rules:
+      - { condition: "amount > 0", action: "filter" }
+      - { condition: "currency IS NOT NULL", action: "filter" }
+
+# Formato alineado con payments_v1/dataset.yml para consistencia

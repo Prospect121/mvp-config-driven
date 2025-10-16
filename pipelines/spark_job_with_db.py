@@ -18,8 +18,23 @@ from sources import load_source, flatten_json, sanitize_nulls, project_columns
 from udf_catalog import get_udf
 
 def load_json_schema(path):
+    """Carga el schema desde archivo JSON o YAML y retorna un dict.
+
+    Compatibilidad hacia atrás: mantiene el nombre de la función pero
+    detecta automáticamente la extensión del archivo para usar el
+    parser apropiado.
+    """
+    _, ext = os.path.splitext(path.lower())
     with open(path, 'r', encoding='utf-8') as f:
-        return json.load(f)
+        if ext in ('.yml', '.yaml'):
+            return yaml.safe_load(f)
+        else:
+            # Por defecto intentar JSON; si falla, intentar YAML
+            try:
+                return json.load(f)
+            except Exception:
+                f.seek(0)
+                return yaml.safe_load(f)
 
 def spark_type_from_json(t):
     return {
@@ -497,7 +512,8 @@ def main():
         print(f"[source] Loaded {df.count()} rows from {src.get('path', src.get('jdbc',{}).get('table','<jdbc>'))}")
 
         # Optional Bronze step: convert Raw to Parquet before validations/transforms
-        bronze_cfg = cfg.get('bronze', {})
+        # Prefer new location under output.bronze; fallback to top-level for backward compatibility
+        bronze_cfg = (cfg.get('output', {}).get('bronze') or cfg.get('bronze') or {})
         if bronze_cfg.get('enabled', False):
             bronze_path = bronze_cfg.get('path')
             bronze_format = (bronze_cfg.get('format') or 'parquet').lower()
@@ -513,18 +529,27 @@ def main():
                 if part_cols:
                     # Add partitioning columns if needed
                     if base_col is not None:
+                        # Convert base column to timestamp to derive partitions robustly
+                        ts_col = F.to_timestamp(base_col)
                         for p in part_cols:
                             if p not in df.columns:
                                 lp = p.lower()
                                 if lp == 'year':
-                                    df = df.withColumn('year', F.year(base_col))
+                                    df = df.withColumn('year', F.year(ts_col))
                                 elif lp == 'month':
-                                    df = df.withColumn('month', F.month(base_col))
+                                    df = df.withColumn('month', F.month(ts_col))
                                 elif lp == 'day':
-                                    df = df.withColumn('day', F.dayofmonth(base_col))
+                                    df = df.withColumn('day', F.dayofmonth(ts_col))
                                 elif lp == 'date':
-                                    df = df.withColumn('date', F.to_date(base_col))
-                    writer = writer.partitionBy(*part_cols)
+                                    df = df.withColumn('date', F.to_date(ts_col))
+                        writer = writer.partitionBy(*part_cols)
+                    else:
+                        # If base column missing, only partition if requested columns already exist
+                        existing = [p for p in part_cols if p in df.columns]
+                        if len(existing) == len(part_cols):
+                            writer = writer.partitionBy(*part_cols)
+                        else:
+                            print(f"[bronze] Base column '{base_col_name}' not found; skipping partitioning")
 
                 if bronze_format == 'parquet':
                     writer.parquet(bronze_path)
@@ -551,12 +576,7 @@ def main():
         if nulls_cfg:
             df = sanitize_nulls(df, fills=nulls_cfg.get('fills'), drop_if_null=nulls_cfg.get('drop_if_null'))
 
-        # Optional: project columns
-        keep_cols = cfg.get('select_columns')
-        if keep_cols:
-            df = project_columns(df, keep_cols)
-        
-        # Rename columns FIRST - before any validations
+        # Rename columns FIRST - before any validations and projections
         for r in std.get('rename', []) or []:
             from_col = r['from']
             to_col = r['to']
@@ -568,6 +588,11 @@ def main():
             elif from_col in df.columns:
                 # Regular column rename
                 df = df.withColumnRenamed(from_col, to_col)
+
+        # Optional: project columns (after rename to preserve renamed columns)
+        keep_cols = cfg.get('select_columns')
+        if keep_cols:
+            df = project_columns(df, keep_cols)
         
         # Enforce schema if specified
         if 'schema' in cfg and cfg['schema'].get('ref'):

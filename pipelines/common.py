@@ -44,46 +44,56 @@ def norm_type(raw: str) -> str:
     return f"StringType()  # Tipo desconocido: {raw}"
 
 def parse_order(order_input):
-    """Parsear string o lista de ordenamiento a lista de expresiones de columnas Spark."""
+    """Parsear especificaciones de ordenamiento a lista de expresiones de columnas Spark.
+
+    Soporta:
+    - string: "col1 desc, col2 asc"
+    - lista de strings: ["col1 desc", "col2"]
+    - lista de dicts: [{column: col1, dir: desc}, {column: col2}]
+    - dict único: {column: col1, dir: desc}
+    """
     from pyspark.sql.functions import col
-    
+
     if not order_input:
         return []
-    
-    def parse_single_order(order_str):
-        """Parse a single order expression like 'column_name desc' or 'column_name'"""
-        order_str = str(order_str).strip()
+
+    def parse_single_order(order_spec):
+        """Parsea una sola especificación de orden."""
+        # Dict: {column, dir}
+        if isinstance(order_spec, dict):
+            col_name = (
+                order_spec.get('column')
+                or order_spec.get('col')
+                or order_spec.get('name')
+            )
+            direction = str(order_spec.get('dir') or order_spec.get('direction') or 'asc').lower()
+            if not col_name:
+                # Fallback: ignorar entrada inválida
+                return None
+            return col(col_name).desc() if direction in ['desc', 'descending'] else col(col_name).asc()
+
+        # String: "col desc" o "col"
+        order_str = str(order_spec).strip()
         parts = order_str.split()
-        
+
         if len(parts) == 1:
-            # Solo nombre de columna, orden ascendente por defecto
             return col(parts[0])
-        elif len(parts) == 2:
-            # Nombre de columna + dirección
-            col_name, direction = parts[0], parts[1].lower()
-            if direction in ['desc', 'descending']:
-                return col(col_name).desc()
-            else:
-                return col(col_name).asc()
-        else:
-            # Si hay más partes, tomar la primera como columna y la última como dirección
-            col_name = parts[0]
-            direction = parts[-1].lower()
-            if direction in ['desc', 'descending']:
-                return col(col_name).desc()
-            else:
-                return col(col_name).asc()
-    
-    # Si ya es una lista, procesarla
+        elif len(parts) >= 2:
+            col_name, direction = parts[0], parts[-1].lower()
+            return col(col_name).desc() if direction in ['desc', 'descending'] else col(col_name).asc()
+
+    # Lista: procesar cada elemento
     if isinstance(order_input, list):
-        return [parse_single_order(item) for item in order_input]
-    
-    # Si es un string, dividirlo por comas y procesar
+        parsed = [parse_single_order(item) for item in order_input]
+        return [p for p in parsed if p is not None]
+
+    # String: dividir por comas y procesar
     if isinstance(order_input, str):
-        return [parse_single_order(item) for item in order_input.split(",")]
-    
-    # Para cualquier otro tipo, convertir a string y procesar
-    return [parse_single_order(order_input)]
+        return [parse_single_order(item) for item in order_input.split(',')]
+
+    # Dict único u otro tipo: intentar parsear directamente
+    single = parse_single_order(order_input)
+    return [single] if single is not None else []
 
 def safe_cast(df: DataFrame, column: str, target_type: str, format_hint: Optional[str] = None, on_error: Optional[str] = None) -> DataFrame:
     """Aplicar cast seguro con manejo de errores y soporte para format_hint."""

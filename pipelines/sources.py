@@ -35,6 +35,47 @@ def _parquet_options(opts: Dict[str, Any]) -> Dict[str, Any]:
     return {**defaults, **(opts or {})}
 
 
+def _normalize_value_for_spark(v: Any) -> Any:
+    """Normalize Python values to avoid schema merge conflicts when inferring.
+
+    - Promote ints to floats (excluding bool) to unify numeric types as DoubleType.
+    - Recurse into dicts and lists.
+    - Leave other types as-is.
+    """
+    try:
+        # Keep bools intact (bool is subclass of int)
+        if isinstance(v, bool):
+            return v
+        # Promote integers to float to avoid Double/Long merge errors
+        if isinstance(v, int):
+            return float(v)
+        if isinstance(v, float):
+            return v
+        if isinstance(v, dict):
+            return {k: _normalize_value_for_spark(val) for k, val in v.items()}
+        if isinstance(v, list):
+            return [_normalize_value_for_spark(x) for x in v]
+        return v
+    except Exception:
+        # On any unexpected error, return original value
+        return v
+
+
+def _normalize_items_for_spark(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Normalize a list of dict rows to ensure consistent numeric types.
+
+    This prevents PySpark's schema merger from failing with DoubleType vs LongType.
+    """
+    out: List[Dict[str, Any]] = []
+    for row in items:
+        if isinstance(row, dict):
+            out.append({k: _normalize_value_for_spark(v) for k, v in row.items()})
+        else:
+            # Fallback for non-dict entries
+            out.append(_normalize_value_for_spark(row))  # type: ignore
+    return out
+
+
 def load_source(cfg: Dict[str, Any], spark: SparkSession, env: Dict[str, Any]) -> DataFrame:
     """Load a dataset source according to configuration.
 
@@ -191,21 +232,19 @@ def load_source(cfg: Dict[str, Any], spark: SparkSession, env: Dict[str, Any]) -
                     break
 
                 if staging_enabled and staging_path:
-                    # Escribir chunk como JSONL temporal y subir vía Hadoop FS
-                    with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".jsonl", encoding="utf-8") as tf:
-                        for row in items:
-                            tf.write(json.dumps(row, ensure_ascii=False) + "\n")
-                        temp_local = tf.name
-
-                    jconf = spark._jsc.hadoopConfiguration()
-                    jfs = spark._jvm.org.apache.hadoop.fs.FileSystem.get(jconf)
-                    JPath = spark._jvm.org.apache.hadoop.fs.Path
-                    # Usar subcarpeta por página
-                    target = JPath(staging_path + f"/page={page}/chunk.jsonl")
-                    jfs.copyFromLocalFile(True, True, JPath(temp_local), target)
+                    # Escribir directamente cada página a staging usando el writer de Spark
+                    norm_items = _normalize_items_for_spark(items)
+                    df_page = spark.createDataFrame(norm_items)
+                    writer = df_page.write.mode("overwrite")
+                    page_out = staging_path + f"/page={page}"
+                    if staging_format == "parquet":
+                        writer.parquet(page_out)
+                    else:
+                        # json/jsonl: ambos se leen con reader.json
+                        writer.json(page_out)
                 else:
                     # Acumular en memoria para crear DataFrame directo
-                    all_rows.extend(items)
+                    all_rows.extend(_normalize_items_for_spark(items))
 
             except Exception as e:
                 raise RuntimeError(f"API fetch failed on page {page}: {e}")

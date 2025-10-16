@@ -1,0 +1,154 @@
+# Dataset API de ejemplo: payments_v3
+# Organización: este archivo comparte carpeta con schema.yml y transforms.yml
+#
+# Uso: ejecutar el job con este dataset_api.yml
+#   python pipelines/spark_job_with_db.py config/datasets/finanzas/payments_v3/dataset_api.yml config/env.yml config/database.yml development
+
+id: payments_v3
+description: "Pagos - v3 vía API con staging JSONL"
+
+source:
+  type: api
+  api:
+    method: GET
+    endpoint: "http://192.168.1.12:8000/api/payments"  # Reemplazar por endpoint real
+    #headers_ref: api_headers_payments_v3           # Definir en env.yml o variables de entorno
+    items_key: items
+    page_param: page
+    page_start: 1
+    page_size_param: page_size
+    page_size: 1000
+    max_pages: 100
+    query_params: {}
+    staging:
+      enabled: true
+      path: s3a://raw/staging/payments_v3_api
+      format: jsonl
+      mode: overwrite
+
+# Estandarización: misma lógica que CSV para mantener consistencia
+standardization:
+  timezone: America/Bogota
+  rename:
+    - { from: payment_ts, to: payment_date }
+  casts:
+    - column: amount
+      to: "decimal(18,2)"
+      on_error: null
+    - column: payment_date
+      to: timestamp
+      format_hint: "yyyy-MM-dd[ HH:mm:ss]"
+      on_error: null
+    - column: quantity
+      to: integer
+      on_error: null
+  defaults:
+    - column: currency
+      value: "USD"
+  deduplicate:
+    key: ["payment_id", "customer_id"]
+    order_by: [payment_date desc]
+
+select_columns:
+  - payment_id
+  - customer_id
+  - amount
+  - currency
+  - payment_date
+  - status
+  - method
+  - quantity
+
+schema:
+  ref: config/datasets/finanzas/payments_v3/schema.yml
+  mode: permissive
+
+transforms_ref: config/datasets/finanzas/payments_v3/transforms.yml
+
+quality:
+  expectations_ref: config/datasets/finanzas/payments_v3/expectations.yml
+  quarantine: s3a://raw/quarantine/payments_v3_api/
+
+output:
+  silver:
+    path: s3a://silver/payments_v3_api/
+    format: parquet
+    partition_by: ["year", "month"]
+    partition_from: payment_date
+    merge_schema: true
+    compression: snappy
+    mode: overwrite_dynamic
+  gold:
+    enabled: true
+    database_config: "config/database.yml"
+    environment: development
+    write_mode: overwrite
+    upsert_keys: [payment_id, customer_id]
+    exclude_columns: ["_run_id", "_ingestion_ts"]
+    add_columns:
+      - { name: "data_source", value: "payments_v3_api", type: "string" }
+      - { name: "processed_at", value: "current_timestamp()", type: "timestamp" }
+    business_rules:
+      - { condition: "amount > 0", action: "filter" }
+      - { condition: "currency IS NOT NULL", action: "filter" }
+
+# Nota: Bronze se define dentro de 'output.bronze' para coherencia
+
+
+#   id: payments_v1
+# source:
+#   type: api
+#   input_format: jsonl
+#   api:
+#     endpoint: https://api.example.com/payments
+#     method: GET
+#     # headers_ref: api_headers_payments   # opcional: definir en env.yml o variables de entorno
+#     # headers: { Authorization: "Bearer <token>" }  # opcional directo
+#     page_param: page
+#     page_start: 1
+#     page_size_param: page_size
+#     page_size: 1000
+#     max_pages: 100
+#     items_key: items
+#     query_params: {}
+#     staging:
+#       enabled: true
+#       path: data/s3a-staging/raw/payments_v1_api
+#       format: jsonl
+# standardization:
+#   casts:
+#     - {column: amount, to: double, on_error: null}
+#     - {column: payment_ts, to: timestamp, on_error: null}
+#   defaults:
+#     - {column: currency, value: "USD"}
+#   deduplicate:
+#     key: [payment_id, customer_id]
+#     order_by: ["payment_ts desc"]
+# bronze:
+#   enabled: true
+#   path: data/processed/bronze/payments_v1_api
+#   format: parquet
+#   mode: overwrite
+#   compression: snappy
+#   partition_by: [year, month, day]
+#   partition_from: payment_ts
+# output:
+#   silver:
+#     path: data/processed/payments_v1_api
+#     format: parquet
+#     partition_by: [year, month, day]
+#     partition_from: payment_ts
+#   gold:
+#     enabled: true
+#     environment: default
+#     write_mode: append
+#     upsert_keys: [payment_id, customer_id]
+#     table_prefix: ""
+#     table_suffix: ""
+# schema:
+#   ref: config/schemas/payments_v1.json
+#   mode: strict
+# quality:
+#   expectations_ref: config/quality/payments_v1_expectations.yml
+#   quarantine: data/output/quarantine/payments_v1_api
+# transforms_ref: config/transforms/payments_v1.yml
