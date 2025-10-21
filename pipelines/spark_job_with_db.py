@@ -14,7 +14,7 @@ from database.schema_mapper import DatabaseEngine
 
 # Importar funciones comunes
 from common import norm_type, parse_order, safe_cast, maybe_config_s3a
-from sources import load_source, flatten_json, sanitize_nulls, project_columns
+from sources import load_sources_or_source, flatten_json, sanitize_nulls, project_columns
 from udf_catalog import get_udf
 
 def load_json_schema(path):
@@ -445,6 +445,67 @@ def write_to_gold_database(df, dataset_id: str, schema_path: str, db_manager, ta
         print(f"[gold] Error writing to database: {e}")
         return False
 
+def write_to_gold_bucket(df, dataset_id: str, schema_path: str, bucket_cfg: dict, env: dict, spark) -> bool:
+    """Write DataFrame to configurable object storage bucket for Gold layer"""
+    try:
+        path = bucket_cfg.get('path')
+        if not path:
+            raise ValueError("Gold bucket configuration requires 'path'")
+        fmt = (bucket_cfg.get('format') or 'parquet').lower()
+        mode = (bucket_cfg.get('mode') or 'append').lower()
+        compression = bucket_cfg.get('compression', 'snappy')
+        merge_schema = str(bucket_cfg.get('merge_schema', True)).lower()
+        partition_by = bucket_cfg.get('partition_by', []) or []
+        partition_from = bucket_cfg.get('partition_from')
+        coalesce_n = bucket_cfg.get('coalesce')
+        repartition = bucket_cfg.get('repartition')
+
+        # Configure S3A/MinIO if needed
+        maybe_config_s3a(spark, path, env)
+
+        # Derive partitioning columns if requested
+        base_col = F.col(partition_from) if partition_from and partition_from in df.columns else None
+        if base_col is not None and partition_by:
+            ts_col = F.to_timestamp(base_col)
+            for p in partition_by:
+                if p not in df.columns:
+                    lp = p.lower()
+                    if lp == 'year':
+                        df = df.withColumn('year', F.year(ts_col))
+                    elif lp == 'month':
+                        df = df.withColumn('month', F.month(ts_col))
+                    elif lp == 'day':
+                        df = df.withColumn('day', F.dayofmonth(ts_col))
+                    elif lp == 'date':
+                        df = df.withColumn('date', F.to_date(ts_col))
+
+        # Optional coalesce/repartition for file sizing
+        if isinstance(coalesce_n, int) and coalesce_n > 0:
+            df = df.coalesce(coalesce_n)
+        elif isinstance(repartition, int) and repartition > 0:
+            df = df.repartition(repartition)
+        elif isinstance(repartition, list) and repartition:
+            cols = [c for c in repartition if c in df.columns]
+            if cols:
+                df = df.repartition(*[F.col(c) for c in cols])
+
+        writer = df.write.format(fmt).mode('overwrite' if mode == 'overwrite' else 'append')
+        writer = writer.option('compression', compression).option('mergeSchema', merge_schema)
+        if partition_by:
+            writer = writer.partitionBy(*partition_by)
+
+        if fmt in ('parquet', 'json', 'csv'):
+            writer.save(path)
+        else:
+            print(f"[gold][bucket] Unsupported format '{fmt}', falling back to parquet")
+            df.write.mode(mode).option('compression', compression).save(path)
+
+        print(f"[gold][bucket] Wrote {df.count()} rows to {path}")
+        return True
+    except Exception as e:
+        print(f"[gold][bucket] Error writing to bucket: {e}")
+        return False
+
 def main():
     """Main pipeline execution"""
     if len(sys.argv) < 3:
@@ -470,6 +531,7 @@ def main():
     db_manager = None
     table_settings = {}
     execution_id = None
+    spark = None
     
     if os.path.exists(db_config_path):
         db_full_config = yaml.safe_load(open(db_config_path, 'r', encoding='utf-8'))
@@ -503,13 +565,18 @@ def main():
         # S3A autoconfig se maneja desde el módulo común
         
         # Configure source and output paths
-        src = cfg['source']
+        sources_list = cfg.get('sources')
+        src = cfg.get('source', {})
         out = cfg['output']['silver']
         maybe_config_s3a(spark, out['path'], env)
 
-        # Read data via unified source loader
-        df = load_source(cfg, spark, env)
-        print(f"[source] Loaded {df.count()} rows from {src.get('path', src.get('jdbc',{}).get('table','<jdbc>'))}")
+        # Read data via unified source loader (single or multi-source)
+        df = load_sources_or_source(cfg, spark, env)
+        if sources_list:
+            print(f"[source] Loaded {df.count()} rows from {len(sources_list)} sources")
+        else:
+            src_desc = src.get('path') or src.get('jdbc',{}).get('table') or src.get('api',{}).get('endpoint') or '<source>'
+            print(f"[source] Loaded {df.count()} rows from {src_desc}")
 
         # Optional Bronze step: convert Raw to Parquet before validations/transforms
         # Prefer new location under output.bronze; fallback to top-level for backward compatibility
@@ -567,7 +634,19 @@ def main():
 
         # Optional: flatten nested JSON structures
         json_norm = cfg.get('json_normalization', {})
-        if json_norm.get('flatten', True) and src.get('input_format') in ('json','jsonl'):
+        should_flatten = json_norm.get('flatten', True)
+        is_jsonish = False
+        if sources_list:
+            for s in sources_list:
+                fmt = (s.get('input_format') or '').lower()
+                if fmt in ('json','jsonl') or (s.get('type') == 'api'):
+                    is_jsonish = True
+                    break
+        else:
+            fmt = (src.get('input_format') or '').lower()
+            if fmt in ('json','jsonl') or (src.get('type') == 'api'):
+                is_jsonish = True
+        if should_flatten and is_jsonish:
             paths = json_norm.get('paths')
             df = flatten_json(df, paths)
 
@@ -705,23 +784,19 @@ def main():
             except Exception as e:
                 print(f"[metadata] Warning: Failed to log silver dataset version: {e}")
         
-        # Write to Gold layer (Database) if configured
+        # Gold layer (Database and/or Bucket) if configured
         gold_config = cfg.get('output', {}).get('gold', {})
+        gold_db_enabled = gold_config.get('enabled', False) or gold_config.get('database', {}).get('enabled', False)
+        gold_bucket_enabled = gold_config.get('bucket', {}).get('enabled', False)
         
-        # Verificación mejorada de 'enabled'
-        if not gold_config.get('enabled', False):
+        if not (gold_db_enabled or gold_bucket_enabled):
             print("[gold] Capa Gold deshabilitada, omitiendo...")
             print("[pipeline] Pipeline completado exitosamente (solo Silver layer)")
-            sys.exit(0)  # Salida limpia del proceso
-        
-        if (db_manager and 
-            'schema' in cfg and cfg['schema'].get('ref')):
-            
-            schema_path = cfg['schema']['ref']
+        else:
             dataset_id = cfg['id']
-            
+            schema_path = cfg.get('schema', {}).get('ref')
             print(f"[gold] Starting Gold layer processing for dataset: {dataset_id}")
-            
+
             # Construir configuración efectiva (dataset.yml tiene prioridad sobre database.yml)
             effective_table_settings = dict(table_settings) if table_settings else {}
             # Overrides de dataset para comportamiento de escritura
@@ -737,74 +812,77 @@ def main():
 
             # Apply transformations (dataset overrides + global defaults)
             gold_df = apply_gold_transformations(df, gold_config, effective_table_settings)
-            
-            success = write_to_gold_database(
-                df=gold_df,
-                dataset_id=dataset_id,
-                schema_path=schema_path,
-                db_manager=db_manager,
-                table_settings=effective_table_settings
-            )
-            
-            if success:
-                # Log dataset version for Gold layer
+
+            # Write to Gold database if enabled
+            db_success = False
+            if gold_db_enabled and db_manager and schema_path:
+                db_success = write_to_gold_database(
+                    df=gold_df,
+                    dataset_id=dataset_id,
+                    schema_path=schema_path,
+                    db_manager=db_manager,
+                    table_settings=effective_table_settings
+                )
+                if db_success and db_manager:
+                    try:
+                        gold_version = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+                        db_manager.log_dataset_version(
+                            dataset_name=f"{dataset_id}_gold",
+                            version=gold_version,
+                            schema_path=schema_path,
+                            record_count=gold_df.count()
+                        )
+                        print(f"[metadata] Gold dataset version logged: {gold_version}")
+                    except Exception as e:
+                        print(f"[metadata] Warning: Failed to log gold dataset version: {e}")
+                elif gold_db_enabled and not db_manager:
+                    print("[gold] Advertencia: Gold (DB) habilitado pero no hay db_manager disponible")
+
+            # Write to Gold bucket if enabled
+            bucket_success = False
+            if gold_bucket_enabled:
+                bucket_cfg = gold_config.get('bucket', {})
                 try:
-                    gold_version = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-                    db_manager.log_dataset_version(
-                        dataset_name=f"{dataset_id}_gold",
-                        version=gold_version,
+                    bucket_success = write_to_gold_bucket(
+                        df=gold_df,
+                        dataset_id=dataset_id,
                         schema_path=schema_path,
-                        record_count=gold_df.count()
+                        bucket_cfg=bucket_cfg,
+                        env=env,
+                        spark=spark
                     )
-                    print(f"[metadata] Gold dataset version logged: {gold_version}")
                 except Exception as e:
-                    print(f"[metadata] Warning: Failed to log gold dataset version: {e}")
-                
-                # Log successful pipeline completion
-                if execution_id:
-                    try:
-                        db_manager.log_pipeline_execution(
-                            dataset_name=cfg['id'],
-                            status="completed",
-                            execution_id=execution_id
-                        )
-                        print(f"[metadata] Pipeline execution completed: {execution_id}")
-                    except Exception as e:
-                        print(f"[metadata] Warning: Failed to log pipeline completion: {e}")
-                
-                print(f"[gold] Pipeline completed successfully!")
-            else:
-                # Log failed pipeline execution
-                if execution_id:
-                    try:
-                        db_manager.log_pipeline_execution(
-                            dataset_name=cfg['id'],
-                            status="failed",
-                            error_message="Gold layer processing failed",
-                            execution_id=execution_id
-                        )
-                        print(f"[metadata] Pipeline execution failed: {execution_id}")
-                    except Exception as e:
-                        print(f"[metadata] Warning: Failed to log pipeline failure: {e}")
-                
-                print(f"[gold] Pipeline completed with Gold layer errors")
-        else:
-            # Log successful pipeline completion (Silver only)
-            if execution_id:
+                    print(f"[gold][bucket] Error: {e}")
+
+            # Log pipeline execution status
+            if db_manager and execution_id:
                 try:
+                    status = "completed" if ((not gold_db_enabled or db_success) and (not gold_bucket_enabled or bucket_success)) else "failed"
                     db_manager.log_pipeline_execution(
                         dataset_name=cfg['id'],
-                        status="completed",
+                        status=status,
                         execution_id=execution_id
                     )
-                    print(f"[metadata] Pipeline execution completed: {execution_id}")
+                    print(f"[metadata] Pipeline execution {status}: {execution_id}")
                 except Exception as e:
-                    print(f"[metadata] Warning: Failed to log pipeline completion: {e}")
-            
-            print(f"[pipeline] Silver layer processing completed (Gold layer not configured)")
+                    print(f"[metadata] Warning: Failed to log pipeline status: {e}")
+
+        # Stop Spark after pipeline
+        if spark:
+            spark.stop()
+        # Additional completion log if we didn't already log in Gold bucket/db
+        if execution_id and db_manager:
+            try:
+                db_manager.log_pipeline_execution(
+                    dataset_name=cfg['id'],
+                    status="completed",
+                    execution_id=execution_id
+                )
+                print(f"[metadata] Pipeline execution completed: {execution_id}")
+            except Exception as e:
+                print(f"[metadata] Warning: Failed to log pipeline completion: {e}")
         
-        spark.stop()
-        
+        print("[pipeline] Pipeline completed successfully.")
     except Exception as e:
         # Log failed pipeline execution
         if execution_id and db_manager:
@@ -820,6 +898,12 @@ def main():
                 print(f"[metadata] Warning: Failed to log pipeline failure: {log_error}")
         
         print(f"[pipeline] Pipeline failed with error: {e}")
+        # Ensure Spark session is closed on error
+        try:
+            if spark:
+                spark.stop()
+        except Exception:
+            pass
         raise
 
 if __name__ == "__main__":

@@ -1,0 +1,16 @@
+rules:
+  - name: non_negative_amount
+    expr: amount >= 0
+    on_fail: quarantine
+  - name: valid_currency
+    expr: currency IS NOT NULL AND length(currency) = 3
+    on_fail: drop
+  - name: valid_timestamp
+    expr: payment_date IS NOT NULL
+    on_fail: quarantine
+  - name: required_ids
+    expr: payment_id IS NOT NULL AND customer_id IS NOT NULL
+    on_fail: quarantine
+  - name: valid_quantity
+    expr: quantity IS NOT NULL AND quantity > 0
+    on_fail: quarantine

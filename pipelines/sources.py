@@ -35,30 +35,14 @@ def _parquet_options(opts: Dict[str, Any]) -> Dict[str, Any]:
     return {**defaults, **(opts or {})}
 
 
-def _normalize_value_for_spark(v: Any) -> Any:
-    """Normalize Python values to avoid schema merge conflicts when inferring.
-
-    - Promote ints to floats (excluding bool) to unify numeric types as DoubleType.
-    - Recurse into dicts and lists.
-    - Leave other types as-is.
-    """
-    try:
-        # Keep bools intact (bool is subclass of int)
-        if isinstance(v, bool):
-            return v
-        # Promote integers to float to avoid Double/Long merge errors
-        if isinstance(v, int):
-            return float(v)
-        if isinstance(v, float):
-            return v
-        if isinstance(v, dict):
-            return {k: _normalize_value_for_spark(val) for k, val in v.items()}
-        if isinstance(v, list):
-            return [_normalize_value_for_spark(x) for x in v]
-        return v
-    except Exception:
-        # On any unexpected error, return original value
-        return v
+def _normalize_value_for_spark(value: Any) -> Any:
+    """Normalize values to be Spark-friendly (e.g., numeric types)."""
+    if isinstance(value, dict):
+        return {k: _normalize_value_for_spark(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_normalize_value_for_spark(v) for v in value]
+    # Convert Python bool to int? Keep as-is; Spark handles booleans.
+    return value
 
 
 def _normalize_items_for_spark(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -270,11 +254,84 @@ def load_source(cfg: Dict[str, Any], spark: SparkSession, env: Dict[str, Any]) -
         raise ValueError(f"Unsupported source type/format: {src}")
 
 
-def flatten_json(df: DataFrame, paths: Dict[str, Any] = None) -> DataFrame:
-    """Flatten common nested objects like metadata and geo_location, configurable via paths.
+# ---- NUEVO: Soporte para múltiples fuentes ----
 
-    - If `paths` provided, expect mapping of {nested_field: [subfields_to_extract]}
-    - Otherwise, flatten standard fields if present.
+def load_source_any(src_cfg: Dict[str, Any], spark: SparkSession, env: Dict[str, Any]) -> DataFrame:
+    """Load a single source definition (same structure as cfg['source'])."""
+    tmp_cfg = {"source": src_cfg}
+    return load_source(tmp_cfg, spark, env)
+
+
+def load_sources_or_source(cfg: Dict[str, Any], spark: SparkSession, env: Dict[str, Any]) -> DataFrame:
+    """Load from either a single source or a list of sources and union them.
+
+    - If cfg has 'sources': iterate and union with allowMissingColumns
+    - Else, fallback to existing 'source' behavior
+    """
+    sources_list = cfg.get("sources")
+    if not sources_list:
+        return load_source(cfg, spark, env)
+
+    dfs: List[DataFrame] = []
+    for idx, src in enumerate(sources_list):
+        try:
+            df_i = load_source_any(src, spark, env)
+            dfs.append(df_i)
+            path_or_table = src.get("path") or src.get("jdbc", {}).get("table") or src.get("api", {}).get("endpoint") or "<unknown>"
+            print(f"[source] Loaded source[{idx}] rows={df_i.count()} from {path_or_table}")
+        except Exception as e:
+            print(f"[source] Warning: failed to load source[{idx}]: {e}")
+
+    if not dfs:
+        print("[source] Warning: no sources loaded; returning empty DataFrame")
+        return spark.createDataFrame([], schema=None)
+
+    # Union by name with missing columns allowed
+    base = dfs[0]
+    for other in dfs[1:]:
+        try:
+            base = base.unionByName(other, allowMissingColumns=True)
+        except Exception as e:
+            print(f"[source] Warning: union failed, attempting schema alignment: {e}")
+            # Fallback: align columns manually by adding missing columns as nulls
+            base_cols = set(base.columns)
+            other_cols = set(other.columns)
+            for c in base_cols - other_cols:
+                other = other.withColumn(c, F.lit(None))
+            for c in other_cols - base_cols:
+                base = base.withColumn(c, F.lit(None))
+            base = base.select(sorted(base.columns)).unionByName(other.select(sorted(other.columns)), allowMissingColumns=True)
+
+    print(f"[source] Combined rows from {len(dfs)} sources: {base.count()}")
+    return base
+
+
+def sanitize_nulls(df: DataFrame, fills: Dict[str, Any] = None, drop_if_null: Dict[str, bool] = None) -> DataFrame:
+    """Handle nulls by filling defaults and optional row drops when key fields are null."""
+    out = df
+    if fills:
+        out = out.fillna(fills)
+    if drop_if_null:
+        for col, enabled in drop_if_null.items():
+            if enabled and col in out.columns:
+                out = out.filter(F.col(col).isNotNull())
+    return out
+
+
+def project_columns(df: DataFrame, keep: Any = None) -> DataFrame:
+    """Project to a subset of columns if configured."""
+    if not keep:
+        return df
+    cols = [c for c in keep if c in df.columns]
+    return df.select(*cols)
+
+
+def flatten_json(df: DataFrame, paths: Dict[str, Any] = None) -> DataFrame:
+    """Flatten nested JSON/struct columns into top-level fields.
+
+    If `paths` is provided, it should be a mapping like:
+    { "metadata": ["user_agent", "ip_address", ...], "geo_location": ["country", ...] }
+    Otherwise, defaults will flatten common fields if present.
     """
     out = df
     default_paths = {
@@ -300,23 +357,3 @@ def flatten_json(df: DataFrame, paths: Dict[str, Any] = None) -> DataFrame:
                 alias = f"{parent}_{f}"
                 out = out.withColumn(alias, F.col(col_path))
     return out
-
-
-def sanitize_nulls(df: DataFrame, fills: Dict[str, Any] = None, drop_if_null: Dict[str, bool] = None) -> DataFrame:
-    """Handle nulls by filling defaults and optional row drops when key fields are null."""
-    out = df
-    if fills:
-        out = out.fillna(fills)
-    if drop_if_null:
-        for col, enabled in drop_if_null.items():
-            if enabled and col in out.columns:
-                out = out.filter(F.col(col).isNotNull())
-    return out
-
-
-def project_columns(df: DataFrame, keep: Any = None) -> DataFrame:
-    """Project to a subset of columns if configured."""
-    if not keep:
-        return df
-    cols = [c for c in keep if c in df.columns]
-    return df.select(*cols)

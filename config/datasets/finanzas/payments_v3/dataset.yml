@@ -8,14 +8,22 @@
 id: payments_v3
 description: "Pagos - versión v3. Estructura organizada en carpeta dedicada."
 
-source:
-  input_format: csv
-  path: s3a://raw/payments_v3/*.csv
-  options:
-    header: "true"
-    inferSchema: "true"
-    sep: ","
-    encoding: "UTF-8"
+sources:
+  - type: file
+    input_format: csv
+    path: s3a://raw/payments/*/*/*/*.csv
+    options:
+      header: "true"
+      inferSchema: "true"
+      sep: ","
+      encoding: "UTF-8"
+  - type: jdbc
+    jdbc:
+      url: jdbc:postgresql://postgres:5432/data_warehouse
+      table: finanzas.payments
+      user: postgres
+      password: postgres123
+      driver: org.postgresql.Driver
 
 # Estandarización básica previa a particionado, calidad y escritura
 standardization:
@@ -25,6 +33,9 @@ standardization:
     - { column: payment_date, to: timestamp, format_hint: "yyyy-MM-dd[ HH:mm:ss]", on_error: null }
   defaults:
     - { column: currency, value: "USD" }
+    - { column: customer_id, value: "CUST-DB" }
+    - { column: status, value: "completed" }
+    - { column: method, value: "card" }
   deduplicate:
     key: [payment_id, customer_id]
     order_by: [payment_date desc]
@@ -38,6 +49,7 @@ select_columns:
   - payment_date
   - status
   - method
+  - quantity
 
 # Referencia de schema (ahora en YAML) y modo de aplicación
 schema:
@@ -62,12 +74,11 @@ output:
     mode: overwrite_dynamic
     compression: snappy
   gold:
-    enabled: true
+    enabled: false
     database_config: "config/database.yml"
     environment: development
     write_mode: append
     upsert_keys: [payment_id, customer_id]
-    # Transformaciones específicas de Gold layer
     exclude_columns: ["_run_id", "_ingestion_ts"]
     add_columns:
       - { name: "data_source", value: "payments_v3", type: "string" }

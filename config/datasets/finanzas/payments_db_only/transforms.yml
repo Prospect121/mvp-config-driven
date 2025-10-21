@@ -1,5 +1,5 @@
-# Transformaciones para payments_v3
-# Se aplican en la etapa Silver antes de la escritura.
+# Transformaciones para payments_db_only
+# Aplicadas en Silver antes de la escritura
 
 on_error: null
 
@@ -28,20 +28,18 @@ transforms:
     mode: replace
     type: timestamp
 
-  # Ejemplo de columna derivada (simple)
+  # Derivados
   - target_column: amount_usd
     expr: "amount"
     mode: create
     type: double
-  
-  # Ejemplo de columna derivada (compleja)
+
   - target_column: total_amount
     expr: "amount * quantity"
     mode: create
     type: double
 
 udf:
-  # Normalización de IDs (Pandas UDF definida en udf_catalog)
   - target_column: customer_id_norm
     function: normalize_id
     args: ["customer_id"]
@@ -49,7 +47,6 @@ udf:
     mode: create
     on_error: null
 
-  # Sanitizado de currency (trim, espacios, caracteres raros)
   - target_column: currency_norm
     function: sanitize_string
     args: ["currency"]

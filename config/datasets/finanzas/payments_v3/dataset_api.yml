@@ -18,7 +18,7 @@ source:
     page_start: 1
     page_size_param: page_size
     page_size: 1000
-    max_pages: 100
+    max_pages: 100 #30000/1000=30 páginas
     query_params: {}
     staging:
       enabled: true
@@ -91,8 +91,6 @@ output:
     business_rules:
       - { condition: "amount > 0", action: "filter" }
       - { condition: "currency IS NOT NULL", action: "filter" }
-
-# Nota: Bronze se define dentro de 'output.bronze' para coherencia
 
 
 #   id: payments_v1
