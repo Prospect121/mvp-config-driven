@@ -1,0 +1,1 @@
+"""I/O helpers (S3A/MinIO config, JDBC wrappers if needed)."""

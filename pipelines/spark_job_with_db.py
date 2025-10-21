@@ -79,6 +79,12 @@ def load_transforms(path):
         print(f"[transforms] Warning: No se pudo cargar '{path}': {e}")
         return {}
 
+from pipelines.validation.quality import apply_quality as apply_quality_mod
+from pipelines.transforms.apply import (
+    apply_sql_transforms as apply_sql_transforms_mod,
+    apply_udf_transforms as apply_udf_transforms_mod,
+)
+
 def apply_sql_transforms(df, transforms_cfg: dict):
     """
     Aplica transformaciones SQL declarativas definidas en transforms.yml
@@ -706,8 +712,8 @@ def main():
             try:
                 transforms_cfg = load_transforms(tpath)
                 if transforms_cfg:
-                    df = apply_sql_transforms(df, transforms_cfg)
-                    df = apply_udf_transforms(df, transforms_cfg)
+                    df = apply_sql_transforms_mod(df, transforms_cfg)
+                    df = apply_udf_transforms_mod(df, transforms_cfg)
                 else:
                     print(f"[transforms] No transforms found in {tpath}")
             except Exception as e:
@@ -744,7 +750,7 @@ def main():
             rules = q.get('rules', [])
             quarantine_path = cfg['quality'].get('quarantine')
             maybe_config_s3a(spark, quarantine_path or "", env)
-            df, _, stats = apply_quality(df, rules, quarantine_path, run_id)
+            df, _, stats = apply_quality_mod(df, rules, quarantine_path, run_id)
             print("[quality] stats:", stats)
         
         # Show final schema and count

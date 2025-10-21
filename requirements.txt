@@ -10,10 +10,15 @@ requests>=2.31.0
 sqlalchemy==2.0.23
 psycopg2-binary==2.9.9  # PostgreSQL
 
+# Robustez (reintentos I/O)
+tenacity==8.2.3
 
-
-# Dependencias para desarrollo y testing
-pytest==7.4.4
+# Herramientas de estilo y calidad (desarrollo)
+black==24.10.0
+ruff==0.6.9
+mypy==1.13.0
+pre-commit==4.0.1
+pytest==8.3.3
 pytest-cov==4.1.0
 
 # Dependencias opcionales (descomenta según necesidad)
