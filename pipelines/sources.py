@@ -5,7 +5,7 @@ from typing import Dict, Any, List
 from pyspark.sql import SparkSession, DataFrame, functions as F
 
 # Usar import absoluto para el contexto de ejecución del script
-from common import maybe_config_s3a
+from pipelines.common import maybe_config_s3a
 
 
 def _json_options(opts: Dict[str, Any]) -> Dict[str, Any]:

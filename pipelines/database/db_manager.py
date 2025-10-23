@@ -651,9 +651,14 @@ def create_database_manager_from_config(config_dict: Dict[str, Any]) -> Database
 
 
 def create_database_manager_from_file(config_path: str, environment: str = "default") -> DatabaseManager:
-    """Crear DatabaseManager desde archivo de configuración YAML"""
-    with open(config_path, 'r', encoding='utf-8') as f:
-        config = yaml.safe_load(f)
+    """Crear DatabaseManager desde archivo de configuración YAML (local o abfs/abfss)."""
+    if config_path.startswith("abfs://") or config_path.startswith("abfss://"):
+        import fsspec
+        with fsspec.open(config_path, 'r') as f:
+            config = yaml.safe_load(f)
+    else:
+        with open(config_path, 'r', encoding='utf-8') as f:
+            config = yaml.safe_load(f)
     
     # Get environment-specific configuration
     # First try under 'environments' key, then try direct key

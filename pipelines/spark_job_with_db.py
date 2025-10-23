@@ -9,32 +9,44 @@ from pyspark.sql import SparkSession, functions as F
 from pyspark.sql.window import Window
 
 # Import database modules
-from database.db_manager import DatabaseManager, create_database_manager_from_file
-from database.schema_mapper import DatabaseEngine
+from pipelines.database.db_manager import DatabaseManager, create_database_manager_from_file
+from pipelines.database.schema_mapper import DatabaseEngine
 
 # Importar funciones comunes
-from common import norm_type, parse_order, safe_cast, maybe_config_s3a
-from sources import load_sources_or_source, flatten_json, sanitize_nulls, project_columns
-from udf_catalog import get_udf
+from pipelines.common import norm_type, parse_order, safe_cast, maybe_config_s3a, maybe_config_abfs
+from pipelines.sources import load_sources_or_source, flatten_json, sanitize_nulls, project_columns
+from pipelines.udf_catalog import get_udf
+from pipelines.config.loader import load_dataset_config, load_env_config, load_db_config
 
 def load_json_schema(path):
     """Carga el schema desde archivo JSON o YAML y retorna un dict.
 
-    Compatibilidad hacia atrás: mantiene el nombre de la función pero
-    detecta automáticamente la extensión del archivo para usar el
-    parser apropiado.
+    Compatibilidad hacia atrás: detecta automáticamente la extensión y
+    soporta rutas locales y ABLS (abfs/abfss) via fsspec/adlfs.
     """
     _, ext = os.path.splitext(path.lower())
+
+    # Rutas remotas (ADLS Gen2)
+    if path.startswith("abfs://") or path.startswith("abfss://"):
+        import fsspec
+        with fsspec.open(path, 'r') as f:
+            content = f.read()
+        if ext in ('.yml', '.yaml'):
+            return yaml.safe_load(content)
+        try:
+            return json.loads(content)
+        except Exception:
+            return yaml.safe_load(content)
+
+    # Ruta local
     with open(path, 'r', encoding='utf-8') as f:
         if ext in ('.yml', '.yaml'):
             return yaml.safe_load(f)
-        else:
-            # Por defecto intentar JSON; si falla, intentar YAML
-            try:
-                return json.load(f)
-            except Exception:
-                f.seek(0)
-                return yaml.safe_load(f)
+        try:
+            return json.load(f)
+        except Exception:
+            f.seek(0)
+            return yaml.safe_load(f)
 
 def spark_type_from_json(t):
     return {
@@ -66,15 +78,26 @@ def enforce_schema(df, jsch, mode="strict"):
     return df
 
 def load_expectations(path):
+    """Cargar expectativas YAML desde ruta local o ABLS (abfs/abfss)."""
+    if path.startswith("abfs://") or path.startswith("abfss://"):
+        import fsspec
+        with fsspec.open(path, 'r') as f:
+            return yaml.safe_load(f.read())
     with open(path, 'r', encoding='utf-8') as f:
         return yaml.safe_load(f)
 
 def load_transforms(path):
-    """Cargar archivo de transformaciones declarativas (YAML)."""
+    """Cargar archivo de transformaciones declarativas (YAML), local o ABLS."""
     try:
-        with open(path, 'r', encoding='utf-8') as f:
-            cfg = yaml.safe_load(f) or {}
+        if path.startswith("abfs://") or path.startswith("abfss://"):
+            import fsspec
+            with fsspec.open(path, 'r') as f:
+                cfg = yaml.safe_load(f.read()) or {}
             return cfg
+        else:
+            with open(path, 'r', encoding='utf-8') as f:
+                cfg = yaml.safe_load(f) or {}
+                return cfg
     except Exception as e:
         print(f"[transforms] Warning: No se pudo cargar '{path}': {e}")
         return {}
@@ -524,9 +547,33 @@ def main():
     environment = sys.argv[4] if len(sys.argv) > 4 else "default"
     
     # Load configurations
-    cfg = yaml.safe_load(open(cfg_path, 'r', encoding='utf-8'))
-    env = yaml.safe_load(open(env_path, 'r', encoding='utf-8'))
-    
+    cfg = load_dataset_config(cfg_path)
+    env = load_env_config(env_path)
+
+    # Si el dataset.yml está en ABFS y las referencias son relativas, convertirlas a absolutas
+    abfs_base = None
+    if cfg_path.startswith("abfs://") or cfg_path.startswith("abfss://"):
+        scheme = "abfs://" if cfg_path.startswith("abfs://") else "abfss://"
+        remainder = cfg_path[len(scheme):]
+        # authority = "<filesystem>@<account>.dfs.core.windows.net"
+        authority = remainder.split('/', 1)[0]
+        abfs_base = f"{scheme}{authority}/"
+
+    def _abfs_ref(ref: str) -> str:
+        if abfs_base and ("://" not in ref):
+            # Normalizar prefijo 'config/' porque los blobs se suben sin esa carpeta raíz
+            norm_ref = ref.lstrip("/")
+            if norm_ref.startswith("config/"):
+                norm_ref = norm_ref[len("config/"):]
+            return abfs_base + norm_ref
+        return ref
+
+    if cfg.get('transforms_ref'):
+        cfg['transforms_ref'] = _abfs_ref(cfg['transforms_ref'])
+    if cfg.get('quality', {}).get('expectations_ref'):
+        cfg['quality']['expectations_ref'] = _abfs_ref(cfg['quality']['expectations_ref'])
+    if cfg.get('schema', {}).get('ref'):
+        cfg['schema']['ref'] = _abfs_ref(cfg['schema']['ref'])
     # Override environment from gold config if specified
     gold_config = cfg.get('output', {}).get('gold', {})
     if gold_config.get('environment'):
@@ -538,9 +585,12 @@ def main():
     table_settings = {}
     execution_id = None
     spark = None
+
+    def _exists_any(path: str) -> bool:
+        return path.startswith("abfs://") or path.startswith("abfss://") or os.path.exists(path)
     
-    if os.path.exists(db_config_path):
-        db_full_config = yaml.safe_load(open(db_config_path, 'r', encoding='utf-8'))
+    if _exists_any(db_config_path):
+        db_full_config = load_db_config(db_config_path)
         db_manager = load_database_config(db_config_path, environment)
         table_settings = db_full_config.get("table_settings", {})
         print(f"[gold] Database configuration loaded for environment: {environment}")
@@ -568,12 +618,86 @@ def main():
             .getOrCreate()
         )
         
+        # Diagnóstico ABFS/OAuth en Databricks
+        try:
+            # Derivar host del storage desde abfs_base (authority)
+            host = None
+            if abfs_base:
+                authority = abfs_base[len("abfs://"):] if abfs_base.startswith("abfs://") else abfs_base[len("abfss://"):]
+                authority = authority.split('/')[0]
+                host = authority.split('@')[1] if '@' in authority else authority
+            if host:
+                k1 = spark.conf.get(f"fs.azure.account.key.{host}", "<unset>")
+                k2 = spark.conf.get(f"spark.hadoop.fs.azure.account.key.{host}", "<unset>")
+                a1 = spark.conf.get(f"fs.azure.account.auth.type.{host}", "<unset>")
+                a2 = spark.conf.get(f"spark.hadoop.fs.azure.account.auth.type.{host}", "<unset>")
+                cid1 = spark.conf.get(f"fs.azure.account.oauth2.client.id.{host}", "<unset>")
+                cid2 = spark.conf.get(f"spark.hadoop.fs.azure.account.oauth2.client.id.{host}", "<unset>")
+                print(f"[azure] host={host} auth.type fs={a1} spark.hadoop={a2}")
+                def _len(v):
+                    return (0 if v == "<unset>" else len(v))
+                print(f"[azure] key fs.len={_len(k1)} spark.hadoop.len={_len(k2)} client.id fs={cid1} spark.hadoop={cid2}")
+            else:
+                print("[azure] ABFS base no derivado; no se puede inspeccionar claves.")
+        except Exception as e:
+            print(f"[azure] Diagnóstico ABFS/OAuth falló: {e}")
+        
+        # Refuerzo de OAuth ABFS y limpieza de claves accidentales
+        try:
+            authority = None
+            if abfs_base:
+                authority = abfs_base[len("abfs://"):] if abfs_base.startswith("abfs://") else abfs_base[len("abfss://"):]
+                authority = authority.split('/')[0]
+            host2 = authority.split('@')[1] if authority and '@' in authority else authority
+            if host2:
+                tenant = os.environ.get("AZURE_TENANT_ID")
+                client_id = os.environ.get("AZURE_CLIENT_ID")
+                client_secret = os.environ.get("AZURE_CLIENT_SECRET")
+                if tenant and client_id and client_secret:
+                    spark.conf.set(f"fs.azure.account.auth.type.{host2}", "OAuth")
+                    spark.conf.set(f"fs.azure.account.oauth.provider.type.{host2}", "org.apache.hadoop.fs.azurebfs.oauth2.ClientCredsTokenProvider")
+                    spark.conf.set(f"fs.azure.account.oauth2.client.id.{host2}", client_id)
+                    spark.conf.set(f"fs.azure.account.oauth2.client.secret.{host2}", client_secret)
+                    spark.conf.set(f"fs.azure.account.oauth2.client.endpoint.{host2}", f"https://login.microsoftonline.com/{tenant}/oauth2/token")
+                # Intentar eliminar any 'fs.azure.account.key' que pueda estar presente
+                hconf = spark.sparkContext._jsc.hadoopConfiguration()
+                try:
+                    hconf.unset("fs.azure.account.key")
+                except Exception:
+                    pass
+                try:
+                    hconf.unset(f"fs.azure.account.key.{host2}")
+                except Exception:
+                    pass
+                try:
+                    hconf.unset(f"fs.azure.account.key.{host2}.dfs.core.windows.net")
+                except Exception:
+                    pass
+                print(f"[azure] OAuth reforzado para {host2}; claves 'fs.azure.account.key' eliminadas si existían.")
+        except Exception as e:
+            print(f"[azure] Refuerzo OAuth/limpieza de claves falló: {e}")
+        
         # S3A autoconfig se maneja desde el módulo común
         
         # Configure source and output paths
         sources_list = cfg.get('sources')
         src = cfg.get('source', {})
         out = cfg['output']['silver']
+        # Asegurar ABFS OAuth por cada host de las rutas usadas
+        try:
+            if sources_list:
+                for s in sources_list:
+                    maybe_config_abfs(spark, s.get('path') or '', env)
+            else:
+                maybe_config_abfs(spark, src.get('path') or '', env)
+            # Silver/quarantine/gold si están presentes
+            maybe_config_abfs(spark, out.get('path') or '', env)
+            qc = cfg.get('output', {}).get('quarantine', {})
+            maybe_config_abfs(spark, (qc or {}).get('path') or '', env)
+            gold_cfg = cfg.get('output', {}).get('gold', {})
+            maybe_config_abfs(spark, gold_cfg.get('path') or '', env)
+        except Exception as e:
+            print(f"[azure] ABFS OAuth por rutas falló: {e}")
         maybe_config_s3a(spark, out['path'], env)
 
         # Read data via unified source loader (single or multi-source)
@@ -874,7 +998,8 @@ def main():
                     print(f"[metadata] Warning: Failed to log pipeline status: {e}")
 
         # Stop Spark after pipeline
-        if spark:
+        # Avoid stopping Spark on Databricks notebooks to prevent driver restart
+        if spark and not os.environ.get("DATABRICKS_RUNTIME_VERSION"):
             spark.stop()
         # Additional completion log if we didn't already log in Gold bucket/db
         if execution_id and db_manager:
@@ -906,7 +1031,8 @@ def main():
         print(f"[pipeline] Pipeline failed with error: {e}")
         # Ensure Spark session is closed on error
         try:
-            if spark:
+            # Avoid stopping Spark on Databricks notebooks to prevent driver restart
+            if spark and not os.environ.get("DATABRICKS_RUNTIME_VERSION"):
                 spark.stop()
         except Exception:
             pass

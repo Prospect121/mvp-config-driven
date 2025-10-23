@@ -4,7 +4,7 @@ description: Ingesta multi-fuente (archivo local) y salida Gold a DB
 sources:
   - type: file
     input_format: jsonl
-    path: /mvp/data/s3a-staging/finanzas/payments/raw/
+    path: "abfs://configs@stmvpconfigdls01.dfs.core.windows.net/raw/finanzas/payments_multi/"
 
 standardization:
   rename:
@@ -40,14 +40,14 @@ json_normalization:
 output:
   bronze:
     enabled: true
-    path: /mvp/data/output/payments/bronze/
+    path: "abfs://configs@stmvpconfigdls01.dfs.core.windows.net/output/payments/bronze/"
     format: parquet
     mode: overwrite
     compression: snappy
     partition_by: [year, month]
     partition_from: created_at
   silver:
-    path: /mvp/data/output/payments/silver/
+    path: "abfs://configs@stmvpconfigdls01.dfs.core.windows.net/output/payments/silver/"
     format: parquet
     merge_schema: true
     mode: append
@@ -61,7 +61,7 @@ output:
     table_prefix: fin_
     bucket:
       enabled: false
-      path: /mvp/data/output/payments/gold/
+      path: "abfs://configs@stmvpconfigdls01.dfs.core.windows.net/output/payments/gold/"
       format: parquet
       mode: append
       merge_schema: true

@@ -2,13 +2,13 @@ id: payments_v1
 
 source:
   input_format: csv
-  path: "s3a://raw/payments/2025/09/26/*.csv"  # Fecha por defecto del seed script
+  path: "abfss://configs@stmvpconfigdls02.dfs.core.windows.net/raw/payments/2025/09/26/*.csv"  # Azure ADLS Gen2
   options:
     header: "true"
     inferSchema: "true"
 
 # Transformaciones declarativas externas
-transforms_ref: config/datasets/finanzas/payments_v1/transforms.yml
+transforms_ref: abfss://configs@stmvpconfigdls02.dfs.core.windows.net/datasets/finanzas/payments_v1/transforms.yml
 
 standardization:
   timezone: America/Bogota
@@ -27,17 +27,17 @@ standardization:
     order_by: [updated_at desc]
 
 quality:
-  expectations_ref: config/datasets/finanzas/payments_v1/expectations.yml
-  quarantine: s3a://raw/quarantine/payments_v1/
+  expectations_ref: abfss://configs@stmvpconfigdls02.dfs.core.windows.net/datasets/finanzas/payments_v1/expectations.yml
+  quarantine: "abfss://configs@stmvpconfigdls02.dfs.core.windows.net/quarantine/payments_v1/"
 
 schema:
-  ref: config/datasets/finanzas/payments_v1/schema.json
+  ref: abfss://configs@stmvpconfigdls02.dfs.core.windows.net/datasets/finanzas/payments_v1/schema.json
   mode: strict
 
 output:
   silver:
     format: parquet
-    path: "s3a://silver/payments_v1/"
+    path: "abfss://configs@stmvpconfigdls02.dfs.core.windows.net/silver/payments_v1/"
     partition_by: [year, month]
     merge_schema: true
     mode: overwrite_dynamic     # <--- activa overwrite dinámico
@@ -45,7 +45,7 @@ output:
 
   # Configuración para Gold layer (Base de datos)
   gold:
-    enabled: true
+    enabled: false
     database_config: "config/database.yml"
     environment: "development"  # default, development, production
     

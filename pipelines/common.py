@@ -147,3 +147,48 @@ def maybe_config_s3a(spark, path: str, env: Dict[str, Any]) -> str:
     spark.conf.set("spark.hadoop.fs.s3a.connection.ssl.enabled", "false")
     
     return path
+
+# Nuevo helper: configurar ABFS OAuth por host y limpiar claves accidentales
+
+def maybe_config_abfs(spark, path: str, env: Dict[str, Any]) -> str:
+    """Asegura OAuth para rutas ABFS y limpia cualquier fs.azure.account.key."""
+    if not (path and (path.startswith("abfs://") or path.startswith("abfss://"))):
+        return path
+    try:
+        scheme = "abfs://" if path.startswith("abfs://") else "abfss://"
+        remainder = path[len(scheme):]
+        authority = remainder.split('/', 1)[0]
+        host = authority.split('@')[1] if '@' in authority else authority
+        tenant = os.environ.get("AZURE_TENANT_ID")
+        client_id = os.environ.get("AZURE_CLIENT_ID")
+        client_secret = os.environ.get("AZURE_CLIENT_SECRET")
+        if tenant and client_id and client_secret:
+            # fs.azure.*
+            spark.conf.set(f"fs.azure.account.auth.type.{host}", "OAuth")
+            spark.conf.set(f"fs.azure.account.oauth.provider.type.{host}", "org.apache.hadoop.fs.azurebfs.oauth2.ClientCredsTokenProvider")
+            spark.conf.set(f"fs.azure.account.oauth2.client.id.{host}", client_id)
+            spark.conf.set(f"fs.azure.account.oauth2.client.secret.{host}", client_secret)
+            spark.conf.set(f"fs.azure.account.oauth2.client.endpoint.{host}", f"https://login.microsoftonline.com/{tenant}/oauth2/token")
+            # spark.hadoop.fs.azure.* (refuerzo)
+            spark.conf.set(f"spark.hadoop.fs.azure.account.auth.type.{host}", "OAuth")
+            spark.conf.set(f"spark.hadoop.fs.azure.account.oauth.provider.type.{host}", "org.apache.hadoop.fs.azurebfs.oauth2.ClientCredsTokenProvider")
+            spark.conf.set(f"spark.hadoop.fs.azure.account.oauth2.client.id.{host}", client_id)
+            spark.conf.set(f"spark.hadoop.fs.azure.account.oauth2.client.secret.{host}", client_secret)
+            spark.conf.set(f"spark.hadoop.fs.azure.account.oauth2.client.endpoint.{host}", f"https://login.microsoftonline.com/{tenant}/oauth2/token")
+        # Limpiar claves accidentales
+        hconf = spark.sparkContext._jsc.hadoopConfiguration()
+        for k in [
+            "fs.azure.account.key",
+            f"fs.azure.account.key.{host}",
+            f"fs.azure.account.key.{host}.dfs.core.windows.net",
+            f"spark.hadoop.fs.azure.account.key.{host}",
+            f"spark.hadoop.fs.azure.account.key.{host}.dfs.core.windows.net",
+        ]:
+            try:
+                hconf.unset(k)
+            except Exception:
+                pass
+        print(f"[azure] OAuth aplicado para {host}; claves fs.azure.account.key limpiadas")
+    except Exception as e:
+        print(f"[azure] ABFS config fallo: {e}")
+    return path

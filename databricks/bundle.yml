@@ -1,0 +1,42 @@
+bundle:
+  name: mvp-config-driven
+
+variables:
+  storage_account:
+    default: "${prefix}adls"
+  filesystem:
+    default: "configs"
+  dbfs_wheel_path:
+    default: "/FileStore/mvp_config_driven-0.1.1-py3-none-any.whl"
+  environment:
+    default: "default"
+
+resources:
+  jobs:
+    pipeline:
+      name: "${prefix}-pipeline"
+      tasks:
+        - task_key: run
+          spark_python_task:
+            python_file: "file:/dbfs/FileStore/runner_cli.py"
+            parameters:
+              - "--config"
+              - "abfs://${var.storage_account}/${var.filesystem}/${var.dataset_config_path}"
+              - "--env"
+              - "abfs://${var.storage_account}/${var.filesystem}/env.yml"
+              - "--db-config"
+              - "abfs://${var.storage_account}/${var.filesystem}/database.yml"
+              - "--environment"
+              - "${var.environment}"
+          libraries:
+            - whl: "${var.dbfs_wheel_path}"
+          compute:
+            new_cluster:
+              spark_version: "14.3.x-scala2.12"
+              num_workers: 2
+              node_type_id: "Standard_DS3_v2"
+
+environments:
+  dev:
+    workspace:
+      azure_resource_id: "/subscriptions/<sub>/resourceGroups/<rg>/providers/Microsoft.Databricks/workspaces/<workspace>"

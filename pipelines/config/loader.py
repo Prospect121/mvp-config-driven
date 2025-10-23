@@ -5,8 +5,25 @@ from typing import Any, Dict
 
 
 def _load_yaml_or_json(path: str) -> Dict[str, Any]:
-    """Load YAML or JSON file into dict, auto-detecting extension."""
+    """Load YAML or JSON file into dict, auto-detecting extension.
+
+    Supports local files and Azure Data Lake (abfs/abfss) via fsspec/adlfs.
+    """
     _, ext = os.path.splitext(path.lower())
+
+    # Remote path via Azure Data Lake Storage (Gen2)
+    if path.startswith("abfs://") or path.startswith("abfss://"):
+        import fsspec
+        with fsspec.open(path, "r") as f:
+            content = f.read()
+        if ext in ('.yml', '.yaml'):
+            return yaml.safe_load(content) or {}
+        try:
+            return json.loads(content)
+        except Exception:
+            return yaml.safe_load(content) or {}
+
+    # Local file
     with open(path, 'r', encoding='utf-8') as f:
         if ext in ('.yml', '.yaml'):
             return yaml.safe_load(f) or {}

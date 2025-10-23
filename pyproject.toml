@@ -18,3 +18,35 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 addopts = "-q"
+
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mvp_config_driven"
+version = "0.1.1"
+description = "Config-driven Spark pipelines"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "PyYAML==6.0.2",
+    "jsonschema==4.23.0",
+    "pyspark==3.5.1",
+    "pyarrow>=14.0.0",
+    "pandas>=2.0.0",
+    "requests>=2.31.0",
+    "SQLAlchemy==2.0.23",
+    "psycopg2-binary==2.9.9",
+    "tenacity==8.2.3",
+    "python-dotenv==1.0.0",
+    "fsspec>=2024.6.0",
+    "adlfs>=2024.1.0",
+]
+
+[project.scripts]
+cli = "pipelines.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["pipelines*"]
