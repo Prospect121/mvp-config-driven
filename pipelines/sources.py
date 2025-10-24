@@ -5,7 +5,7 @@ from typing import Dict, Any, List
 from pyspark.sql import SparkSession, DataFrame, functions as F
 
 # Usar import absoluto para el contexto de ejecución del script
-from common import maybe_config_s3a
+from datacore.io.fs import read_df, write_df, storage_options_from_env
 
 
 def _json_options(opts: Dict[str, Any]) -> Dict[str, Any]:
@@ -70,31 +70,27 @@ def load_source(cfg: Dict[str, Any], spark: SparkSession, env: Dict[str, Any]) -
     fmt = src.get("input_format")
     path = src.get("path")
 
-    # Configure S3A automatically if path uses s3a
-    if path:
-        maybe_config_s3a(spark, path, env)
+    storage_opts = storage_options_from_env(path, env) if path else {}
 
     # Reader base
     if fmt in ("csv", "json", "jsonl", "parquet"):
-        reader = spark.read
         if fmt == "csv":
             opts = _csv_options(src.get("options", {}))
-            reader = reader.options(**opts)
-            return reader.csv(path)
         elif fmt == "json":
             opts = _json_options(src.get("options", {}))
-            reader = reader.options(**opts)
-            return reader.json(path)
         elif fmt == "jsonl":
-            # JSON lines: same reader.json but ensure multiline False
             opts = _json_options(src.get("options", {}))
             opts["multiline"] = False
-            reader = reader.options(**opts)
-            return reader.json(path)
-        elif fmt == "parquet":
+        else:  # parquet
             opts = _parquet_options(src.get("options", {}))
-            reader = reader.options(**opts)
-            return reader.parquet(path)
+
+        return read_df(
+            path,
+            fmt,
+            spark=spark,
+            storage_options=storage_opts,
+            reader_options=opts,
+        )
 
     elif src.get("type") == "jdbc":
         jdbc = src.get("jdbc", {})
@@ -157,8 +153,7 @@ def load_source(cfg: Dict[str, Any], spark: SparkSession, env: Dict[str, Any]) -
         staging_enabled = bool(staging.get("enabled", False))
         staging_path = staging.get("path")
         staging_format = (staging.get("format") or "jsonl").lower()
-        if staging_enabled and staging_path:
-            maybe_config_s3a(spark, staging_path, env)
+        staging_storage_opts = storage_options_from_env(staging_path, env) if staging_path else {}
 
         all_rows: List[Dict[str, Any]] = []
         page = page_start
@@ -219,13 +214,14 @@ def load_source(cfg: Dict[str, Any], spark: SparkSession, env: Dict[str, Any]) -
                     # Escribir directamente cada página a staging usando el writer de Spark
                     norm_items = _normalize_items_for_spark(items)
                     df_page = spark.createDataFrame(norm_items)
-                    writer = df_page.write.mode("overwrite")
                     page_out = staging_path + f"/page={page}"
-                    if staging_format == "parquet":
-                        writer.parquet(page_out)
-                    else:
-                        # json/jsonl: ambos se leen con reader.json
-                        writer.json(page_out)
+                    write_df(
+                        df_page,
+                        page_out,
+                        "parquet" if staging_format == "parquet" else "jsonl",
+                        mode="overwrite",
+                        storage_options=storage_options_from_env(page_out, env),
+                    )
                 else:
                     # Acumular en memoria para crear DataFrame directo
                     all_rows.extend(_normalize_items_for_spark(items))
@@ -238,12 +234,14 @@ def load_source(cfg: Dict[str, Any], spark: SparkSession, env: Dict[str, Any]) -
         # Leer desde staging o crear DataFrame
         if staging_enabled and staging_path:
             opts = _json_options(src.get("options", {}))
-            reader = spark.read.options(**opts)
-            if staging_format == "parquet":
-                return reader.parquet(staging_path)
-            else:
-                # jsonl/json: reader.json maneja ambos
-                return reader.json(staging_path)
+            target_fmt = "parquet" if staging_format == "parquet" else "jsonl"
+            return read_df(
+                staging_path,
+                target_fmt,
+                spark=spark,
+                storage_options=staging_storage_opts,
+                reader_options=opts,
+            )
         else:
             if not all_rows:
                 # Sin filas, crear DF vacío
