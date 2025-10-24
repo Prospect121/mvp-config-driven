@@ -7,32 +7,52 @@ from pipelines.udf_catalog import get_udf
 def apply_sql_transforms(df: DataFrame, transforms_cfg: Dict) -> DataFrame:
     """Apply declarative SQL transforms.
 
-    Compatible with the prior format used by transforms.yml
+    Compatible with the prior format used by transforms.yml, including raw SQL statements.
     """
     if not transforms_cfg:
         return df
+
     transforms_list = transforms_cfg.get('transforms') or transforms_cfg.get('sql') or []
     if not transforms_list:
         return df
+
     default_on_error = (transforms_cfg.get('on_error') or '').lower() or None
 
     for t in transforms_list:
         if not isinstance(t, dict):
             print(f"[transforms] Ignorando entrada no soportada: {t}")
             continue
+
+        statement = t.get('statement')
         target = t.get('target_column') or t.get('name')
         expr = t.get('expr')
         mode = (t.get('mode') or 'create').lower()
         cast_type = t.get('type')
         on_error = (t.get('on_error') or default_on_error)
+
+        if statement:
+            temp_view = '__df__'
+            try:
+                df.createOrReplaceTempView(temp_view)
+                df = df.sparkSession.sql(statement.replace('__df__', temp_view))
+                print(f"[transforms] Applied statement: {statement}")
+            finally:
+                try:
+                    df.sparkSession.catalog.dropTempView(temp_view)
+                except Exception:
+                    pass
+            continue
+
         if not target or not expr:
             print(f"[transforms] Entrada inválida, falta target/expr: {t}")
             continue
+
         try:
             target_exists = target in df.columns
             if mode == 'create' and target_exists:
                 print(f"[transforms] Skipped create for existing column '{target}'")
                 continue
+
             df = df.withColumn(target, F.expr(expr))
             if cast_type:
                 df = safe_cast(df, target, cast_type, on_error=on_error)
@@ -44,12 +64,12 @@ def apply_sql_transforms(df: DataFrame, transforms_cfg: Dict) -> DataFrame:
                 df = df.withColumn(target, F.lit(None).cast(ttype))
                 print(msg + f" -> set NULL ({ttype})")
             elif (on_error or '').lower() == 'skip':
-                print(msg + " -> skipped")
+                print(msg + ' -> skipped')
             else:
                 print(msg)
                 raise
-    return df
 
+    return df
 
 def apply_udf_transforms(df: DataFrame, transforms_cfg: Dict) -> DataFrame:
     """Apply UDF-based transforms using the udf_catalog."""

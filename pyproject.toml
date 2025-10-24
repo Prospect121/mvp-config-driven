@@ -1,3 +1,13 @@
+[project]
+name = "mvp-config-driven"
+version = "0.1.0"
+description = "Config-driven Spark pipeline orchestration"
+requires-python = ">=3.10"
+dependencies = [
+    "typer>=0.9,<0.10",
+]
+scripts = { prodi = "datacore.cli:main" }
+
 [tool.black]
 line-length = 100
 skip-string-normalization = true
@@ -18,3 +28,4 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 addopts = "-q"
+pythonpath = ["src"]

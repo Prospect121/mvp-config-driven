@@ -1,0 +1,9 @@
+# Example configuration for the Raw layer.
+# Set `dry_run: false` and provide real config paths to execute the pipeline.
+dry_run: true
+layer: raw
+paths:
+  dataset: config/datasets/example.yml
+  environment: config/env.yml
+  database: config/database.yml
+environment: development
