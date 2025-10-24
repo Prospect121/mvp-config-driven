@@ -364,6 +364,8 @@ data/output/*
 *.xml
 *.xlsx
 *.xls
+data/raw/casos-uso/payments-high-volume
+data/raw/casos-uso/copia
 
 # Archivos de medios
 *.mp4
