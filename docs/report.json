@@ -1,0 +1,180 @@
+{
+  "layers": {
+    "raw": {
+      "entrypoints": [],
+      "imports": [],
+      "cross_calls": [],
+      "notes": "La capa raw no existe como módulo independiente; la ingesta inicial ocurre dentro de pipelines.spark_job_with_db.main."
+    },
+    "bronze": {
+      "entrypoints": [],
+      "imports": ["pipelines.spark_job_with_db"],
+      "cross_calls": [],
+      "notes": "La escritura bronze es opcional pero se ejecuta en el mismo main sin módulo dedicado."
+    },
+    "silver": {
+      "entrypoints": ["pipelines/spark_job_with_db.py:main", "pipelines/spark_job.py:main"],
+      "imports": ["pipelines.sources", "pipelines.validation.quality", "pipelines.transforms.apply"],
+      "cross_calls": [],
+      "notes": "Silver se ejecuta dentro del script monolítico; no hay layers/silver/main.py."
+    },
+    "gold": {
+      "entrypoints": ["pipelines/spark_job_with_db.py:main"],
+      "imports": ["pipelines.database.db_manager", "pipelines.database.schema_mapper"],
+      "cross_calls": [],
+      "notes": "Gold (DB/Bucket) se dispara al final de pipelines.spark_job_with_db sin separación de capa."
+    }
+  },
+  "cli": {
+    "exists": false,
+    "script": null,
+    "module": null,
+    "commands": []
+  },
+  "io": {
+    "reads": [
+      {
+        "file": "pipelines/sources.py",
+        "func": "load_source",
+        "uri": "cfg['source']['path'] (p.ej. s3a://...)",
+        "format": "csv/json/jsonl/parquet/jdbc/api",
+        "engine": "spark"
+      },
+      {
+        "file": "pipelines/spark_job_with_db.py",
+        "func": "main (bronze reload)",
+        "uri": "bronze_cfg['path'] (s3a://...)",
+        "format": "parquet",
+        "engine": "spark"
+      },
+      {
+        "file": "pipelines/validation/quality.py",
+        "func": "apply_quality",
+        "uri": "df.filter(...)",
+        "format": "in-memory",
+        "engine": "spark"
+      }
+    ],
+    "writes": [
+      {
+        "file": "pipelines/sources.py",
+        "func": "load_source (API staging)",
+        "uri": "staging_path (opcional s3a://...)",
+        "format": "parquet/json",
+        "engine": "spark"
+      },
+      {
+        "file": "pipelines/validation/quality.py",
+        "func": "apply_quality",
+        "uri": "quarantine_path (s3a://...)",
+        "format": "parquet",
+        "engine": "spark"
+      },
+      {
+        "file": "pipelines/spark_job_with_db.py",
+        "func": "main (silver)",
+        "uri": "out['path'] (s3a://silver/...)",
+        "format": "parquet/json/csv",
+        "engine": "spark"
+      },
+      {
+        "file": "pipelines/spark_job_with_db.py",
+        "func": "write_to_gold_bucket",
+        "uri": "bucket_cfg['path'] (s3a://gold/...)",
+        "format": "parquet/json/csv",
+        "engine": "spark"
+      },
+      {
+        "file": "pipelines/spark_job_with_db.py",
+        "func": "write_to_gold_database",
+        "uri": "DatabaseManager.write_dataframe (jdbc)",
+        "format": "table",
+        "engine": "sqlalchemy"
+      },
+      {
+        "file": "pipelines/io/writer.py",
+        "func": "write_parquet",
+        "uri": "path (s3a:// o local)",
+        "format": "parquet",
+        "engine": "spark"
+      }
+    ],
+    "non_portable": [
+      {
+        "file": "pipelines/common.py",
+        "reason": "maybe_config_s3a imprime credenciales y fuerza spark.hadoop.fs.s3a.connection.ssl.enabled=false"
+      },
+      {
+        "file": "pipelines/io/s3a.py",
+        "reason": "Solo delega en maybe_config_s3a; no hay abstracción para otros esquemas"
+      },
+      {
+        "file": "scripts/runner.sh",
+        "reason": "spark-submit con flags S3A y TLS deshabilitado"
+      },
+      {
+        "file": "scripts/runner_with_db.sh",
+        "reason": "spark-submit empaqueta credenciales S3A y desactiva TLS"
+      }
+    ]
+  },
+  "security": {
+    "tls_off": [
+      {"file": "pipelines/common.py", "line": 147, "snippet": "spark.hadoop.fs.s3a.connection.ssl.enabled\" = \"false\""},
+      {"file": "scripts/runner.sh", "line": 83, "snippet": "--conf spark.hadoop.fs.s3a.connection.ssl.enabled=false"},
+      {"file": "scripts/runner_with_db.sh", "line": 54, "snippet": "--conf spark.hadoop.fs.s3a.connection.ssl.enabled=false"}
+    ],
+    "secret_logging": [
+      {"file": "pipelines/common.py", "line": 139, "snippet": "print(f\"[S3A] Access Key: {access_key}\")"},
+      {"file": "scripts/runner_with_db.sh", "line": 40, "snippet": "echo \"AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID\""},
+      {"file": "scripts/run_multiformat_case.py", "line": 24, "snippet": "'AWS_SECRET_ACCESS_KEY': 'minioadmin'"},
+      {"file": "scripts/run_high_volume_case.py", "line": 32, "snippet": "'AWS_SECRET_ACCESS_KEY': 'minioadmin'"}
+    ]
+  },
+  "configs": {
+    "by_layer": {
+      "raw": [],
+      "bronze": [],
+      "silver": [
+        "config/datasets/finanzas/payments_v1/dataset.yml",
+        "config/datasets/finanzas/payments_v2/dataset.yml",
+        "config/datasets/finanzas/payments_v3/dataset.yml",
+        "config/datasets/finanzas/payments_db_only/dataset.yml",
+        "config/datasets/finanzas/payments_multi/dataset.yml",
+        "config/datasets/casos_uso/payments_high_volume.yml",
+        "config/datasets/casos_uso/events_multiformat.yml"
+      ],
+      "gold": [
+        "config/database.yml",
+        "config/datasets/finanzas/payments_v1/dataset.yml",
+        "config/datasets/finanzas/payments_db_only/dataset.yml",
+        "config/datasets/casos_uso/events_multiformat.yml"
+      ]
+    }
+  },
+  "notebooks": {
+    "fat": [],
+    "thin": []
+  },
+  "ci_tests": {
+    "ci_found": false,
+    "coverage": null,
+    "gaps": [
+      "Sin workflows .github",
+      "Solo existe tests/test_apply para transforms",
+      "Sin pruebas de I/O ni CLI"
+    ]
+  },
+  "regressions": [
+    "monolithic_pipeline",
+    "tls_disabled",
+    "credentials_logged"
+  ],
+  "proposed_fixes": [
+    "harden_maybe_config_s3a_and_runners",
+    "scaffold_datacore_package_and_cli",
+    "split_layers_and_add_yaml_per_stage",
+    "introduce_fsspec_io_and_spark_factory",
+    "enable_ci_and_multicloud_docs"
+  ]
+}
