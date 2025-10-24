@@ -1,0 +1,93 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "payment_id",
+    "customer_id",
+    "amount",
+    "payment_date",
+    "merchant_id"
+  ],
+  "properties": {
+    "payment_id": {
+      "type": "string",
+      "pattern": "^PAY-[A-Z0-9]{8}-[A-Z0-9]{4}$",
+      "description": "Identificador único del pago con formato PAY-XXXXXXXX-XXXX"
+    },
+    "customer_id": {
+      "type": "string",
+      "pattern": "^CUST-[0-9]{6}$",
+      "description": "Identificador del cliente con formato CUST-XXXXXX"
+    },
+    "amount": {
+      "type": "number",
+      "minimum": 0.01,
+      "maximum": 1000000,
+      "multipleOf": 0.01,
+      "description": "Monto del pago con máximo 2 decimales"
+    },
+    "currency": {
+      "type": ["string", "null"],
+      "enum": ["USD", "EUR", "COP", "CLP", "MXN", "BRL", "PEN", null],
+      "default": "USD",
+      "description": "Código de moneda ISO 4217"
+    },
+    "payment_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha y hora del pago en formato ISO 8601"
+    },
+    "updated_at": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Fecha y hora de última actualización"
+    },
+    "payment_method": {
+      "type": ["string", "null"],
+      "enum": [
+        "CREDIT_CARD",
+        "DEBIT_CARD", 
+        "BANK_TRANSFER",
+        "DIGITAL_WALLET",
+        "CASH",
+        "CRYPTOCURRENCY",
+        null
+      ],
+      "description": "Método de pago utilizado"
+    },
+    "status": {
+      "type": ["string", "null"],
+      "enum": [
+        "PENDING",
+        "COMPLETED", 
+        "FAILED",
+        "CANCELLED",
+        "REFUNDED",
+        "PROCESSING",
+        "EXPIRED",
+        null
+      ],
+      "default": "PENDING",
+      "description": "Estado actual del pago"
+    },
+    "merchant_id": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 999999,
+      "description": "Identificador numérico del comerciante"
+    },
+    "reference_number_test": {
+      "type": ["string", "null"],
+      "pattern": "^(REF-[A-Z0-9]{12}|)$",
+      "description": "Número de referencia opcional con formato REF-XXXXXXXXXXXX"
+    }
+  },
+  "uniqueConstraints": [
+    {
+      "name": "uk_payment_customer_high_volume",
+      "columns": ["payment_id", "customer_id"],
+      "description": "Restricción única compuesta para payment_id y customer_id para evitar duplicados"
+    }
+  ]
+}

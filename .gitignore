@@ -359,11 +359,11 @@ data/output/*
 !data/output/.gitkeep
 
 # Archivos grandes
-*.csv
-*.json
-*.xml
-*.xlsx
-*.xls
+# *.csv
+# *.json
+# *.xml
+# *.xlsx
+# *.xls
 
 # Archivos de medios
 *.mp4
