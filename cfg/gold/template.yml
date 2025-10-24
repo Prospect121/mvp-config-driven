@@ -1,0 +1,9 @@
+# Example configuration for the Gold layer.
+# Set `dry_run: false` and provide real config paths to execute the pipeline.
+dry_run: true
+layer: gold
+paths:
+  dataset: config/datasets/example.yml
+  environment: config/env.yml
+  database: config/database.yml
+environment: development
