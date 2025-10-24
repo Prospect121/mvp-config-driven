@@ -1,0 +1,214 @@
+{
+  "layers": {
+    "raw": {
+      "entrypoints": ["datacore.layers.raw.main.run"],
+      "imports": ["datacore.pipeline.utils.run_raw_sources"],
+      "cross_calls": []
+    },
+    "bronze": {
+      "entrypoints": ["datacore.layers.bronze.main.run"],
+      "imports": [
+        "datacore.layers.raw.main.execute",
+        "datacore.pipeline.utils.run_bronze_stage"
+      ],
+      "cross_calls": [
+        {
+          "target": "datacore.layers.raw.main.execute",
+          "file": "src/datacore/layers/bronze/main.py",
+          "line": 12
+        }
+      ]
+    },
+    "silver": {
+      "entrypoints": ["datacore.layers.silver.main.run"],
+      "imports": [
+        "datacore.layers.bronze.main.execute",
+        "datacore.pipeline.utils.run_silver_stage"
+      ],
+      "cross_calls": [
+        {
+          "target": "datacore.layers.bronze.main.execute",
+          "file": "src/datacore/layers/silver/main.py",
+          "line": 12
+        }
+      ]
+    },
+    "gold": {
+      "entrypoints": ["datacore.layers.gold.main.run"],
+      "imports": [
+        "datacore.layers.silver.main.execute",
+        "datacore.pipeline.utils.write_to_gold_bucket",
+        "datacore.pipeline.utils.write_to_gold_database"
+      ],
+      "cross_calls": [
+        {
+          "target": "datacore.layers.silver.main.execute",
+          "file": "src/datacore/layers/gold/main.py",
+          "line": 17
+        }
+      ]
+    }
+  },
+  "cli": {
+    "exists": true,
+    "script": "prodi",
+    "module": "datacore.cli",
+    "commands": ["run-layer"]
+  },
+  "io": {
+    "reads": [
+      {
+        "file": "pipelines/sources.py",
+        "func": "load_source",
+        "uri": "cfg['source']['path']",
+        "format": "csv|json|jsonl|parquet",
+        "engine": "read_df (fsspec + Spark/Pandas/Polars)"
+      },
+      {
+        "file": "pipelines/sources.py",
+        "func": "load_source",
+        "uri": "jdbc.url",
+        "format": "jdbc",
+        "engine": "spark.read.format('jdbc')"
+      },
+      {
+        "file": "pipelines/spark_job.py",
+        "func": "main",
+        "uri": "cfg['source']['path']",
+        "format": "csv|json|parquet",
+        "engine": "spark.read"
+      },
+      {
+        "file": "src/datacore/pipeline/utils.py",
+        "func": "run_bronze_stage",
+        "uri": "bronze_path",
+        "format": "parquet",
+        "engine": "spark.read.parquet"
+      }
+    ],
+    "writes": [
+      {
+        "file": "src/datacore/pipeline/utils.py",
+        "func": "run_bronze_stage",
+        "uri": "bronze_path",
+        "format": "parquet",
+        "engine": "spark.write"
+      },
+      {
+        "file": "src/datacore/pipeline/utils.py",
+        "func": "run_silver_stage",
+        "uri": "out['path']",
+        "format": "configurable (default parquet)",
+        "engine": "spark.write"
+      },
+      {
+        "file": "src/datacore/pipeline/utils.py",
+        "func": "write_to_gold_bucket",
+        "uri": "bucket_cfg['path']",
+        "format": "parquet|json|csv",
+        "engine": "spark.write"
+      },
+      {
+        "file": "src/datacore/pipeline/utils.py",
+        "func": "write_to_gold_database",
+        "uri": "db_manager",
+        "format": "table",
+        "engine": "db_manager.write_dataframe"
+      },
+      {
+        "file": "pipelines/validation/quality.py",
+        "func": "apply_quality",
+        "uri": "quarantine_path",
+        "format": "parquet",
+        "engine": "spark.write"
+      }
+    ],
+    "non_portable": [
+      {
+        "file": "pipelines/common.py",
+        "reason": "S3A-specific spark.conf settings and optional TLS disable"
+      },
+      {
+        "file": "scripts/runner_with_db.sh",
+        "reason": "spark-submit flags hardcode s3a endpoint and disable SSL"
+      },
+      {
+        "file": "scripts/runner.sh",
+        "reason": "spark-submit depends on S3A-specific configs"
+      }
+    ]
+  },
+  "security": {
+    "tls_off": [
+      {
+        "file": "pipelines/common.py",
+        "line": 185,
+        "snippet": "spark.hadoop.fs.s3a.connection.ssl.enabled"
+      },
+      {
+        "file": "scripts/runner_with_db.sh",
+        "line": 54,
+        "snippet": "--conf spark.hadoop.fs.s3a.connection.ssl.enabled=false"
+      },
+      {
+        "file": "scripts/runner.sh",
+        "line": 83,
+        "snippet": "--conf spark.hadoop.fs.s3a.connection.ssl.enabled=false"
+      }
+    ],
+    "secret_logging": [
+      {
+        "file": "scripts/run_high_volume_case.py",
+        "line": 32,
+        "pattern": "Set AWS_ACCESS_KEY_ID=minioadmin"
+      },
+      {
+        "file": "scripts/runner_with_db.sh",
+        "line": 44,
+        "pattern": "echo \"AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID\""
+      }
+    ]
+  },
+  "configs": {
+    "by_layer": {
+      "raw": ["dry_run", "layer", "paths.dataset", "paths.environment", "paths.database"],
+      "bronze": ["dry_run", "layer", "paths.dataset", "paths.environment", "paths.database"],
+      "silver": ["dry_run", "layer", "paths.dataset", "paths.environment", "paths.database"],
+      "gold": ["dry_run", "layer", "paths.dataset", "paths.environment", "paths.database"]
+    },
+    "missing_minimum_keys": {
+      "raw": ["compute", "io.source", "io.sink", "transform.sql", "dq"],
+      "bronze": ["compute", "io.source", "io.sink", "transform.sql", "dq"],
+      "silver": ["compute", "io.source", "io.sink", "transform.sql", "dq"],
+      "gold": ["compute", "io.source", "io.sink", "transform.sql", "dq"]
+    }
+  },
+  "notebooks": {
+    "fat": [],
+    "thin": []
+  },
+  "ci_tests": {
+    "ci_found": true,
+    "coverage": null,
+    "gaps": [
+      "no pytest execution in CI",
+      "no layer integration tests",
+      "no storage adapter mocks"
+    ]
+  },
+  "regressions": [
+    "silver_calls_bronze",
+    "bronze_calls_raw",
+    "gold_calls_silver",
+    "cli_runs_full_chain",
+    "legacy_spark_jobs_active"
+  ],
+  "proposed_fixes": [
+    "refactor_layer_execute_to_require_inputs",
+    "replace_legacy_jobs_with_cli",
+    "enforce_fsspec_tls_defaults",
+    "scrub_secret_logging",
+    "normalize_dataset_configs",
+    "extend_ci_with_tests_and_build"
+  ]
+}
