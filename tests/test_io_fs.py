@@ -4,8 +4,10 @@ import shutil
 from pathlib import Path
 from typing import Dict, List
 
-import pandas as pd
 import pytest
+
+pytest.importorskip("fsspec")
+pd = pytest.importorskip("pandas")
 
 from datacore.io import fs as fs_mod
 from datacore.io.fs import read_df, write_df, storage_options_from_env

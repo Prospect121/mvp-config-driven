@@ -4,7 +4,9 @@ import sys
 from pathlib import Path
 
 import pytest
-from typer.testing import CliRunner
+
+typer_testing = pytest.importorskip("typer.testing")
+CliRunner = typer_testing.CliRunner
 
 from datacore.cli import app, main
 
