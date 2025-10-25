@@ -104,3 +104,24 @@ jobs:
         with:
           name: smoke-prod-logs
           path: smoke-prod.log
+
+  validate-configs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install CLI dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -e .
+
+      - name: Validate all configs
+        run: |
+          set -euo pipefail
+          find cfg -type f -name "*.yml" -print0 | xargs -0 -I{} prodi validate -c "{}"

@@ -75,12 +75,38 @@ dq:
 | `io.source.auth`     | `managed_identity` (JDBC)   | Habilita `azure.identity.auth.type=ManagedIdentity`        |
 |                      | `basic_env` (JDBC)          | Lee usuario/clave desde variables sin exponer secretos     |
 
+No dupliques la cabecera `Authorization`: cuando se declara un bloque `auth`
+no es necesario (ni seguro) inyectar la cabecera manualmente en `io.source.headers`.
+
 ### Herencia (`extends`)
 
 Los overlays definen `extends: "../base.yml"` para reutilizar una configuración
 existente. Durante la carga se hace un merge profundo y se reemplazan sólo las
 secciones presentes en el overlay. Esto se utiliza para los casos de uso de
 fraude y cobranza (`cfg/use_cases/...`).
+
+Cuando un overlay redefine SQL debe leer desde `__BASE__` en lugar de
+`__INPUT__`. `__BASE__` representa el resultado final de la configuración
+extendida y evita ejecutar dos veces la cláusula `FROM`. El placeholder
+`__INPUT__` queda reservado para los archivos base que consumen la entrada de la
+capa previa.
+
+### Pipelines declarativos
+
+Los pipelines (`cfg/pipelines/*.yml`) encadenan capas respetando la separación
+por dominios. Se pueden parametrizar con `--vars` para reutilizar un mismo
+pipeline con fuentes distintas. Ejemplo:
+
+```bash
+prodi run-pipeline -p cfg/pipelines/finance_transactions.yml --vars RAW_SOURCE=http
+prodi run-pipeline -p cfg/pipelines/finance_transactions.yml --vars RAW_SOURCE=jdbc
+```
+
+El pipeline de finanzas `cfg/pipelines/finance_transactions.yml` selecciona la
+fuente RAW (`http` o `jdbc`) y continúa con las capas bronze, silver y gold
+(`cfg/finance/gold/kpis.yml`). Si no se declara `RAW_SOURCE`, se usa `http` y el
+watermark inicial se puede inyectar con `RAW_WM_TS` (por defecto,
+`1970-01-01T00:00:00Z`).
 
 ## Configuraciones de dataset (`config/datasets/**/*.yml`)
 

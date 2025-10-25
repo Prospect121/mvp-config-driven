@@ -27,7 +27,7 @@ def test_finance_bronze_config_sql_contains_dedup():
 
 
 def test_finance_gold_config_sql_contains_metrics():
-    cfg = _load_yaml(CONFIG_ROOT / "gold" / "transactions.yml")
+    cfg = _load_yaml(CONFIG_ROOT / "gold" / "kpis.yml")
     sql = cfg["transform"]["sql"]
     assert "SUM(amount)" in sql
     assert "GROUP BY posted_date" in sql
