@@ -1,0 +1,54 @@
+{
+  "Comment": "Orquestación secuencial de capas prodi en Step Functions",
+  "StartAt": "raw",
+  "States": {
+    "raw": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {
+        "JobName": "prodi-layer-raw",
+        "Arguments": {
+          "--config.$": "$.config.raw",
+          "--env.$": "$.env"
+        }
+      },
+      "Next": "bronze"
+    },
+    "bronze": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {
+        "JobName": "prodi-layer-bronze",
+        "Arguments": {
+          "--config.$": "$.config.bronze",
+          "--env.$": "$.env"
+        }
+      },
+      "Next": "silver"
+    },
+    "silver": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {
+        "JobName": "prodi-layer-silver",
+        "Arguments": {
+          "--config.$": "$.config.silver",
+          "--env.$": "$.env"
+        }
+      },
+      "Next": "gold"
+    },
+    "gold": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {
+        "JobName": "prodi-layer-gold",
+        "Arguments": {
+          "--config.$": "$.config.gold",
+          "--env.$": "$.env"
+        }
+      },
+      "End": true
+    }
+  }
+}
