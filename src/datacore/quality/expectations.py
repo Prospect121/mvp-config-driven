@@ -1,14 +1,16 @@
-"""Expectation-based data-quality checks."""
+"""Data quality expectation evaluation primitives."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+import json
+from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping
 
 try:  # Optional dependency - pyspark may not be available
+    from pyspark.sql import Column  # type: ignore
     from pyspark.sql import DataFrame as SparkDataFrame  # type: ignore
     from pyspark.sql import functions as F  # type: ignore
-    from pyspark.sql import Column  # type: ignore
 except Exception:  # pragma: no cover - pyspark optional
     SparkDataFrame = None  # type: ignore
     F = None  # type: ignore
@@ -31,10 +33,76 @@ class ExpectationResult:
 
     expectation: Dict[str, Any]
     failures: int
+    severity: str = "error"
 
     @property
     def passed(self) -> bool:
         return self.failures == 0
+
+    @property
+    def is_error(self) -> bool:
+        return self.severity == "error" and self.failures > 0
+
+    @property
+    def is_warning(self) -> bool:
+        return self.severity == "warn" and self.failures > 0
+
+    def to_dict(self) -> Dict[str, Any]:
+        payload = dict(self.expectation)
+        payload["failures"] = self.failures
+        payload["severity"] = self.severity
+        payload["passed"] = self.passed
+        return payload
+
+
+@dataclass
+class DQReport:
+    """Summary of a set of expectation evaluations."""
+
+    results: List[ExpectationResult] = field(default_factory=list)
+    fail_on_error: bool = True
+
+    @property
+    def passed(self) -> bool:
+        return not any(result.is_error for result in self.results)
+
+    @property
+    def error_results(self) -> List[ExpectationResult]:
+        return [result for result in self.results if result.is_error]
+
+    @property
+    def warning_results(self) -> List[ExpectationResult]:
+        return [result for result in self.results if result.is_warning]
+
+    def to_json(self) -> str:
+        return json.dumps(
+            {
+                "passed": self.passed,
+                "fail_on_error": self.fail_on_error,
+                "expectations": [result.to_dict() for result in self.results],
+            },
+            indent=2,
+            sort_keys=True,
+        )
+
+    def to_markdown(self) -> str:
+        lines = ["| Expectation | Severity | Failures |", "| --- | --- | --- |"]
+        for result in self.results:
+            expectation_type = result.expectation.get("type", "unknown")
+            description = result.expectation.get("description") or expectation_type
+            lines.append(f"| {description} | {result.severity} | {result.failures} |")
+        return "\n".join(lines)
+
+    def write(self, base_path: Path) -> None:
+        base_path = Path(base_path)
+        base_path.parent.mkdir(parents=True, exist_ok=True)
+        base_path.with_suffix(".json").write_text(self.to_json(), encoding="utf-8")
+        base_path.with_suffix(".md").write_text(self.to_markdown(), encoding="utf-8")
+
+    def raise_if_needed(self) -> None:
+        if self.fail_on_error and self.error_results:
+            failed = ", ".join(result.expectation.get("type", "unknown") for result in self.error_results)
+            raise ValueError(f"Data quality expectations failed: {failed}")
 
 
 def _is_spark(df: Any) -> bool:
@@ -165,29 +233,42 @@ def _evaluate_pandas(df: Any, expectation: Mapping[str, Any]) -> int:
     raise ValueError(f"Unsupported expectation type: {expectation_type}")
 
 
-def apply_expectations(df: Any, expectations: Iterable[Mapping[str, Any]]) -> List[ExpectationResult]:
-    """Evaluate expectations and raise on failures."""
+def _normalize_severity(expectation: Mapping[str, Any]) -> str:
+    severity = str(expectation.get("severity") or expectation.get("level") or "error")
+    severity = severity.strip().lower()
+    if severity in {"warn", "warning"}:
+        return "warn"
+    return "error"
+
+
+def evaluate_expectations(
+    df: Any, expectations: Iterable[Mapping[str, Any]], *, fail_on_error: bool = True
+) -> DQReport:
+    """Evaluate expectations producing a :class:`DQReport`."""
 
     results: List[ExpectationResult] = []
-    expectations = list(expectations or [])
-
-    for expectation in expectations:
+    for expectation in expectations or []:
         if not expectation:
             continue
+        severity = _normalize_severity(expectation)
         if _is_spark(df):
             failures = _evaluate_spark(df, expectation)
         else:
             failures = _evaluate_pandas(df, expectation)
-        result = ExpectationResult(expectation=dict(expectation), failures=int(failures))
-        results.append(result)
-        if result.failures:
-            raise ValueError(
-                "Expectation failed for type '{type}' on column '{column}'".format(
-                    type=expectation.get("type"), column=expectation.get("column")
-                )
+        results.append(
+            ExpectationResult(
+                expectation=dict(expectation), failures=int(failures), severity=severity
             )
+        )
 
-    return results
+    report = DQReport(results=results, fail_on_error=fail_on_error)
+    report.raise_if_needed()
+    return report
 
 
-__all__ = ["ExpectationResult", "apply_expectations"]
+def apply_expectations(df: Any, expectations: Iterable[Mapping[str, Any]]) -> List[ExpectationResult]:
+    report = evaluate_expectations(df, expectations, fail_on_error=True)
+    return report.results
+
+
+__all__ = ["ExpectationResult", "DQReport", "evaluate_expectations", "apply_expectations"]

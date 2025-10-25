@@ -60,3 +60,31 @@ def test_run_layer_raw_example_executes(tmp_path: Path) -> None:
         assert any(output_dir.iterdir()), "Raw sink directory should contain data"
     else:
         assert output_dir.is_file(), "Raw sink file was not created"
+
+
+def test_validate_command(tmp_path: Path) -> None:
+    runner = CliRunner()
+    cfg_path = tmp_path / "layer.yml"
+    cfg_path.write_text(
+        yaml.safe_dump(
+            {
+                "layer": "raw",
+                "dry_run": True,
+                "io": {
+                    "source": {
+                        "type": "http",
+                        "url": "https://api.example.com",
+                        "pagination": {"strategy": "none"},
+                        "incremental": {"watermark": {"field": "updated_at", "state_id": "demo"}},
+                    },
+                    "sink": {"type": "files", "uri": str((tmp_path / "out").as_posix())},
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(app, ["validate", "-c", str(cfg_path)])
+
+    assert result.exit_code == 0
+    assert "is valid" in result.stdout

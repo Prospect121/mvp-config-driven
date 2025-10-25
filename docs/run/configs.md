@@ -1,80 +1,120 @@
 # Esquema de configuraciones
 
-El proyecto ahora valida las configuraciones de ejecución y datasets mediante un
-esquema declarativo basado en Pydantic. Los modelos se definen en
-`src/datacore/config/schema.py` y exponen tanto objetos Pydantic como los JSON
-Schema resultantes para integraciones externas.
+El pipeline valida todas las configuraciones YAML con modelos de Pydantic
+definidos en `src/datacore/config/schema.py`. Cada archivo que vive en `cfg/`
+se convierte en un `LayerRuntimeConfigModel` y, cuando aplica, los datasets bajo
+`config/datasets/` usan `DatasetConfigModel`. La validación ocurre tanto en
+`prodi run-layer`/`run-pipeline` como en CI (`pytest` + `prodi validate`).
 
-## Configuración de ejecución por capa (`cfg/*.yml`)
+## Capas de ejecución (`cfg/<layer>/*.yml`)
 
-Cada archivo en `cfg/` se normaliza con `migrate_layer_config` y se valida con
-`LayerRuntimeConfigModel`. La estructura expone bloques consistentes:
+Las capas comparten la misma estructura de alto nivel con bloques
+`compute`/`io`/`transform`/`dq`. Un ejemplo de ingesta HTTP incremental:
 
 ```yaml
 layer: raw
 compute:
-  kind: spark
+  engine: spark
+  spark:
+    app_name: "raw_fin_transactions_http"
 io:
   source:
-    use_local_fallback: true
+    type: http
+    url: "https://api.finbank.com/v1/transactions"
+    auth:
+      type: bearer_env
+      env: FINBANK_TOKEN
+    pagination:
+      strategy: param_increment
+      param: page
+      max_pages: 2000
+    rate_limit:
+      requests_per_minute: 60
+    incremental:
+      watermark:
+        field: updated_at
+        state_id: raw_fin_transactions_http
+        default: "1970-01-01T00:00:00Z"
   sink:
+    type: files
     format: parquet
-    uri: file://./data/raw/toy_customers/
-transform: {}
-dq: {}
-dry_run: false
+    path: "s3://datalake/raw/finance/transactions/date={{ds}}/"
+transform:
+  pre:
+    - rename:
+        from: txn_id
+        to: transaction_id
+dq:
+  fail_on_error: true
+  expectations:
+    - type: not_null
+      column: transaction_id
+    - type: valid_values
+      column: currency
+      values: ["USD", "EUR", "COP"]
 ```
 
-Los campos `compute`, `io`, `transform` y `dq` quedan disponibles para todas las
-capas y se serializan junto a `_legacy_aliases`, un mapa de alias que indica el
-nuevo destino de claves planas utilizadas anteriormente (`dataset_config`,
-`environment_config`, etc.).
+- `compute.spark.app_name` y `compute.spark.options` se transfieren a la sesión
+  de Spark.
+- `io.source` y `io.sink` son uniones tipadas: `type: http|jdbc|files` decide
+  qué campos son obligatorios. Las secciones aceptan `options` y overrides por
+  filesystem (`filesystem.storage_options`, `filesystem.reader_options`, ...).
+- `incremental.watermark` resuelve el valor a partir del estado persistente y lo
+  reescribe al finalizar la capa.
+- `dq.expectations` soporta `severity: warn|error`. El reporte JSON/Markdown se
+  genera cuando se declara `dq.report.path`.
 
-## Configuración de datasets (`config/datasets/**/*.yml`)
+### Autenticación declarativa
 
-Los datasets migran al formato por capas usando `migrate_dataset_config` y el
-modelo `DatasetConfigModel`. Cada capa (`raw`, `bronze`, `silver`, `gold`, ...)
-expone sub-secciones `compute`, `io`, `transform` y `dq`:
+| Bloque               | Tipo (`type`)               | Descripción                                               |
+| -------------------- | -------------------------- | --------------------------------------------------------- |
+| `io.source.auth`     | `bearer_env`                | Lee `env` y construye `Authorization: Bearer <token>`     |
+|                      | `api_key_header`            | Usa `header` + `env` para inyectar llaves en HTTP          |
+|                      | `basic_env`                 | Resuelve `username_env`/`password_env` para Basic Auth     |
+|                      | `oauth2_client_credentials` | Ejecuta client-credentials (`token_url`, scopes opcionales) |
+| `io.source.auth`     | `managed_identity` (JDBC)   | Habilita `azure.identity.auth.type=ManagedIdentity`        |
+|                      | `basic_env` (JDBC)          | Lee usuario/clave desde variables sin exponer secretos     |
+
+### Herencia (`extends`)
+
+Los overlays definen `extends: "../base.yml"` para reutilizar una configuración
+existente. Durante la carga se hace un merge profundo y se reemplazan sólo las
+secciones presentes en el overlay. Esto se utiliza para los casos de uso de
+fraude y cobranza (`cfg/use_cases/...`).
+
+## Configuraciones de dataset (`config/datasets/**/*.yml`)
+
+Los datasets se normalizan con `migrate_dataset_config` y luego pasan por
+`DatasetConfigModel`. Cada capa (`raw`, `bronze`, `silver`, `gold`, ...) tiene
+sus propios bloques `compute`, `io`, `transform` y `dq`. El modelo mantiene un
+mapa `_legacy_aliases` con el destino final de claves planas antiguas.
 
 ```yaml
 layers:
   raw:
     io:
       source:
-        input_format: csv
-        path: s3://raw/payments/*.csv
-  silver:
+        type: http
+        url: https://api.example.com/items
+        incremental:
+          watermark:
+            field: updated_at
+            state_id: example_items
+  bronze:
     transform:
-      standardization: {...}
-      schema: {...}
-    dq:
-      expectations:
-        expectations_ref: config/datasets/payments/expectations.yml
+      sql: ["SELECT * FROM __INPUT__"]
   gold:
     io:
       sink:
-        enabled: true
-        database_config: config/database.yml
+        type: files
+        path: s3://datalake/gold/items/
 ```
-
-### Alias temporales
-
-Para mantener compatibilidad mientras se actualiza el pipeline, se incluyen
-alias en `_legacy_aliases`. Los más relevantes son:
-
-| Clave legacy          | Ubicación actual                                      |
-| --------------------- | ----------------------------------------------------- |
-| `source` / `sources`  | `layers.raw.io.source`                                |
-| `output.<layer>`      | `layers.<layer>.io.sink`                              |
-| `standardization`     | `layers.silver.transform.standardization`            |
-| `quality`             | `layers.silver.dq.expectations`                       |
-
-El valor bajo `_legacy_aliases` es una cadena que documenta el nuevo camino
-para cada clave histórica.
 
 ## Validación automática
 
-El test `tests/test_config_schema.py` recorre todos los YAML relevantes (capas y
-datasets) y confirma que el contenido respeta el esquema además de verificar la
-presencia de alias críticos. Cualquier ruptura en los archivos de configuración
-se detectará de forma temprana durante la ejecución de `pytest`.
+- `prodi validate -c cfg/finance/raw/transactions_http.yml` valida un YAML sin
+  ejecutarlo.
+- `pytest` ejecuta `tests/test_config_schema.py`, que recorre todos los archivos
+  bajo `cfg/` y `config/datasets/` para garantizar compatibilidad.
+- El estado incremental se persiste bajo `data/_state/<state_id>.json` y se
+  utiliza automáticamente en las re-ejecuciones.

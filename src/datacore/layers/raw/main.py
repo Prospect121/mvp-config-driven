@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Tuple
 
 from datacore.context import PipelineContext, build_context, ensure_spark, stop_spark
 from datacore.io import build_storage_adapter, read_df, write_df
-from datacore.catalog.state import read_watermark, update_watermark
-from datacore.quality import apply_expectations
+from datacore.catalog.state import get_watermark, set_watermark
+from datacore.quality import evaluate_expectations
 
 try:  # pragma: no cover - pyspark optional in unit tests
     from pyspark.sql import DataFrame as SparkDataFrame  # type: ignore
@@ -175,7 +176,7 @@ def _compute_watermark_from_frame(df: Any, field: str) -> str | None:
 
 
 def _resolve_watermark_seed(
-    dataset_id: str,
+    context: PipelineContext,
     entry: Mapping[str, Any],
 ) -> Tuple[str | None, Dict[str, Any]]:
     incremental_cfg = dict(entry.get("incremental") or {})
@@ -183,8 +184,13 @@ def _resolve_watermark_seed(
     if not watermark_cfg:
         return None, dict(entry)
 
-    state_key = watermark_cfg.get("state_key") or _watermark_key(entry)
-    state = read_watermark(dataset_id, state_key)
+    state_id = watermark_cfg.get("state_id")
+    if not state_id:
+        dataset_id = _watermark_dataset_id(context)
+        state_key = watermark_cfg.get("state_key") or _watermark_key(entry)
+        state_id = f"{dataset_id}::{state_key}"
+
+    state = get_watermark(str(state_id))
     value = state.value
 
     env_var = watermark_cfg.get("from_env")
@@ -198,11 +204,12 @@ def _resolve_watermark_seed(
         value = str(default)
 
     watermark_cfg["resolved_value"] = value
+    watermark_cfg["state_id"] = str(state_id)
     incremental_cfg["watermark"] = watermark_cfg
     resolved_entry = dict(entry)
     resolved_entry["incremental"] = incremental_cfg
 
-    return state_key, resolved_entry
+    return str(state_id), resolved_entry
 
 
 def _read_sources(
@@ -226,14 +233,12 @@ def _read_sources(
     frames = []
     watermark_updates: List[Tuple[str, str, str | None]] = []
 
-    dataset_id = _watermark_dataset_id(context)
-
     for entry in entries:
         if not isinstance(entry, Mapping):
             raise TypeError("Raw source configuration entries must be mappings")
 
         resolved_entry = dict(entry)
-        state_key, resolved_entry = _resolve_watermark_seed(dataset_id, resolved_entry)
+        state_id, resolved_entry = _resolve_watermark_seed(context, resolved_entry)
 
         if resolved_entry.get("type") in {"http", "jdbc"}:
             df, metadata = read_df(
@@ -256,14 +261,14 @@ def _read_sources(
                 reader_options=reader_options,
             )
 
-        if state_key:
+        if state_id:
             wm_cfg = ((resolved_entry.get("incremental") or {}).get("watermark") or {})
             watermark_field = wm_cfg.get("field")
             watermark_value = metadata.get("watermark") if isinstance(metadata, dict) else None
             if not watermark_value and watermark_field:
                 watermark_value = _compute_watermark_from_frame(df, str(watermark_field))
             if watermark_value:
-                watermark_updates.append((state_key, str(watermark_value), watermark_field))
+                watermark_updates.append((str(state_id), str(watermark_value), watermark_field))
         frames.append(df)
 
     if not frames:
@@ -414,7 +419,15 @@ def _apply_dq(engine: Any, df: Any, dq_cfg: Mapping[str, Any]) -> Any:
         expectation_list.extend(expectations)  # type: ignore[arg-type]
 
     if expectation_list:
-        apply_expectations(df, expectation_list)
+        fail_on_error = dq_cfg.get("fail_on_error")
+        if fail_on_error is None:
+            fail_on_error = True
+        report = evaluate_expectations(df, expectation_list, fail_on_error=bool(fail_on_error))
+        report_cfg = dq_cfg.get("report") if isinstance(dq_cfg.get("report"), Mapping) else {}
+        if report_cfg:
+            base_path = report_cfg.get("path") or report_cfg.get("base_path")
+            if base_path:
+                report.write(Path(str(base_path)))
 
     return df
 
@@ -479,9 +492,8 @@ def execute(context: PipelineContext, engine: Any) -> Any:
     df = _apply_dq(engine, df, dq_cfg)
     df = _write_sink(engine, df, sink_cfg, context.env_cfg, storage_cfg)
 
-    dataset_id = _watermark_dataset_id(context)
-    for state_key, value, field in watermark_updates:
-        update_watermark(dataset_id, state_key, value, field=str(field) if field else None)
+    for state_id, value, field in watermark_updates:
+        set_watermark(state_id, value, field=str(field) if field else None)
 
     return df
 

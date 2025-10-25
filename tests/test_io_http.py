@@ -48,7 +48,13 @@ def test_fetch_json_to_df_param_pagination(monkeypatch):
         "url": "https://api.example.com/transactions",
         "params": {"page": 1, "page_size": 1},
         "pagination": {"strategy": "param_increment", "param": "page", "max_pages": 5},
-        "incremental": {"watermark": {"field": "updated_at", "value": "2024-01-01T00:00:00Z"}},
+        "incremental": {
+            "watermark": {
+                "field": "updated_at",
+                "value": "2024-01-01T00:00:00Z",
+                "state_id": "raw_fin_transactions_http",
+            }
+        },
     }
 
     df, metrics = fetch_json_to_df(cfg)
@@ -57,6 +63,7 @@ def test_fetch_json_to_df_param_pagination(monkeypatch):
     assert metrics.pages == 2
     assert metrics.records == 2
     assert metrics.watermark == "2024-01-02T00:00:00Z"
+    assert metrics.state_id == "raw_fin_transactions_http"
 
     if hasattr(df, "toPandas"):
         pdf = df.toPandas() if hasattr(df, "toPandas") else df
@@ -121,3 +128,99 @@ def test_http_rate_limit_respected(monkeypatch):
     assert len(dummy_session.calls) == 6
     assert current_time["value"] <= 60.0
     assert sum(slept) == pytest.approx(50.0, rel=1e-6)
+
+
+def test_http_bearer_env_auth(monkeypatch):
+    dummy_session = DummySession([DummyResponse({"data": []})])
+    monkeypatch.setattr("datacore.io.http._RetryableSession", lambda *a, **k: dummy_session)
+    monkeypatch.setenv("FINBANK_TOKEN", "secret-token")
+
+    cfg = {
+        "url": "https://api.example.com/transactions",
+        "auth": {"type": "bearer_env", "env": "FINBANK_TOKEN"},
+    }
+
+    fetch_json_to_df(cfg)
+
+    _, _, kwargs = dummy_session.calls[0]
+    assert kwargs["headers"]["Authorization"] == "Bearer secret-token"
+
+
+def test_http_basic_env_auth(monkeypatch):
+    dummy_session = DummySession([DummyResponse({"data": []})])
+    monkeypatch.setattr("datacore.io.http._RetryableSession", lambda *a, **k: dummy_session)
+    monkeypatch.setenv("HTTP_USER", "svc-user")
+    monkeypatch.setenv("HTTP_PASS", "svc-pass")
+
+    cfg = {
+        "url": "https://api.example.com/transactions",
+        "auth": {"type": "basic_env", "username_env": "HTTP_USER", "password_env": "HTTP_PASS"},
+    }
+
+    fetch_json_to_df(cfg)
+
+    _, _, kwargs = dummy_session.calls[0]
+    assert kwargs["auth"] == ("svc-user", "svc-pass")
+
+
+def test_http_api_key_header_auth(monkeypatch):
+    dummy_session = DummySession([DummyResponse({"data": []})])
+    monkeypatch.setattr("datacore.io.http._RetryableSession", lambda *a, **k: dummy_session)
+    monkeypatch.setenv("API_TOKEN", "key123")
+
+    cfg = {
+        "url": "https://api.example.com/transactions",
+        "auth": {"type": "api_key_header", "header": "X-API-Key", "env": "API_TOKEN"},
+    }
+
+    fetch_json_to_df(cfg)
+
+    _, _, kwargs = dummy_session.calls[0]
+    assert kwargs["headers"]["X-API-Key"] == "key123"
+
+
+def test_http_oauth_client_credentials(monkeypatch):
+    dummy_session = DummySession([DummyResponse({"data": []})])
+    monkeypatch.setattr("datacore.io.http._RetryableSession", lambda *a, **k: dummy_session)
+    monkeypatch.setenv("OAUTH_CLIENT", "client-id")
+    monkeypatch.setenv("OAUTH_SECRET", "client-secret")
+
+    class DummyTokenResponse:
+        def __init__(self) -> None:
+            self._payload = {"access_token": "token-value", "token_type": "Bearer"}
+
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> Dict[str, Any]:
+            return self._payload
+
+    captured: Dict[str, Any] = {}
+
+    def fake_post(url: str, data: Dict[str, Any], auth: Any, timeout: float):
+        captured["url"] = url
+        captured["data"] = dict(data)
+        captured["auth"] = auth
+        captured["timeout"] = timeout
+        return DummyTokenResponse()
+
+    monkeypatch.setattr("datacore.io.http.requests.post", fake_post)
+
+    cfg = {
+        "url": "https://api.example.com/transactions",
+        "auth": {
+            "type": "oauth2_client_credentials",
+            "token_url": "https://login.example.com/token",
+            "client_id_env": "OAUTH_CLIENT",
+            "client_secret_env": "OAUTH_SECRET",
+            "scope": "transactions:read",
+        },
+    }
+
+    fetch_json_to_df(cfg)
+
+    assert captured["url"] == "https://login.example.com/token"
+    assert captured["auth"] == ("client-id", "client-secret")
+    assert captured["data"]["scope"] == "transactions:read"
+    _, _, kwargs = dummy_session.calls[0]
+    assert kwargs["headers"]["Authorization"] == "Bearer token-value"

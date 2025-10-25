@@ -1,5 +1,5 @@
 layer: silver
-base_config: ../../finance/silver/transactions.yml
+extends: "../../finance/silver/transactions.yml"
 transform:
   sql: |
     SELECT
@@ -13,7 +13,7 @@ transform:
       risk_flag,
       score,
       CASE WHEN score >= 80 THEN 'critical' WHEN score >= 60 THEN 'high' ELSE 'medium' END AS risk_bucket
-    FROM __INPUT__
+    FROM __BASE__
 dq:
   expectations:
     - type: condition

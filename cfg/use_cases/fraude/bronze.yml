@@ -1,9 +1,9 @@
 layer: bronze
-base_config: ../../finance/bronze/transactions.yml
+extends: "../../finance/bronze/transactions.yml"
 transform:
   sql: |
     SELECT *
-    FROM __INPUT__
+    FROM __BASE__
     WHERE amount <> 0
 
 dq:

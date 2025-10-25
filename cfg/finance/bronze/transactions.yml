@@ -7,6 +7,7 @@ compute:
       spark.sql.session.timeZone: "UTC"
 io:
   source:
+    type: files
     path: "s3://datalake/raw/finance/transactions/"
     format: parquet
   sink:

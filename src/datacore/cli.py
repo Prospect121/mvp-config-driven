@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any, Dict, Iterable, List
+from typing import Any, Dict, Iterable, List, Optional
 
 import sys
 import typer
@@ -53,6 +53,48 @@ def _load_config(path: Path, variables: Dict[str, str] | None = None) -> Any:
     return yaml.safe_load(rendered) or {}
 
 
+def _merge_dicts(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
+    result: Dict[str, Any] = dict(base)
+    for key, value in override.items():
+        if (
+            isinstance(value, dict)
+            and key in result
+            and isinstance(result[key], dict)
+        ):
+            result[key] = _merge_dicts(result[key], value)  # type: ignore[arg-type]
+        else:
+            result[key] = value
+    return result
+
+
+def _resolve_extends(
+    cfg: Any,
+    path: Path,
+    variables: Dict[str, Any] | None,
+    *,
+    seen: Optional[set[Path]] = None,
+) -> Any:
+    if not isinstance(cfg, dict):
+        return cfg
+    extends = cfg.get("extends")
+    if not extends:
+        return cfg
+
+    base_path = Path(str(extends))
+    if not base_path.is_absolute():
+        base_path = (path.parent / base_path).resolve()
+
+    seen = set() if seen is None else set(seen)
+    if base_path in seen:
+        raise typer.BadParameter(f"Circular extends detected for {base_path}")
+    seen.add(base_path)
+
+    base_cfg = _load_config(base_path, variables)
+    base_resolved = _resolve_extends(base_cfg, base_path, variables, seen=seen)
+    merged = _merge_dicts(base_resolved, {k: v for k, v in cfg.items() if k != "extends"})
+    return merged
+
+
 def _parse_vars(values: Iterable[str]) -> Dict[str, str]:
     parsed: Dict[str, str] = {}
     for entry in values:
@@ -75,7 +117,9 @@ def _normalize_layer_name(layer: str) -> str:
     return normalized
 
 
-def _validate_normalized_cfg(cfg: Any, expected_layer: str) -> Dict[str, Any]:
+def _validate_normalized_cfg(
+    cfg: Any, expected_layer: str, dq_fail_override: Optional[bool] = None
+) -> Dict[str, Any]:
     if not isinstance(cfg, dict):
         raise typer.BadParameter("Layer configuration must be a mapping")
 
@@ -108,6 +152,10 @@ def _validate_normalized_cfg(cfg: Any, expected_layer: str) -> Dict[str, Any]:
     runtime_dict = runtime_model.model_dump(by_alias=True)
     runtime_dict["layer"] = normalized_layer
     runtime_dict["dry_run"] = bool(runtime_dict.get("dry_run", False))
+    if dq_fail_override is not None:
+        dq_section = dict(runtime_dict.get("dq") or {})
+        dq_section["fail_on_error"] = bool(dq_fail_override)
+        runtime_dict["dq"] = dq_section
     if _should_force_dry_run():
         if not runtime_dict["dry_run"]:
             typer.echo(
@@ -131,11 +179,19 @@ def run_layer(
     layer: str = typer.Argument(..., help="Layer to execute"),
     config: Path = typer.Option(..., "-c", "--config", help="Path to layer configuration"),
     vars_: List[str] = typer.Option([], "--vars", help="Template variables as key=value"),
+    dq_fail_on_error: Optional[bool] = typer.Option(
+        None,
+        "--dq-fail-on-error/--dq-no-fail-on-error",
+        "--dq.fail-on-error/--dq.no-fail-on-error",
+        help="Override data-quality fail-on-error behaviour",
+    ),
 ) -> None:
     layer_name = _normalize_layer_name(layer)
     variables = _parse_vars(vars_)
-    raw_config = _load_config(config, variables)
-    normalized_cfg = _validate_normalized_cfg(raw_config, layer_name)
+    raw_config = _resolve_extends(_load_config(config, variables), config, variables)
+    normalized_cfg = _validate_normalized_cfg(
+        raw_config, layer_name, dq_fail_override=dq_fail_on_error
+    )
     _execute_layer(layer_name, normalized_cfg)
 
 
@@ -143,6 +199,12 @@ def run_layer(
 def run_pipeline(
     pipeline: Path = typer.Option(..., "-p", "--pipeline", help="Pipeline declaration file"),
     vars_: List[str] = typer.Option([], "--vars", help="Template variables as key=value"),
+    dq_fail_on_error: Optional[bool] = typer.Option(
+        None,
+        "--dq-fail-on-error/--dq-no-fail-on-error",
+        "--dq.fail-on-error/--dq.no-fail-on-error",
+        help="Override data-quality fail-on-error behaviour for all steps",
+    ),
 ) -> None:
     variables = _parse_vars(vars_)
     raw_pipeline_cfg = _load_config(pipeline, variables)
@@ -179,9 +241,26 @@ def run_pipeline(
         if not config_path.is_absolute():
             config_path = (pipeline.parent / config_path).resolve()
 
-        layer_cfg = _load_config(config_path, variables)
-        normalized_cfg = _validate_normalized_cfg(layer_cfg, layer_name)
+        layer_cfg = _resolve_extends(_load_config(config_path, variables), config_path, variables)
+        normalized_cfg = _validate_normalized_cfg(
+            layer_cfg, layer_name, dq_fail_override=dq_fail_on_error
+        )
         _execute_layer(layer_name, normalized_cfg)
+
+
+@app.command()
+def validate(
+    config: Path = typer.Option(..., "-c", "--config", help="Configuration to validate"),
+    vars_: List[str] = typer.Option([], "--vars", help="Template variables as key=value"),
+) -> None:
+    variables = _parse_vars(vars_)
+    raw_cfg = _resolve_extends(_load_config(config, variables), config, variables)
+    layer_value = raw_cfg.get("layer") if isinstance(raw_cfg, dict) else None
+    if not layer_value:
+        layer_value = "raw"
+    layer_name = _normalize_layer_name(str(layer_value))
+    _validate_normalized_cfg(raw_cfg, layer_name)
+    typer.echo(f"[{layer_name}] {config} is valid")
 
 
 def main() -> None:
