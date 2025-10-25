@@ -1,32 +1,37 @@
 # Ejecución de `prodi run-layer` en Azure Synapse
 
-Esta guía cubre la ejecución del pipeline por capas en Synapse Pipelines con
-notebooks o actividades de Spark que consumen el wheel de `prodi`.
+Esta guía cubre la ejecución del pipeline por capas en Synapse Pipelines o Azure
+Data Factory utilizando actividades Spark que consumen el wheel de `prodi`.
 
-## 1. Publicar el wheel en un workspace
+## 1. Publicar el wheel y configuraciones
 
 1. Construye el wheel localmente:
    ```bash
    poetry build -f wheel
    ```
-2. Carga el artefacto y las configuraciones declarativas al almacenamiento
-   ligado al workspace (por ejemplo ADLS):
+2. Carga el artefacto y las configuraciones productivas al almacenamiento ligado
+   al workspace (por ejemplo ADLS):
    ```bash
    az storage blob upload \
      --account-name datalake \
      --container-name artifacts \
-     --file dist/mvp_config_driven-0.1.0-py3-none-any.whl \
-     --name libs/mvp_config_driven-0.1.0-py3-none-any.whl
+     --file dist/mvp_config_driven-0.2.0-py3-none-any.whl \
+     --name libs/mvp_config_driven-0.2.0-py3-none-any.whl
    az storage blob upload-batch \
      --account-name datalake \
      --destination cfg \
      --source cfg
    ```
 
-## 2. Configurar un Spark job definition
+## 2. Definir actividades Spark por capa
 
 Crea una [Spark job definition](https://learn.microsoft.com/azure/synapse-analytics/spark/spark-job-definitions)
-que invoque el entrypoint de `prodi`.
+por capa. El JSON [`docs/run/jobs/azure_adf_pipeline.json`](jobs/azure_adf_pipeline.json)
+se actualizó para apuntar a `cfg/<layer>/azure.prod.yml` y reutilizar el wheel
+`mvp_config_driven-0.2.0`. Importa la plantilla, actualiza los vínculos de
+servicio y publica la pipeline.
+
+Ejemplo de definición para `raw`:
 
 ```json
 {
@@ -34,9 +39,8 @@ que invoque el entrypoint de `prodi`.
   "type": "SparkJobDefinition",
   "properties": {
     "file": "abfss://artifacts@datalake.dfs.core.windows.net/scripts/prodi_synapse_entry.py",
-    "className": "",
-    "args": ["--layer", "raw", "--config", "abfss://artifacts@datalake.dfs.core.windows.net/cfg/raw/example.yml"],
-    "packages": ["abfss://artifacts@datalake.dfs.core.windows.net/libs/mvp_config_driven-0.1.0-py3-none-any.whl"],
+    "args": ["--layer", "raw", "--config", "abfss://artifacts@datalake.dfs.core.windows.net/cfg/raw/azure.prod.yml"],
+    "packages": ["abfss://artifacts@datalake.dfs.core.windows.net/libs/mvp_config_driven-0.2.0-py3-none-any.whl"],
     "driverMemory": "8g",
     "executorMemory": "8g",
     "executorCores": 4
@@ -46,51 +50,13 @@ que invoque el entrypoint de `prodi`.
 
 Replica la definición para bronze, silver y gold cambiando `args` y el nombre.
 
-## 3. Orquestar con Synapse Pipelines
+## 3. Orquestar con Synapse Pipelines o ADF
 
-Dentro de una pipeline usa actividades **Execute Spark job** con dependencias
-secuenciales:
-
-```yaml
-activities:
-  - name: raw
-    type: SynapseNotebook
-    dependsOn: []
-    typeProperties:
-      sparkJob: prodi-layer-raw
-  - name: bronze
-    dependsOn:
-      - activity: raw
-        dependencyConditions: [Succeeded]
-    type: SynapseNotebook
-    typeProperties:
-      sparkJob: prodi-layer-bronze
-  - name: silver
-    dependsOn:
-      - activity: bronze
-        dependencyConditions: [Succeeded]
-    type: SynapseNotebook
-    typeProperties:
-      sparkJob: prodi-layer-silver
-  - name: gold
-    dependsOn:
-      - activity: silver
-        dependencyConditions: [Succeeded]
-    type: SynapseNotebook
-    typeProperties:
-      sparkJob: prodi-layer-gold
-```
-
-Revisa configuraciones listas para importar en [`docs/run/jobs/`](jobs/).
-
-### Plantilla para Azure Data Factory / Synapse Pipelines
-
-El archivo [`docs/run/jobs/azure_adf_pipeline.json`](jobs/azure_adf_pipeline.json)
-modela la misma secuencia en Data Factory con actividades `ExecutePipeline` que
-invocan definiciones de Spark por capa y parametrizan `configUri` usando
-`cfg/<layer>/example.yml`. Importa la plantilla, actualiza los vínculos de
-servicio y ejecuta un disparador manual con `dryRun=true` para validar la
-configuración antes de mover cargas reales.
+El pipeline de ejemplo en [`docs/run/jobs/azure_adf_pipeline.json`](jobs/azure_adf_pipeline.json)
+contiene cuatro actividades `ExecuteSparkJob` con dependencias secuenciales y
+parametriza `configUri` usando los YAML productivos. Ajusta las identidades
+administradas según tu subscription; los archivos `.prod.yml` están diseñados
+para autenticarse mediante Managed Identity sin llaves embebidas.
 
 ## 4. Script de entrada y parámetros
 
@@ -109,10 +75,9 @@ en los argumentos con `@{pipeline().parameters.executionDate}`.
 
 ## 5. Validación `dry-run`
 
-* Ejecuta el Spark job con `args`: `["--layer", "raw", "--config", "...", "--dry-run"]`
-  para validar sin procesar datos.
-* Crea un trigger separado (por ejemplo `ManualDryRun`) que fije el parámetro
-  `dryRun=true` y lo concatene como argumento adicional.
+Agrega `--env.PRODI_FORCE_DRY_RUN=true` como argumento adicional en Synapse o ADF
+para validar la pipeline completa sin tocar datos reales. El comportamiento es
+idéntico al job `smoke-prod` configurado en CI.
 
 ## 6. Observabilidad
 

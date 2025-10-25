@@ -23,7 +23,7 @@
                 "type": "PipelineReference"
               },
               "parameters": {
-                "configUri": "abfss://artifacts@datalake.dfs.core.windows.net/cfg/raw/example.yml",
+                "configUri": "abfss://artifacts@datalake.dfs.core.windows.net/cfg/raw/azure.prod.yml",
                 "dryRun": "@{pipeline().parameters.dryRun}"
               }
             }
@@ -43,7 +43,7 @@
                 "type": "PipelineReference"
               },
               "parameters": {
-                "configUri": "abfss://artifacts@datalake.dfs.core.windows.net/cfg/bronze/example.yml",
+                "configUri": "abfss://artifacts@datalake.dfs.core.windows.net/cfg/bronze/azure.prod.yml",
                 "dryRun": "@{pipeline().parameters.dryRun}"
               }
             }
@@ -63,7 +63,7 @@
                 "type": "PipelineReference"
               },
               "parameters": {
-                "configUri": "abfss://artifacts@datalake.dfs.core.windows.net/cfg/silver/example.yml",
+                "configUri": "abfss://artifacts@datalake.dfs.core.windows.net/cfg/silver/azure.prod.yml",
                 "dryRun": "@{pipeline().parameters.dryRun}"
               }
             }
@@ -83,7 +83,7 @@
                 "type": "PipelineReference"
               },
               "parameters": {
-                "configUri": "abfss://artifacts@datalake.dfs.core.windows.net/cfg/gold/example.yml",
+                "configUri": "abfss://artifacts@datalake.dfs.core.windows.net/cfg/gold/azure.prod.yml",
                 "dryRun": "@{pipeline().parameters.dryRun}"
               }
             }

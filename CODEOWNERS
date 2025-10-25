@@ -1,0 +1,2 @@
+# Production configuration requires cloud and security review
+cfg/*/*.prod.yml @data-platform/cloud-admins @security/ops

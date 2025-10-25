@@ -1,6 +1,6 @@
 [project]
 name = "mvp-config-driven"
-version = "0.1.0"
+version = "0.2.0"
 description = "Config-driven Spark pipeline orchestration"
 requires-python = ">=3.10"
 dependencies = [

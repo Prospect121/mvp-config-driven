@@ -11,55 +11,54 @@ preparación del artefacto, la configuración del job y comandos de verificació
    ```bash
    poetry build -f wheel
    ```
-2. Publica el wheel (`dist/mvp_config_driven-0.1.0-py3-none-any.whl`) y las
-   configuraciones de ejemplo (`cfg/*/example.yml`)
+2. Publica el wheel (`dist/mvp_config_driven-0.2.0-py3-none-any.whl`) y las
+   configuraciones de producción (`cfg/*/*.prod.yml`)
    en DBFS o en un repositorio de artefactos accesible desde Databricks:
    ```bash
-   databricks fs cp dist/mvp_config_driven-0.1.0-py3-none-any.whl dbfs:/libs/mvp-config-driven.whl
+   databricks fs cp dist/mvp_config_driven-0.2.0-py3-none-any.whl dbfs:/libs/mvp-config-driven.whl
    databricks fs cp -r cfg dbfs:/cfg
    ```
 
 ## 2. Definir la tarea tipo wheel
 
 Dentro de un Job multipaso se recomienda una tarea por capa. Cada tarea reutiliza
-el mismo wheel y varía los parámetros del comando `prodi run-layer`.
-
-```json
-{
-  "name": "prodi-layer-raw",
-  "task_key": "raw",
-  "job_cluster_key": "shared_cluster",
-  "wheel_task": {
-    "package_name": "prodi",
-    "entry_point": "run-layer",
-      "parameters": [
-        "--layer", "raw",
-        "--config", "dbfs:/cfg/raw/example.yml"
-      ]
-  },
-  "libraries": [
-    { "whl": "dbfs:/libs/mvp-config-driven.whl" }
-  ]
-}
-```
-
-### Secuencia completa raw → bronze → silver → gold
-
-Replica la definición anterior ajustando `task_key`, `--layer` y la ruta del
-YAML para cada capa. Encadena las tareas estableciendo dependencias:
+el mismo wheel y varía los parámetros del comando `prodi run-layer`. El archivo
+[`docs/run/jobs/databricks_v020.json`](jobs/databricks_v020.json) declara la
+cadena completa para AWS (ajusta el sufijo `aws` por `azure` o `gcp` según tu
+workspace):
 
 ```json
 {
   "tasks": [
-    { "task_key": "raw", ... },
-    { "task_key": "bronze", "depends_on": [{"task_key": "raw"}], ... },
-    { "task_key": "silver", "depends_on": [{"task_key": "bronze"}], ... },
-    { "task_key": "gold", "depends_on": [{"task_key": "silver"}], ... }
+    {
+      "task_key": "raw",
+      "job_cluster_key": "shared_cluster",
+      "depends_on": [],
+      "wheel_task": {
+        "package_name": "prodi",
+        "entry_point": "run-layer",
+        "parameters": ["--layer", "raw", "--config", "dbfs:/cfg/raw/aws.prod.yml"]
+      },
+      "libraries": [{"whl": "dbfs:/libs/mvp-config-driven.whl"}]
+    },
+    {
+      "task_key": "bronze",
+      "depends_on": [{"task_key": "raw"}],
+      "job_cluster_key": "shared_cluster",
+      "wheel_task": {
+        "package_name": "prodi",
+        "entry_point": "run-layer",
+        "parameters": ["--layer", "bronze", "--config", "dbfs:/cfg/bronze/aws.prod.yml"]
+      },
+      "libraries": [{"whl": "dbfs:/libs/mvp-config-driven.whl"}]
+    }
   ]
 }
 ```
 
-Consulta ejemplos más completos en [`docs/run/jobs/`](jobs/).
+El JSON de referencia incluye también `silver` y `gold` con dependencias en
+cadena. Copia el archivo, modifica las rutas `dbfs:/cfg/<layer>/<cloud>.prod.yml`
+al proveedor correcto y sube la definición mediante la API de Databricks o la UI.
 
 ## 3. Ejecutar en modo `dry-run`
 
@@ -71,15 +70,19 @@ prodi run-layer raw -c cfg/raw/example.yml
 prodi run-layer bronze -c cfg/bronze/example.yml
 ```
 
-Para tareas en Databricks, agrega `"parameters": ["--dry-run", ...]` a la tarea
-`wheel_task`. El job se detendrá al primer error de validación sin tocar datos.
+Para tareas en Databricks define `PRODI_FORCE_DRY_RUN=1` como variable de entorno
+del job o del task. `prodi` forzará el `dry_run` incluso si el YAML productivo lo
+declara en `false`, lo que permite validar `cfg/*/*.prod.yml` sin tocar datos.
+La configuración de CI (`smoke-prod`) usa exactamente este patrón.
 
 ## 4. Variables y secretos operativos
 
 * Usa `job_parameters` o [task parameters](https://docs.databricks.com/jobs/jobs-parameterization.html)
   para inyectar rutas de configuración o flags como `--env prod`.
 * Gestiona credenciales mediante [Databricks Secrets](https://docs.databricks.com/security/secrets/index.html)
-  y refiérelas dentro de los YAML con `{{secrets/<scope>/<key>}}`.
+  y refiérelas dentro de los YAML con `{{secrets/<scope>/<key>}}`. Las rutas
+  productivas incluidas en este repositorio emplean identidades administradas
+  (IAM/Managed Identity/Service Account) descritas en el README.
 * Registra el build del wheel junto con la versión de configuración aplicada
   para reproducibilidad.
 

@@ -1,0 +1,26 @@
+layer: raw
+environment: production
+dry_run: false
+paths:
+  dataset: config/datasets/examples/toy_customers.yml
+  environment: config/env.aws.prod.yml
+compute:
+  engine: spark
+  options:
+    spark.sql.session.timeZone: UTC
+io:
+  source:
+    dataset_config: config/datasets/examples/toy_customers.yml
+    environment_config: config/env.aws.prod.yml
+    preferred_protocol: s3
+  sink:
+    kind: spark
+    format: parquet
+    mode: overwrite
+    path: s3://datalake-mvp-raw-prod/toy_customers/landing/
+storage:
+  s3:
+    default_uri: s3://datalake-mvp-raw-prod/
+    storage_options:
+      client_kwargs:
+        use_ssl: true

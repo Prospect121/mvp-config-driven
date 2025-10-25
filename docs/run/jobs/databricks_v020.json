@@ -1,0 +1,88 @@
+{
+  "name": "prodi-mvp-v020",
+  "job_clusters": [
+    {
+      "job_cluster_key": "shared_cluster",
+      "new_cluster": {
+        "spark_version": "13.3.x-scala2.12",
+        "node_type_id": "Standard_D3_v2",
+        "num_workers": 2,
+        "aws_attributes": {
+          "availability": "SPOT_WITH_FALLBACK"
+        }
+      }
+    }
+  ],
+  "tasks": [
+    {
+      "task_key": "raw",
+      "job_cluster_key": "shared_cluster",
+      "depends_on": [],
+      "libraries": [
+        { "whl": "dbfs:/libs/mvp-config-driven.whl" }
+      ],
+      "wheel_task": {
+        "package_name": "prodi",
+        "entry_point": "run-layer",
+        "parameters": [
+          "--layer", "raw",
+          "--config", "dbfs:/cfg/raw/aws.prod.yml"
+        ]
+      }
+    },
+    {
+      "task_key": "bronze",
+      "depends_on": [
+        { "task_key": "raw" }
+      ],
+      "job_cluster_key": "shared_cluster",
+      "libraries": [
+        { "whl": "dbfs:/libs/mvp-config-driven.whl" }
+      ],
+      "wheel_task": {
+        "package_name": "prodi",
+        "entry_point": "run-layer",
+        "parameters": [
+          "--layer", "bronze",
+          "--config", "dbfs:/cfg/bronze/aws.prod.yml"
+        ]
+      }
+    },
+    {
+      "task_key": "silver",
+      "depends_on": [
+        { "task_key": "bronze" }
+      ],
+      "job_cluster_key": "shared_cluster",
+      "libraries": [
+        { "whl": "dbfs:/libs/mvp-config-driven.whl" }
+      ],
+      "wheel_task": {
+        "package_name": "prodi",
+        "entry_point": "run-layer",
+        "parameters": [
+          "--layer", "silver",
+          "--config", "dbfs:/cfg/silver/aws.prod.yml"
+        ]
+      }
+    },
+    {
+      "task_key": "gold",
+      "depends_on": [
+        { "task_key": "silver" }
+      ],
+      "job_cluster_key": "shared_cluster",
+      "libraries": [
+        { "whl": "dbfs:/libs/mvp-config-driven.whl" }
+      ],
+      "wheel_task": {
+        "package_name": "prodi",
+        "entry_point": "run-layer",
+        "parameters": [
+          "--layer", "gold",
+          "--config", "dbfs:/cfg/gold/aws.prod.yml"
+        ]
+      }
+    }
+  ]
+}

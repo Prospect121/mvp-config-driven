@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Any, Dict
 
@@ -23,6 +24,16 @@ _LAYER_RUNNERS: Dict[str, Any] = {
     "silver": silver_main.run,
     "gold": gold_main.run,
 }
+
+
+_FORCE_DRY_RUN_ENV = "PRODI_FORCE_DRY_RUN"
+
+
+def _should_force_dry_run() -> bool:
+    value = os.getenv(_FORCE_DRY_RUN_ENV)
+    if value is None:
+        return False
+    return value.strip().lower() not in {"", "0", "false", "no"}
 
 
 def _load_config(path: Path) -> Any:
@@ -75,6 +86,12 @@ def _validate_normalized_cfg(cfg: Any, expected_layer: str) -> Dict[str, Any]:
     runtime_dict = runtime_model.model_dump(by_alias=True)
     runtime_dict["layer"] = normalized_layer
     runtime_dict["dry_run"] = bool(runtime_dict.get("dry_run", False))
+    if _should_force_dry_run():
+        if not runtime_dict["dry_run"]:
+            typer.echo(
+                f"[{normalized_layer}] {_FORCE_DRY_RUN_ENV}=1 - forcing dry_run execution"
+            )
+        runtime_dict["dry_run"] = True
     return runtime_dict
 
 

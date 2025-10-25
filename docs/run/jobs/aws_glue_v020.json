@@ -1,0 +1,54 @@
+{
+  "Comment": "Orquestación v0.2.0 prodi",
+  "StartAt": "raw",
+  "States": {
+    "raw": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {
+        "JobName": "prodi-layer-raw",
+        "Arguments": {
+          "--layer": "raw",
+          "--config": "s3://datalake-artifacts/cfg/raw/aws.prod.yml"
+        }
+      },
+      "Next": "bronze"
+    },
+    "bronze": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {
+        "JobName": "prodi-layer-bronze",
+        "Arguments": {
+          "--layer": "bronze",
+          "--config": "s3://datalake-artifacts/cfg/bronze/aws.prod.yml"
+        }
+      },
+      "Next": "silver"
+    },
+    "silver": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {
+        "JobName": "prodi-layer-silver",
+        "Arguments": {
+          "--layer": "silver",
+          "--config": "s3://datalake-artifacts/cfg/silver/aws.prod.yml"
+        }
+      },
+      "Next": "gold"
+    },
+    "gold": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {
+        "JobName": "prodi-layer-gold",
+        "Arguments": {
+          "--layer": "gold",
+          "--config": "s3://datalake-artifacts/cfg/gold/aws.prod.yml"
+        }
+      },
+      "End": true
+    }
+  }
+}

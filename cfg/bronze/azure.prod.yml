@@ -1,0 +1,25 @@
+layer: bronze
+environment: production
+dry_run: false
+paths:
+  dataset: config/datasets/examples/toy_customers.yml
+  environment: config/env.azure.prod.yml
+compute:
+  engine: spark
+  options:
+    spark.sql.session.timeZone: UTC
+io:
+  source:
+    format: parquet
+    path: abfss://landing@datalakeprod.dfs.core.windows.net/raw/toy_customers/landing/
+  sink:
+    kind: spark
+    format: delta
+    mode: overwrite
+    path: abfss://curated@datalakeprod.dfs.core.windows.net/bronze/toy_customers/
+    options:
+      checkpointLocation: abfss://curated@datalakeprod.dfs.core.windows.net/bronze/checkpoints/toy_customers/
+transform:
+  functions: []
+dq:
+  checks: []
