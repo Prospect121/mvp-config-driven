@@ -13,16 +13,16 @@ Cada archivo en `cfg/` se normaliza con `migrate_layer_config` y se valida con
 ```yaml
 layer: raw
 compute:
-  engine: spark
+  kind: spark
 io:
   source:
-    dataset_config: config/datasets/example.yml
-    environment_config: config/env.yml
+    use_local_fallback: true
   sink:
-    database_config: config/database.yml
+    format: parquet
+    uri: file://./data/raw/toy_customers/
 transform: {}
 dq: {}
-dry_run: true
+dry_run: false
 ```
 
 Los campos `compute`, `io`, `transform` y `dq` quedan disponibles para todas las

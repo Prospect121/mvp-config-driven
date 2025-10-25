@@ -29,7 +29,8 @@ Este documento resume la arquitectura vigente tras la eliminación del monolito 
    prodi run-layer silver -c cfg/silver/example.yml
    prodi run-layer gold -c cfg/gold/example.yml
    ```
-   Los YAML de ejemplo usan `samples/toy_customers.csv` y ejecutan en `dry_run`.
+   Raw genera archivos `parquet` en `data/raw/toy_customers/` usando el dataset de muestra, mientras que Bronze/Silver/Gold permanecen en `dry_run` para acelerar validaciones.
+   Para ejecutar todas las capas declarativamente usa `prodi run-pipeline -p cfg/pipelines/example.yml`.
 
 ## Orquestación externa
 
@@ -54,7 +55,7 @@ Este documento resume la arquitectura vigente tras la eliminación del monolito 
 
 - `pytest`: suites en `tests/` cubren CLI, invariantes de seguridad y aislamiento de capas.
 - `black`, `ruff`, `mypy`, `pre-commit`: definidos en `pyproject.toml`.
-- Ejecución de ejemplos de configuración (`tests/test_cli_layers.py`) garantiza que `prodi run-layer` opere en modo `dry_run` sin dependencias externas.
+- `tests/test_cli_layers.py` ejecuta la ingesta Raw extremo a extremo (escritura de parquet) y verifica que el resto de capas continúen aceptando `dry_run`.
 
 ## Mantenimiento y limpieza
 
