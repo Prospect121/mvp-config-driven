@@ -1,0 +1,19 @@
+layer: silver
+base_config: ../../finance/silver/transactions.yml
+transform:
+  sql: |
+    SELECT
+      transaction_id,
+      account_id,
+      amount,
+      currency,
+      posted_date,
+      is_reversal,
+      days_past_due,
+      collection_stage
+    FROM __INPUT__
+dq:
+  expectations:
+    - type: range
+      column: days_past_due
+      min: 0

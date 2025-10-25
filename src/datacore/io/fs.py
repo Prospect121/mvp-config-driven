@@ -16,9 +16,12 @@ import shutil
 import tempfile
 import weakref
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Tuple
 
 import fsspec
+
+from .http import fetch_json_to_df
+from .jdbc import read_jdbc as _read_jdbc
 
 try:  # Optional dependency
     import pandas as pd
@@ -370,15 +373,52 @@ def _polars_reader(fmt: str, files: Iterable[str], options: Dict[str, Any]):
 
 
 def read_df(
-    uri: str,
-    fmt: str,
+    source: Any,
+    fmt: Optional[str] = None,
     *,
     spark=None,
     engine: str = "auto",
     storage_options: Optional[Dict[str, Any]] = None,
     reader_options: Optional[Dict[str, Any]] = None,
 ):
-    """Read a dataset from the given URI and return a DataFrame."""
+    """Read a dataset declared either as a URI or declarative mapping."""
+
+    metadata: Dict[str, Any] = {}
+
+    if isinstance(source, Mapping):
+        source_type = str(source.get("type") or source.get("format") or "files").lower()
+        if source_type == "http":
+            df, metrics = fetch_json_to_df(source, spark=spark)
+            metadata["http"] = metrics
+            if getattr(metrics, "watermark", None):
+                metadata["watermark"] = metrics.watermark
+            return df, metadata
+        if source_type == "jdbc":
+            df, watermark = _read_jdbc(source, spark)
+            if watermark:
+                metadata["watermark"] = watermark
+            return df, metadata
+
+        resolved_uri = source.get("uri") or source.get("path")
+        if not resolved_uri:
+            raise ValueError("File-based sources require a 'uri' or 'path'")
+        merged_storage_options = dict(storage_options or {})
+        merged_storage_options.update(source.get("storage_options") or {})
+        merged_reader_options = dict(reader_options or {})
+        merged_reader_options.update(source.get("options") or {})
+        resolved_fmt = fmt or source.get("format") or source.get("type") or "parquet"
+        return read_df(
+            str(resolved_uri),
+            str(resolved_fmt),
+            spark=spark,
+            engine=engine,
+            storage_options=merged_storage_options,
+            reader_options=merged_reader_options,
+        )
+
+    uri = str(source)
+    if fmt is None:
+        raise ValueError("A format must be supplied when using URI based reads")
 
     reader_options = dict(reader_options or {})
     fs, path = _filesystem(uri, storage_options)
@@ -392,7 +432,7 @@ def read_df(
             staged = _stage_to_local(fs, path)
             df = _spark_reader(spark, fmt_norm, staged.path, reader_options)
             weakref.finalize(df, staged.cleanup)
-            return df
+            return df, metadata
         except Exception as exc:
             if staged:
                 staged.cleanup()
@@ -408,9 +448,9 @@ def read_df(
         try:
             pdf = _pandas_reader(fmt_norm, local_files, local_options)
             if spark is not None:
-                return spark.createDataFrame(pdf)
+                return spark.createDataFrame(pdf), metadata
             staged.cleanup()
-            return pdf
+            return pdf, metadata
         except Exception as exc:
             last_error = exc
     if engine in {"auto", "polars"}:
@@ -418,9 +458,9 @@ def read_df(
             pldf = _polars_reader(fmt_norm, local_files, local_options)
             if spark is not None:
                 pdf = pldf.to_pandas()
-                return spark.createDataFrame(pdf)
+                return spark.createDataFrame(pdf), metadata
             staged.cleanup()
-            return pldf
+            return pldf, metadata
         except Exception as exc:
             last_error = exc
 

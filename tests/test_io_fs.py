@@ -204,7 +204,8 @@ def test_read_and_write_roundtrip(monkeypatch, tmp_path, uri, protocol):
 
     spark = DummySparkSession()
 
-    df = read_df(uri, "csv", spark=spark, storage_options={})
+    df, metadata = read_df(uri, "csv", spark=spark, storage_options={})
+    assert metadata == {}
     assert isinstance(df, DummySparkDataFrame)
     assert df._pdf.shape == (2, 2)
 
@@ -215,7 +216,8 @@ def test_read_and_write_roundtrip(monkeypatch, tmp_path, uri, protocol):
     parquet_files = [p for p in fs_stub.glob(f"{out_path}**") if p.endswith(".parquet")]
     assert parquet_files
 
-    df_back = read_df(out_uri, "parquet", spark=spark, storage_options={})
+    df_back, metadata_back = read_df(out_uri, "parquet", spark=spark, storage_options={})
+    assert metadata_back == {}
     assert df_back._pdf.equals(df._pdf)
 
 
@@ -236,7 +238,8 @@ def test_read_with_wildcard(monkeypatch, tmp_path):
         handle.write("id,value\n2,b\n")
 
     spark = DummySparkSession()
-    df = read_df("s3://bucket/data/*.csv", "csv", spark=spark, storage_options={})
+    df, metadata = read_df("s3://bucket/data/*.csv", "csv", spark=spark, storage_options={})
+    assert metadata == {}
     assert df._pdf.shape == (2, 2)
 
 

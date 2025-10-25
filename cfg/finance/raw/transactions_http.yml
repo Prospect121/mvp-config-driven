@@ -1,0 +1,51 @@
+layer: raw
+compute:
+  engine: spark
+  spark:
+    app_name: "raw_fin_transactions_http"
+    options:
+      spark.sql.session.timeZone: "UTC"
+io:
+  source:
+    type: http
+    url: "https://api.finbank.com/v1/transactions"
+    method: GET
+    headers:
+      Authorization: "Bearer ${FINBANK_TOKEN}"
+      Accept: "application/json"
+    params:
+      page: 1
+      page_size: 500
+    pagination:
+      strategy: param_increment
+      param: page
+      max_pages: 2000
+      stop_on_empty: true
+    rate_limit:
+      requests_per_minute: 60
+    incremental:
+      watermark:
+        field: updated_at
+        from_env: RAW_WM_TS
+        default: "1970-01-01T00:00:00Z"
+  sink:
+    type: files
+    format: parquet
+    path: "s3://datalake/raw/finance/transactions/date={{ds}}/"
+transform:
+  pre:
+    - rename:
+        from: txn_id
+        to: transaction_id
+  sql: []
+dq:
+  expectations:
+    - type: not_null
+      column: transaction_id
+    - type: unique
+      column: transaction_id
+    - type: valid_values
+      column: currency
+      values: ["USD", "EUR", "COP"]
+    - type: non_negative
+      column: amount

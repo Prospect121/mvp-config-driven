@@ -1,0 +1,13 @@
+layer: bronze
+base_config: ../../finance/bronze/transactions.yml
+transform:
+  sql: |
+    SELECT
+      *,
+      COALESCE(collection_stage, 'pending') AS collection_stage
+    FROM __INPUT__
+dq:
+  expectations:
+    - type: valid_values
+      column: collection_stage
+      values: ['pending','in_progress','resolved']

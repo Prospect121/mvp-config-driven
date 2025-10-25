@@ -1,0 +1,18 @@
+layer: raw
+base_config: ../../finance/raw/transactions_jdbc.yml
+io:
+  source:
+    query: |
+      SELECT *
+      FROM transactions
+      WHERE updated_at >= '${RAW_WM_TS}' AND portfolio = 'collections'
+transform:
+  sql:
+    - |
+      SELECT *
+      FROM __INPUT__
+      WHERE status IN ('overdue','delinquent')
+dq:
+  expectations:
+    - type: condition
+      expr: "amount >= 0"

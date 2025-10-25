@@ -1,0 +1,16 @@
+layer: gold
+base_config: ../../finance/gold/transactions.yml
+transform:
+  sql: |
+    SELECT
+      posted_date,
+      currency,
+      COUNT_IF(risk_bucket = 'critical') AS critical_alerts,
+      COUNT_IF(risk_bucket IN ('critical','high')) AS high_risk_alerts,
+      SUM(amount) AS exposure
+    FROM __INPUT__
+    GROUP BY posted_date, currency
+dq:
+  expectations:
+    - type: not_null
+      column: currency

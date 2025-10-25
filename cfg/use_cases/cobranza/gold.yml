@@ -1,0 +1,16 @@
+layer: gold
+base_config: ../../finance/gold/transactions.yml
+transform:
+  sql: |
+    SELECT
+      posted_date,
+      currency,
+      SUM(amount) AS total_collections,
+      SUM(CASE WHEN collection_stage = 'resolved' THEN amount ELSE 0 END) AS recovered_amount,
+      AVG(days_past_due) AS avg_dpd
+    FROM __INPUT__
+    GROUP BY posted_date, currency
+dq:
+  expectations:
+    - type: non_negative
+      column: total_collections

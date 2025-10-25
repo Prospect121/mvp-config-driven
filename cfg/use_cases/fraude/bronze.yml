@@ -1,0 +1,12 @@
+layer: bronze
+base_config: ../../finance/bronze/transactions.yml
+transform:
+  sql: |
+    SELECT *
+    FROM __INPUT__
+    WHERE amount <> 0
+
+dq:
+  expectations:
+    - type: non_negative
+      column: score

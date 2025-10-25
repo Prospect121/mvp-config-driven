@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import inspect
-from typing import Any, Callable, Dict, Iterable, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Mapping, Tuple
 
 try:  # pragma: no cover - optional dependency in unit tests
     from pyspark.sql import SparkSession
 except ModuleNotFoundError:  # pragma: no cover - pyspark optional
     SparkSession = None  # type: ignore
+
+from datacore.quality import apply_expectations
 
 
 def _call_with_compatible_args(func: Callable[..., Any], *args: Any) -> Any:
@@ -138,6 +140,20 @@ def apply_bronze_dq(engine: Any, df: Any, dq_cfg: Dict[str, Any] | None) -> Any:
             raise ValueError("Bronze data-quality check failed")
         if result not in (None, True):
             df = result
+
+    expectations = dq_cfg.get("expectations") if dq_cfg else None
+    expectation_list: List[Mapping[str, Any]] = []
+    if isinstance(expectations, Mapping):
+        rules = expectations.get("rules")
+        if isinstance(rules, Iterable) and not isinstance(rules, (str, bytes)):
+            expectation_list.extend(rules)  # type: ignore[arg-type]
+        else:
+            expectation_list.append(expectations)
+    elif isinstance(expectations, Iterable) and not isinstance(expectations, (str, bytes)):
+        expectation_list.extend(expectations)  # type: ignore[arg-type]
+
+    if expectation_list:
+        apply_expectations(df, expectation_list)
 
     return df
 
