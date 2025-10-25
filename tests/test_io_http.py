@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import pytest
 
@@ -23,7 +23,7 @@ class DummyResponse:
 
 
 class DummySession:
-    def __init__(self, responses):
+    def __init__(self, responses: List["DummyResponse"]):
         self._responses = responses
         self.verify = True
         self.calls = []
@@ -86,3 +86,38 @@ def test_fetch_json_to_df_cursor(monkeypatch):
     assert metrics.watermark is None
 
     assert len(dummy_session.calls) == 2
+
+
+def test_http_rate_limit_respected(monkeypatch):
+    responses = [
+        DummyResponse({"data": [{"id": i}]}) for i in range(6)
+    ]
+    dummy_session = DummySession(list(responses))
+
+    monkeypatch.setattr("datacore.io.http._RetryableSession", lambda *a, **k: dummy_session)
+
+    current_time = {"value": 0.0}
+
+    def fake_monotonic() -> float:
+        return current_time["value"]
+
+    slept: List[float] = []
+
+    def fake_sleep(seconds: float) -> None:
+        slept.append(seconds)
+        current_time["value"] += seconds
+
+    monkeypatch.setattr("datacore.io.http.time.monotonic", fake_monotonic)
+    monkeypatch.setattr("datacore.io.http.time.sleep", fake_sleep)
+
+    cfg = {
+        "url": "https://api.example.com/transactions",
+        "pagination": {"strategy": "param_increment", "max_pages": 6},
+        "rate_limit": {"requests_per_minute": 6},
+    }
+
+    fetch_json_to_df(cfg)
+
+    assert len(dummy_session.calls) == 6
+    assert current_time["value"] <= 60.0
+    assert sum(slept) == pytest.approx(50.0, rel=1e-6)

@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import json
+import random
 import time
 from dataclasses import dataclass
-from typing import Any, Dict, List, Mapping, MutableMapping, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Mapping, MutableMapping, Optional, Tuple
 
 import requests
 
@@ -37,14 +38,34 @@ class HttpFetchMetrics:
 
 
 class _RetryableSession:
-    """requests.Session wrapper adding retry with exponential backoff."""
+    """requests.Session wrapper adding retry with exponential backoff and jitter."""
 
-    def __init__(self, retries: int, backoff_factor: float, timeout: float) -> None:
+    _DEFAULT_RETRY_STATUSES: Tuple[int, ...] = (429,)
+
+    def __init__(
+        self,
+        retries: int,
+        backoff_factor: float,
+        timeout: float,
+        *,
+        jitter: float = 0.25,
+        retry_statuses: Iterable[int] | None = None,
+    ) -> None:
         self.session = requests.Session()
         self.session.verify = True  # TLS must remain enabled
         self.retries = max(0, int(retries))
         self.backoff_factor = max(0.0, float(backoff_factor))
         self.timeout = max(1.0, float(timeout))
+        self.jitter = max(0.0, float(jitter))
+        configured_statuses = set(int(code) for code in (retry_statuses or ()))
+        configured_statuses.update(self._DEFAULT_RETRY_STATUSES)
+        configured_statuses.update(range(500, 600))
+        self.retry_statuses = configured_statuses
+
+    def _compute_backoff(self, attempt: int) -> float:
+        base = self.backoff_factor * (2 ** attempt)
+        jitter = random.uniform(0.0, base * self.jitter) if self.jitter > 0 else 0.0
+        return max(0.5, base + jitter)
 
     def request(self, method: str, url: str, **kwargs: Any) -> requests.Response:
         attempt = 0
@@ -57,37 +78,54 @@ class _RetryableSession:
                     timeout=self.timeout,
                     **kwargs,
                 )
-                response.raise_for_status()
-                return response
             except requests.RequestException as exc:  # pragma: no cover - network errors
                 last_error = exc
-                if attempt == self.retries:
-                    raise
-                sleep_for = self.backoff_factor * (2 ** attempt)
-                time.sleep(max(0.5, sleep_for))
-                attempt += 1
+            else:
+                status_code = getattr(response, "status_code", None)
+                try:
+                    response.raise_for_status()
+                except requests.HTTPError as exc:
+                    last_error = exc
+                else:
+                    return response
+
+                if status_code not in self.retry_statuses:
+                    raise last_error  # type: ignore[misc]
+
+            if attempt == self.retries:
+                if last_error:
+                    raise last_error
+                raise RuntimeError("HTTP request failed without raising an exception")
+
+            delay = self._compute_backoff(attempt)
+            time.sleep(delay)
+            attempt += 1
+
         if last_error:
             raise last_error
         raise RuntimeError("HTTP request failed without raising an exception")
 
 
-def _next_rate_limit_deadline(rate_limit_cfg: Mapping[str, Any] | None) -> Tuple[Optional[float], float]:
+def _rate_limit_interval(rate_limit_cfg: Mapping[str, Any] | None) -> Tuple[Optional[float], float]:
     if not rate_limit_cfg:
         return None, 0.0
     requests_per_minute = float(rate_limit_cfg.get("requests_per_minute", 0) or 0)
     if requests_per_minute <= 0:
         return None, 0.0
-    interval = 60.0 / requests_per_minute
-    return 0.0, interval
+    interval = 60.0 / max(1.0, requests_per_minute)
+    return None, interval
 
 
-def _sleep_if_needed(next_deadline: Optional[float], interval: float) -> float:
-    if next_deadline is None or interval <= 0:
-        return time.time()
-    now = time.time()
+def _respect_rate_limit(next_deadline: Optional[float], interval: float) -> Optional[float]:
+    if interval <= 0:
+        return None
+    now = time.monotonic()
+    if next_deadline is None:
+        next_deadline = now
     if now < next_deadline:
         time.sleep(next_deadline - now)
-    return time.time()
+        now = time.monotonic()
+    return max(next_deadline + interval, now)
 
 
 def _apply_watermark(params: MutableMapping[str, Any], cfg: Mapping[str, Any]) -> Optional[str]:
@@ -245,13 +283,22 @@ def fetch_json_to_df(cfg: Mapping[str, Any], *, spark: Any | None = None) -> Tup
     param_name = pagination_cfg.get("param") or "page"
     cursor_param = pagination_cfg.get("cursor_param") or "cursor"
 
-    rate_deadline, rate_interval = _next_rate_limit_deadline(cfg.get("rate_limit"))
+    rate_deadline, rate_interval = _rate_limit_interval(cfg.get("rate_limit"))
 
     retry_cfg = cfg.get("retries") or {}
+    status_forcelist = retry_cfg.get("status_forcelist")
+    if isinstance(status_forcelist, (list, tuple, set)):
+        retry_statuses: Iterable[int] | None = [int(code) for code in status_forcelist]
+    elif status_forcelist is None:
+        retry_statuses = None
+    else:
+        retry_statuses = [int(status_forcelist)]
     session = _RetryableSession(
         retries=int(retry_cfg.get("max_attempts", 3) or 3),
         backoff_factor=float(retry_cfg.get("backoff", 1.5) or 1.5),
         timeout=float(cfg.get("timeout", 30) or 30),
+        jitter=float(retry_cfg.get("jitter", 0.25) or 0.25),
+        retry_statuses=retry_statuses,
     )
 
     headers = _prepare_headers(cfg)
@@ -262,7 +309,7 @@ def fetch_json_to_df(cfg: Mapping[str, Any], *, spark: Any | None = None) -> Tup
     next_cursor: Optional[str] = None
 
     for page in range(1, max_pages + 1):
-        rate_deadline = _sleep_if_needed(rate_deadline, rate_interval)
+        rate_deadline = _respect_rate_limit(rate_deadline, rate_interval)
 
         request_params = dict(params)
         if strategy == "param_increment":
