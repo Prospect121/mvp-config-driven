@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.2.1] - 2025-10-25
+
+### Highlights
+- Finance pipelines now auto-discover the JDBC raw source when `RAW_SOURCE=jdbc`, simplifying multi-channel ingestion toggles.
+- Multi-cloud production runbooks reference the new `cfg/finance/**/*.prod.yml` configurations for Databricks, AWS, GCP, and Azure.
+
+### Tooling & CI
+- Hardened `auth-lint` by enforcing incremental `state_id` requirements and blocking embedded `Authorization` headers or hardcoded credentials in production YAMLs.
+- Added a `smoke-finance` CI job that dry-runs the finance pipeline for both HTTP and JDBC sources and uploads `smoke-finance.log` as an artifact.
+
+### Configuration
+- Published finance production configurations per cloud provider, leveraging managed identities and environment-scoped parameters.
+
+### Documentation
+- Documented the finance production rollout process per cloud, including Databricks job JSON definitions and Glue/Dataproc/Synapse commands.
+
 ## [0.2.0] - 2025-02-18
 
 ### Highlights

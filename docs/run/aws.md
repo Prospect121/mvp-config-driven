@@ -12,7 +12,7 @@ gold) en AWS Glue utilizando jobs basados en wheel y comandos `prodi run-layer`.
 2. Carga el artefacto y las configuraciones productivas en un bucket S3 accesible
    desde Glue:
    ```bash
-   aws s3 cp dist/mvp_config_driven-0.2.0-py3-none-any.whl s3://datalake-artifacts/prodi/
+   aws s3 cp dist/mvp_config_driven-0.2.1-py3-none-any.whl s3://datalake-artifacts/prodi/
    aws s3 sync cfg s3://datalake-artifacts/cfg/
    ```
 
@@ -43,13 +43,44 @@ el mismo wheel y YAML de producción:
 ```bash
 spark-submit \
   --deploy-mode cluster \
-  --py-files s3://datalake-artifacts/prodi/mvp_config_driven-0.2.0-py3-none-any.whl \
+  --py-files s3://datalake-artifacts/prodi/mvp_config_driven-0.2.1-py3-none-any.whl \
   s3://datalake-artifacts/scripts/prodi_emr_entry.py \
   --layer bronze \
   --config s3://datalake-artifacts/cfg/bronze/aws.prod.yml
 ```
 
-## 3. Validación `dry-run`
+## 3. Producción (finanzas)
+
+Despliega jobs dedicados para la cadena financiera utilizando los YAML
+`cfg/finance/**/*.prod.yml`. A modo de referencia, el siguiente bloque arranca las
+cuatro capas sobre Glue (sustituye `<bucket>` por tu ubicación real) y fuerza el
+uso de la configuración HTTP; cambia `transactions_http` por
+`transactions_jdbc` cuando el origen sea JDBC:
+
+```bash
+aws glue start-job-run --job-name prodi-fin-raw \
+  --arguments '{"--layer":"raw","--config":"s3://<bucket>/cfg/finance/raw/transactions_http.aws.prod.yml"}'
+aws glue start-job-run --job-name prodi-fin-bronze \
+  --arguments '{"--layer":"bronze","--config":"s3://<bucket>/cfg/finance/bronze/transactions.aws.prod.yml"}'
+aws glue start-job-run --job-name prodi-fin-silver \
+  --arguments '{"--layer":"silver","--config":"s3://<bucket>/cfg/finance/silver/transactions.aws.prod.yml"}'
+aws glue start-job-run --job-name prodi-fin-gold \
+  --arguments '{"--layer":"gold","--config":"s3://<bucket>/cfg/finance/gold/kpis.aws.prod.yml"}'
+```
+
+Para EMR o EMR Serverless, arma un `spark-submit` por capa con el wheel 0.2.1 y
+las rutas de configuración equivalentes:
+
+```bash
+spark-submit \
+  --deploy-mode cluster \
+  --py-files s3://datalake-artifacts/prodi/mvp_config_driven-0.2.1-py3-none-any.whl \
+  s3://datalake-artifacts/scripts/prodi_emr_entry.py \
+  --layer raw \
+  --config s3://datalake-artifacts/cfg/finance/raw/transactions_http.aws.prod.yml
+```
+
+## 4. Validación `dry-run`
 
 Antes de tocar datos reales ejecuta una validación `dry-run` forzada con la misma
 configuración productiva. Tanto los jobs de Glue como Step Functions aceptan
@@ -64,7 +95,7 @@ El flag `PRODI_FORCE_DRY_RUN=1` replica el job `smoke-prod` de CI y obliga a que
 `prodi` no ejecute acciones sobre los buckets aun cuando el YAML defina
 `dry_run: false`.
 
-## 4. Parámetros dinámicos y credenciales
+## 5. Parámetros dinámicos y credenciales
 
 * Define parámetros globales en Step Functions y pásalos a cada job como
   `--env=prod` o fechas de partición.
@@ -72,7 +103,7 @@ El flag `PRODI_FORCE_DRY_RUN=1` replica el job `smoke-prod` de CI y obliga a que
   `cfg/*/aws.prod.yml` se apoyan únicamente en IAM (sin llaves embebidas) como se
   describe en la sección de credenciales por identidad del README.
 
-## 5. Observabilidad
+## 6. Observabilidad
 
 * Activa CloudWatch Logs para cada job y configura métricas de error.
 * Exporta el catálogo de datasets actualizado tras cada ejecución a S3 para

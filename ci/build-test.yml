@@ -110,14 +110,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Lint duplicated HTTP auth headers
+      - name: Enforce configuration guardrails
         run: |
           set -euo pipefail
           python - <<'PY'
-import subprocess
 import sys
+from collections import defaultdict
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Mapping
 
 import yaml
 
@@ -125,33 +125,123 @@ root = Path("cfg")
 if not root.exists():
     sys.exit(0)
 
-result = subprocess.run(
-    ["rg", "--files-with-matches", "io\\.source\\.auth", str(root)],
-    check=False,
-    text=True,
-    capture_output=True,
-)
-offenders: list[Path] = []
-for line in result.stdout.splitlines():
-    path = Path(line.strip())
-    if not path.exists():
-        continue
-    with path.open("r", encoding="utf-8") as handle:
-        documents = [doc for doc in yaml.safe_load_all(handle) if isinstance(doc, Mapping)]
-    for doc in documents:
-        source = ((doc.get("io") or {}).get("source") or {})
-        if not isinstance(source, Mapping) or "auth" not in source:
-            continue
-        headers = source.get("headers") or {}
-        if isinstance(headers, Mapping) and "Authorization" in headers:
-            offenders.append(path)
-            break
+prod_paths = {path for path in root.rglob("*.prod.yml")}
+duplicate_auth_headers: set[Path] = set()
+missing_state_ids: set[Path] = set()
+prod_missing_environment: set[Path] = set()
+prod_authorization_headers: set[Path] = set()
+hardcoded_auth_values: dict[Path, list[str]] = defaultdict(list)
 
-if offenders:
-    print("[auth-lint] Found duplicated Authorization headers alongside auth block:", file=sys.stderr)
-    for path in offenders:
+ALLOWED_LITERAL_AUTH_VALUES = {
+    "managed_identity",
+    "workload_identity",
+    "iam_role",
+    "federated_identity",
+    "service_principal",
+}
+ALLOWED_TYPE_LITERALS = {"bearer_env", "managed_identity", "oauth_service_principal"}
+
+
+def iter_mappings(node):
+    if isinstance(node, Mapping):
+        yield node
+        for value in node.values():
+            yield from iter_mappings(value)
+    elif isinstance(node, list):
+        for item in node:
+            yield from iter_mappings(item)
+
+
+def safe_documents(path: Path):
+    with path.open("r", encoding="utf-8") as handle:
+        for raw in yaml.safe_load_all(handle):
+            if isinstance(raw, Mapping):
+                yield raw
+
+
+def is_safe_auth_value(key: str, value) -> bool:
+    if not isinstance(value, str):
+        return True
+    candidate = value.strip()
+    if not candidate:
+        return False
+    if "{{" in candidate and "}}" in candidate:
+        return True
+    if candidate.isupper() and all(ch.isupper() or ch.isdigit() or ch == "_" for ch in candidate):
+        return True
+    if candidate in ALLOWED_LITERAL_AUTH_VALUES:
+        return True
+    if key == "type" and candidate in ALLOWED_TYPE_LITERALS:
+        return True
+    return False
+
+
+for path in sorted(root.rglob("*.yml")):
+    is_prod = path in prod_paths
+    for document in safe_documents(path):
+        if is_prod and document.get("environment") != "production":
+            prod_missing_environment.add(path)
+
+        for mapping in iter_mappings(document):
+            if not isinstance(mapping, Mapping):
+                continue
+
+            headers = mapping.get("headers")
+            auth = mapping.get("auth")
+            incremental = mapping.get("incremental")
+
+            if isinstance(auth, Mapping):
+                if isinstance(headers, Mapping) and "Authorization" in headers:
+                    duplicate_auth_headers.add(path)
+                if is_prod:
+                    for key, value in auth.items():
+                        if not is_safe_auth_value(str(key), value):
+                            hardcoded_auth_values[path].append(f"{key}={value}")
+
+            if is_prod and isinstance(headers, Mapping) and "Authorization" in headers:
+                prod_authorization_headers.add(path)
+
+            if isinstance(incremental, Mapping):
+                watermark = incremental.get("watermark")
+                state_id = None
+                if isinstance(watermark, Mapping):
+                    state_id = watermark.get("state_id")
+                if not isinstance(state_id, str) or not state_id.strip():
+                    missing_state_ids.add(path)
+
+
+def emit(title: str, paths):
+    print(title, file=sys.stderr)
+    for path in sorted(paths):
         print(f"  - {path}", file=sys.stderr)
-        subprocess.run(["rg", "-n", "Authorization", str(path)], check=False)
+
+
+has_errors = False
+
+if duplicate_auth_headers:
+    has_errors = True
+    emit("[auth-lint] Found Authorization header alongside auth mapping:", duplicate_auth_headers)
+
+if missing_state_ids:
+    has_errors = True
+    emit("[config] Incremental watermark requires state_id:", missing_state_ids)
+
+if prod_missing_environment:
+    has_errors = True
+    emit("[config] Production configs must declare environment: production:", prod_missing_environment)
+
+if prod_authorization_headers:
+    has_errors = True
+    emit("[config] Production configs must not embed headers.Authorization:", prod_authorization_headers)
+
+if hardcoded_auth_values:
+    has_errors = True
+    print("[config] Production auth blocks must reference environment variables or managed identities:", file=sys.stderr)
+    for path in sorted(hardcoded_auth_values):
+        details = ", ".join(sorted(hardcoded_auth_values[path]))
+        print(f"  - {path}: {details}", file=sys.stderr)
+
+if has_errors:
     sys.exit(1)
 PY
 
@@ -194,10 +284,10 @@ PY
         run: |
           set -euo pipefail
           : > smoke-finance.log
-          for source in http jdbc; do
-            echo "[smoke-finance] Running RAW_SOURCE=${source}" | tee -a smoke-finance.log
-            PRODI_FORCE_DRY_RUN=1 prodi run-pipeline -p cfg/pipelines/finance_transactions.yml --vars RAW_SOURCE="${source}" 2>&1 | tee -a smoke-finance.log
-          done
+          echo "[smoke-finance] Running RAW_SOURCE=http" | tee -a smoke-finance.log
+          PRODI_FORCE_DRY_RUN=1 prodi run-pipeline -p cfg/pipelines/finance_transactions.yml --vars RAW_SOURCE=http 2>&1 | tee -a smoke-finance.log
+          echo "[smoke-finance] Running RAW_SOURCE=jdbc" | tee -a smoke-finance.log
+          PRODI_FORCE_DRY_RUN=1 prodi run-pipeline -p cfg/pipelines/finance_transactions.yml --vars RAW_SOURCE=jdbc 2>&1 | tee -a smoke-finance.log
 
       - name: Upload finance smoke logs
         if: always()

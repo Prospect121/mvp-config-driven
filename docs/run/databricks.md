@@ -11,11 +11,11 @@ preparación del artefacto, la configuración del job y comandos de verificació
    ```bash
    poetry build -f wheel
    ```
-2. Publica el wheel (`dist/mvp_config_driven-0.2.0-py3-none-any.whl`) y las
+2. Publica el wheel (`dist/mvp_config_driven-0.2.1-py3-none-any.whl`) y las
    configuraciones de producción (`cfg/*/*.prod.yml`)
    en DBFS o en un repositorio de artefactos accesible desde Databricks:
    ```bash
-   databricks fs cp dist/mvp_config_driven-0.2.0-py3-none-any.whl dbfs:/libs/mvp-config-driven.whl
+   databricks fs cp dist/mvp_config_driven-0.2.1-py3-none-any.whl dbfs:/libs/mvp-config-driven.whl
    databricks fs cp -r cfg dbfs:/cfg
    ```
 
@@ -75,7 +75,89 @@ del job o del task. `prodi` forzará el `dry_run` incluso si el YAML productivo 
 declara en `false`, lo que permite validar `cfg/*/*.prod.yml` sin tocar datos.
 La configuración de CI (`smoke-prod`) usa exactamente este patrón.
 
-## 4. Variables y secretos operativos
+## 4. Producción (finanzas)
+
+Para la cadena financiera crea un Job multipaso específico que lea las nuevas
+configuraciones productivas en `cfg/finance/**/*.prod.yml`. El siguiente JSON
+ejemplifica cuatro Python Wheel Tasks encadenadas para `raw`, `bronze`, `silver`
+y `gold` utilizando el workspace de AWS (ajusta el sufijo `aws` por `azure` o
+`gcp` según corresponda):
+
+```json
+{
+  "tasks": [
+    {
+      "task_key": "raw",
+      "job_cluster_key": "shared_cluster",
+      "wheel_task": {
+        "package_name": "prodi",
+        "entry_point": "run-layer",
+        "parameters": [
+          "--layer",
+          "raw",
+          "--config",
+          "dbfs:/cfg/finance/raw/transactions_http.aws.prod.yml"
+        ]
+      },
+      "libraries": [{"whl": "dbfs:/libs/mvp-config-driven.whl"}]
+    },
+    {
+      "task_key": "bronze",
+      "depends_on": [{"task_key": "raw"}],
+      "job_cluster_key": "shared_cluster",
+      "wheel_task": {
+        "package_name": "prodi",
+        "entry_point": "run-layer",
+        "parameters": [
+          "--layer",
+          "bronze",
+          "--config",
+          "dbfs:/cfg/finance/bronze/transactions.aws.prod.yml"
+        ]
+      },
+      "libraries": [{"whl": "dbfs:/libs/mvp-config-driven.whl"}]
+    },
+    {
+      "task_key": "silver",
+      "depends_on": [{"task_key": "bronze"}],
+      "job_cluster_key": "shared_cluster",
+      "wheel_task": {
+        "package_name": "prodi",
+        "entry_point": "run-layer",
+        "parameters": [
+          "--layer",
+          "silver",
+          "--config",
+          "dbfs:/cfg/finance/silver/transactions.aws.prod.yml"
+        ]
+      },
+      "libraries": [{"whl": "dbfs:/libs/mvp-config-driven.whl"}]
+    },
+    {
+      "task_key": "gold",
+      "depends_on": [{"task_key": "silver"}],
+      "job_cluster_key": "shared_cluster",
+      "wheel_task": {
+        "package_name": "prodi",
+        "entry_point": "run-layer",
+        "parameters": [
+          "--layer",
+          "gold",
+          "--config",
+          "dbfs:/cfg/finance/gold/kpis.aws.prod.yml"
+        ]
+      },
+      "libraries": [{"whl": "dbfs:/libs/mvp-config-driven.whl"}]
+    }
+  ]
+}
+```
+
+Clona el bloque para un `raw` alternativo apuntando a
+`transactions_jdbc.<cloud>.prod.yml` cuando la ingesta venga por JDBC; el job se
+mantiene idéntico para `bronze`, `silver` y `gold`.
+
+## 5. Variables y secretos operativos
 
 * Usa `job_parameters` o [task parameters](https://docs.databricks.com/jobs/jobs-parameterization.html)
   para inyectar rutas de configuración o flags como `--env prod`.
@@ -86,7 +168,7 @@ La configuración de CI (`smoke-prod`) usa exactamente este patrón.
 * Registra el build del wheel junto con la versión de configuración aplicada
   para reproducibilidad.
 
-## 5. Monitoreo y recuperación
+## 6. Monitoreo y recuperación
 
 * Activa [Job run notifications](https://docs.databricks.com/workflows/jobs/jobs-notifications.html)
   para avisos de fallos entre capas.
