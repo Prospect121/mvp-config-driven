@@ -54,14 +54,23 @@ def test_maybe_config_s3a_leaves_ssl_enabled_by_default(monkeypatch, caplog):
     assert "spark.hadoop.fs.s3a.connection.ssl.enabled" not in spark.conf.settings
 
 
-def test_maybe_config_s3a_can_disable_ssl(monkeypatch):
+def test_maybe_config_s3a_rejects_ssl_disable_flag(monkeypatch):
     spark = DummySpark()
     monkeypatch.setenv("AWS_ACCESS_KEY_ID", "AKIAZZZ")
     monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "secret")
 
-    maybe_config_s3a(spark, "s3a://bucket/path", {"s3a_disable_ssl": True})
+    with pytest.raises(ValueError):
+        maybe_config_s3a(spark, "s3a://bucket/path", {"s3a_disable_ssl": True})
 
-    assert spark.conf.settings["spark.hadoop.fs.s3a.connection.ssl.enabled"] == "false"
+
+def test_maybe_config_s3a_rejects_env_ssl_disable(monkeypatch):
+    spark = DummySpark()
+    monkeypatch.setenv("AWS_ACCESS_KEY_ID", "AKIAENV")
+    monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "secret")
+    monkeypatch.setenv("S3A_DISABLE_SSL", "true")
+
+    with pytest.raises(ValueError):
+        maybe_config_s3a(spark, "s3a://bucket/path", {})
 
 
 def test_maybe_config_s3a_reads_credentials_from_named_env(monkeypatch):

@@ -181,7 +181,10 @@ def maybe_config_s3a(spark, path: str, env: Dict[str, Any]) -> str:
     spark.conf.set("spark.hadoop.fs.s3a.path.style.access", "true")
     spark.conf.set("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
 
-    if _bool_from_env(env.get("s3a_disable_ssl") or os.environ.get("S3A_DISABLE_SSL")):
-        spark.conf.set("spark.hadoop.fs.s3a.connection.ssl.enabled", "false")
+    disable_ssl_flag = env.get("s3a_disable_ssl") or os.environ.get("S3A_DISABLE_SSL")
+    if _bool_from_env(disable_ssl_flag):
+        raise ValueError(
+            "TLS must remain enabled for S3A connections. Remove 's3a_disable_ssl' or 'S3A_DISABLE_SSL'."
+        )
 
     return path

@@ -24,21 +24,45 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+def _redact(value: str, visible: int = 4) -> str:
+    if not value:
+        return '<unset>'
+    if len(value) <= visible:
+        return '*' * len(value)
+    return f"{value[:visible]}***"
+
+
 def setup_environment():
     """Configurar variables de entorno necesarias."""
-    env_vars = {
+    base_env = {
         'SPARK_HOME': os.environ.get('SPARK_HOME', '/opt/spark'),
         'JAVA_HOME': os.environ.get('JAVA_HOME', '/usr/lib/jvm/java-11-openjdk'),
-        'PYTHONPATH': os.environ.get('PYTHONPATH', ''),
-        'AWS_ACCESS_KEY_ID': 'minioadmin',
-        'AWS_SECRET_ACCESS_KEY': 'minioadmin',
-        'AWS_ENDPOINT_URL': 'http://localhost:9000',
-        'AWS_REGION': 'us-east-1'
+        'PYTHONPATH': os.environ.get('PYTHONPATH', '')
     }
-    
-    for key, value in env_vars.items():
+
+    for key, value in base_env.items():
         os.environ[key] = value
-        logger.info(f"Set {key}={value}")
+        logger.info("Configured %s=%s", key, value or '<empty>')
+
+    required_secret_keys = ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY']
+    missing = [key for key in required_secret_keys if not os.environ.get(key)]
+    if missing:
+        raise RuntimeError(
+            f"Missing required AWS credentials from secure provider: {', '.join(missing)}"
+        )
+
+    for key in required_secret_keys:
+        logger.info("Environment provides %s=%s", key, _redact(os.environ.get(key)))
+
+    endpoint = os.environ.get('AWS_ENDPOINT_URL')
+    if endpoint:
+        if endpoint.startswith('http://'):
+            raise RuntimeError('Insecure AWS_ENDPOINT_URL detected; TLS is required.')
+        logger.info("Using AWS endpoint from environment: %s", endpoint)
+
+    region = os.environ.get('AWS_REGION', 'us-east-1')
+    os.environ['AWS_REGION'] = region
+    logger.info("Using AWS region: %s", region)
 
 def generate_test_data():
     """Generar datos de prueba multi-formato."""
