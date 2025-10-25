@@ -44,6 +44,12 @@ Este documento centraliza la arquitectura, módulos, configuraciones, ejecución
 - Notebooks:
   - `docs/01_pipeline_explicacion.ipynb`: flujo E2E con Quick Start (`USE_QS`), métricas por etapa y verificación.
   - `docs/01_pipeline_explicacion_min.ipynb`: validación rápida de PySpark y Parquet.
+- Operación en plataformas cloud:
+  - `docs/run/databricks.md`: wheel tasks de Databricks Jobs con ejemplos `dry-run` y dependencia por capa.
+  - `docs/run/aws.md`: despliegue en AWS Glue + Step Functions.
+  - `docs/run/gcp.md`: workflows de Dataproc con templates parametrizados.
+  - `docs/run/azure.md`: ejecución en Synapse Spark job definitions.
+  - `docs/run/jobs/`: artefactos JSON/YAML listos para importar (Jobs, Workflows, Step Functions).
 
 ## Ingesta Multi-Fuente
 
