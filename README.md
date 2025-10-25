@@ -10,9 +10,20 @@ Un pipeline de datos modular y dirigido por configuración. Procesa fuentes CSV/
   - Linux/macOS: `python -m venv .venv && source .venv/bin/activate`
   - `pip install -r requirements.txt`
 - Ejecutar (local):
-  - `python pipelines/spark_job_with_db.py <dataset_config> config/env.yml config/database.yml development`
+  - `prodi run-layer raw -c cfg/raw/example.yml`
+  - `prodi run-pipeline -p cfg/pipelines/example.yml`
 - Docker Compose:
   - `docker compose run --rm runner ./runner.sh --dataset <dataset_name> --env env.yml`
+
+## Ejecución por capa
+
+- Las configuraciones `cfg/<layer>/example.yml` están pensadas para corridas de
+  humo. Cada YAML activa `dry_run` y apunta al dataset sintético en
+  `samples/toy_customers.csv` para validar la estructura sin tocar servicios
+  externos.
+- El manifiesto `cfg/pipelines/example.yml` declara la secuencia raw → bronze →
+  silver → gold y puede invocarse con `prodi run-pipeline -p ...` desde CI o
+  desde cualquier orquestador.
 
 ## Notebooks
 
@@ -26,11 +37,21 @@ Un pipeline de datos modular y dirigido por configuración. Procesa fuentes CSV/
 - `pipelines/transforms`: transformaciones SQL/UDF y casts.
 - `pipelines/config`: carga YAML/JSON.
 - `pipelines/io`: lectura/escritura con reintentos y adaptadores multi-nube.
-- `pipelines/spark_job_with_db.py`: entrypoint principal.
+- `pipelines/spark_job_with_db.py`: entrypoint histórico (aún disponible para
+  compatibilidad, pero sustituido por `prodi run-layer`).
+
+## Orquestación fuera del código
+
+- `docs/run/databricks.md`, `docs/run/aws.md`, `docs/run/gcp.md` y
+  `docs/run/azure.md` contienen guías paso a paso (con JSON/YAML listos) para
+  ejecutar el wheel en Databricks, Glue/EMR, Dataproc y Synapse/ADF.
+- Los JSON/YAML en `docs/run/jobs/` son importables directamente en los
+  orquestadores y referencian las configuraciones `cfg/<layer>/example.yml`.
 
 ## Documentación Completa
 
-- Consultar `docs/PROJECT_DOCUMENTATION.md` para arquitectura, configuraciones, ejecución detallada, módulos y troubleshooting.
+- Consultar `docs/PROJECT_DOCUMENTATION.md` para arquitectura, configuraciones,
+  ejecución detallada, módulos y troubleshooting.
 
 ## Consejos
 
@@ -38,8 +59,11 @@ Un pipeline de datos modular y dirigido por configuración. Procesa fuentes CSV/
   define credenciales/opciones en `config/env.yml` o en los `cfg/*.yml` usando
   las claves `storage_options`, `reader_options` y `writer_options`.
 - Auditoría: `tools/list_io.py --json` verifica que no haya referencias a
-  artefactos en cuarentena ni protocolos no permitidos; el script original
-  sigue disponible en `docs/tools/list_io.py` para análisis detallado.
+  artefactos en cuarentena ni protocolos no permitidos. `tools/check_cross_layer.py`
+  refuerza el aislamiento entre capas y se ejecuta en CI.
+- Seguridad: GitGuardian analiza cada PR en GitHub y se complementa con
+  `tests/test_security_invariants.py`, que falla si alguien intenta desactivar
+  TLS o registrar `AWS_SECRET_ACCESS_KEY`/`fs.s3a.secret.key` en logs.
 - Calidad: usa `quarantine` para aislar inválidos sin perderlos.
 - Performance: ajustar `spark.sql.shuffle.partitions` y `coalesce/repartition` según volumen.
 

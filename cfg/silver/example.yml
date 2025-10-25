@@ -1,0 +1,27 @@
+layer: silver
+dry_run: true
+environment: development
+paths:
+  dataset: config/datasets/examples/toy_customers.yml
+  environment: config/env.yml
+  database: config/database.yml
+transform:
+  steps:
+    - name: sanitize_phone_numbers
+      params:
+        country: CO
+    - name: compute_churn_flags
+      params:
+        window_days: 30
+dq:
+  expectations:
+    require_not_null:
+      - customer_id
+      - signup_ts
+io:
+  source:
+    dataset_config: config/datasets/examples/toy_customers.yml
+  sink:
+    format: delta
+    options:
+      path: s3://example-silver/tables/customers/

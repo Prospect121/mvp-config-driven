@@ -11,8 +11,8 @@ Dataproc utilizando jobs de tipo PySpark que consumen el wheel de `prodi`.
    ```
 2. Publica el wheel y configuraciones en un bucket regional:
    ```bash
-   gsutil cp dist/prodi-1.4.0-py3-none-any.whl gs://datalake-artifacts/libs/
-   gsutil cp -r cfg/run gs://datalake-artifacts/cfg/run
+   gsutil cp dist/mvp_config_driven-0.1.0-py3-none-any.whl gs://datalake-artifacts/libs/
+   gsutil cp -r cfg gs://datalake-artifacts/cfg
    ```
 
 ## 2. Definir un workflow template
@@ -28,28 +28,28 @@ jobs:
       main-python-file-uri: gs://datalake-artifacts/scripts/prodi_dataproc_entry.py
       python-file-uris:
         - gs://datalake-artifacts/libs/prodi-1.4.0-py3-none-any.whl
-      args: ["--layer", "raw", "--config", "gs://datalake-artifacts/cfg/run/raw.yml"]
+      args: ["--layer", "raw", "--config", "gs://datalake-artifacts/cfg/raw/example.yml"]
   - step-id: bronze
     prerequisite-step-ids: [raw]
     pyspark-job:
       main-python-file-uri: gs://datalake-artifacts/scripts/prodi_dataproc_entry.py
       python-file-uris:
         - gs://datalake-artifacts/libs/prodi-1.4.0-py3-none-any.whl
-      args: ["--layer", "bronze", "--config", "gs://datalake-artifacts/cfg/run/bronze.yml"]
+      args: ["--layer", "bronze", "--config", "gs://datalake-artifacts/cfg/bronze/example.yml"]
   - step-id: silver
     prerequisite-step-ids: [bronze]
     pyspark-job:
       main-python-file-uri: gs://datalake-artifacts/scripts/prodi_dataproc_entry.py
       python-file-uris:
         - gs://datalake-artifacts/libs/prodi-1.4.0-py3-none-any.whl
-      args: ["--layer", "silver", "--config", "gs://datalake-artifacts/cfg/run/silver.yml"]
+      args: ["--layer", "silver", "--config", "gs://datalake-artifacts/cfg/silver/example.yml"]
   - step-id: gold
     prerequisite-step-ids: [silver]
     pyspark-job:
       main-python-file-uri: gs://datalake-artifacts/scripts/prodi_dataproc_entry.py
       python-file-uris:
         - gs://datalake-artifacts/libs/prodi-1.4.0-py3-none-any.whl
-      args: ["--layer", "gold", "--config", "gs://datalake-artifacts/cfg/run/gold.yml"]
+      args: ["--layer", "gold", "--config", "gs://datalake-artifacts/cfg/gold/example.yml"]
 cluster-selector:
   zone: us-central1-a
   cluster-labels:
@@ -77,15 +77,20 @@ Antes de ejecutar el workflow completo, lanza un job aislado con el flag
 gcloud dataproc jobs submit pyspark gs://datalake-artifacts/scripts/prodi_dataproc_entry.py \
   --cluster=dp-ops-validation \
   --region=us-central1 \
-  --jars=gs://datalake-artifacts/libs/prodi-1.4.0-py3-none-any.whl \
+  --jars=gs://datalake-artifacts/libs/mvp_config_driven-0.1.0-py3-none-any.whl \
   -- \
   --layer raw \
-  --config gs://datalake-artifacts/cfg/run/raw.yml \
+  --config gs://datalake-artifacts/cfg/raw/example.yml \
   --dry-run
 ```
 
 Puedes repetir el comando para cada capa, o bien crear una versión alternativa
 del template que fije `args: [..., "--dry-run"]` para entornos de QA.
+
+Cuando necesites ejecutar la cadena completa desde un orchestrator externo
+puedes referenciar el manifiesto declarativo `cfg/pipelines/example.yml` y
+ejecutarlo con `prodi run-pipeline -p cfg/pipelines/example.yml` antes de
+escalar a Dataproc.
 
 ## 5. Buenas prácticas operativas
 

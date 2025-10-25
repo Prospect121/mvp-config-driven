@@ -4,6 +4,8 @@ import sys
 from pathlib import Path
 from typing import List
 
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+
 import pytest
 import yaml
 
@@ -18,7 +20,7 @@ from datacore.cli import app, main
 def test_run_layer_dry_run(layer: str) -> None:
     runner = CliRunner()
     config_path = Path("cfg") / layer / "template.yml"
-    result = runner.invoke(app, [layer, "-c", str(config_path)])
+    result = runner.invoke(app, ["run-layer", layer, "-c", str(config_path)])
     assert result.exit_code == 0
     assert "Dry run requested" in result.stdout
 
@@ -49,7 +51,7 @@ def test_run_layer_only_executes_requested(monkeypatch, tmp_path) -> None:
     monkeypatch.setitem(datacore_cli._LAYER_RUNNERS, "raw", _fail_raw)
     monkeypatch.setitem(datacore_cli._LAYER_RUNNERS, "bronze", _bronze)
 
-    result = runner.invoke(app, ["bronze", "-c", str(config_path)])
+    result = runner.invoke(app, ["run-layer", "bronze", "-c", str(config_path)])
 
     assert result.exit_code == 0
     assert calls == ["bronze"]

@@ -588,6 +588,24 @@ def find_string_references(repo_root: Path, target: str) -> List[Path]:
     return matches
 
 
+CODE_REFERENCE_DIRS = {"src", "scripts", "tests", "cfg", "config", "pipelines"}
+
+
+def find_legacy_references(repo_root: Path) -> List[Path]:
+    matches: List[Path] = []
+    for path in collect_files(repo_root):
+        rel = path.relative_to(repo_root)
+        if rel.parts and rel.parts[0] not in CODE_REFERENCE_DIRS:
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            continue
+        if "legacy/" in text:
+            matches.append(rel)
+    return matches
+
+
 def validate_cleanup_state(repo_root: Path) -> List[str]:
     issues: List[str] = []
     for path, rule in MANUAL_RULES.items():
@@ -609,6 +627,13 @@ def validate_cleanup_state(repo_root: Path) -> List[str]:
             if len(references) > REFERENCE_LIMIT:
                 excerpt += ", ..."
             issues.append(f"Active references to {source}: {excerpt}")
+
+    legacy_refs = find_legacy_references(repo_root)
+    if legacy_refs:
+        excerpt = ", ".join(str(ref) for ref in legacy_refs[:REFERENCE_LIMIT])
+        if len(legacy_refs) > REFERENCE_LIMIT:
+            excerpt += ", ..."
+        issues.append(f"Forbidden reference to legacy path detected in: {excerpt}")
     return issues
 
 

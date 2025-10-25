@@ -1,0 +1,65 @@
+{
+  "Name": "prodi-layered-emr",
+  "Steps": [
+    {
+      "Name": "raw",
+      "ActionOnFailure": "CANCEL_AND_WAIT",
+      "HadoopJarStep": {
+        "Jar": "command-runner.jar",
+        "Args": [
+          "spark-submit",
+          "--deploy-mode", "cluster",
+          "--py-files", "s3://datalake-artifacts/prodi/mvp_config_driven-0.1.0-py3-none-any.whl",
+          "s3://datalake-artifacts/scripts/prodi_emr_entry.py",
+          "--layer", "raw",
+          "--config", "s3://datalake-artifacts/cfg/raw/example.yml"
+        ]
+      }
+    },
+    {
+      "Name": "bronze",
+      "ActionOnFailure": "CANCEL_AND_WAIT",
+      "HadoopJarStep": {
+        "Jar": "command-runner.jar",
+        "Args": [
+          "spark-submit",
+          "--deploy-mode", "cluster",
+          "--py-files", "s3://datalake-artifacts/prodi/mvp_config_driven-0.1.0-py3-none-any.whl",
+          "s3://datalake-artifacts/scripts/prodi_emr_entry.py",
+          "--layer", "bronze",
+          "--config", "s3://datalake-artifacts/cfg/bronze/example.yml"
+        ]
+      }
+    },
+    {
+      "Name": "silver",
+      "ActionOnFailure": "CANCEL_AND_WAIT",
+      "HadoopJarStep": {
+        "Jar": "command-runner.jar",
+        "Args": [
+          "spark-submit",
+          "--deploy-mode", "cluster",
+          "--py-files", "s3://datalake-artifacts/prodi/mvp_config_driven-0.1.0-py3-none-any.whl",
+          "s3://datalake-artifacts/scripts/prodi_emr_entry.py",
+          "--layer", "silver",
+          "--config", "s3://datalake-artifacts/cfg/silver/example.yml"
+        ]
+      }
+    },
+    {
+      "Name": "gold",
+      "ActionOnFailure": "CANCEL_AND_WAIT",
+      "HadoopJarStep": {
+        "Jar": "command-runner.jar",
+        "Args": [
+          "spark-submit",
+          "--deploy-mode", "cluster",
+          "--py-files", "s3://datalake-artifacts/prodi/mvp_config_driven-0.1.0-py3-none-any.whl",
+          "s3://datalake-artifacts/scripts/prodi_emr_entry.py",
+          "--layer", "gold",
+          "--config", "s3://datalake-artifacts/cfg/gold/example.yml"
+        ]
+      }
+    }
+  ]
+}

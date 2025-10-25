@@ -16,14 +16,14 @@
       "description": "Ingesta inicial",
       "job_cluster_key": "shared_cluster",
       "libraries": [
-        { "whl": "dbfs:/libs/prodi-1.4.0.whl" }
+        { "whl": "dbfs:/libs/mvp-config-driven.whl" }
       ],
       "wheel_task": {
         "package_name": "prodi",
         "entry_point": "run-layer",
         "parameters": [
           "--layer", "raw",
-          "--config", "dbfs:/cfg/run/raw.yml",
+          "--config", "dbfs:/cfg/raw/example.yml",
           "--env", "prod"
         ]
       }
@@ -33,14 +33,14 @@
       "depends_on": [{ "task_key": "raw" }],
       "job_cluster_key": "shared_cluster",
       "libraries": [
-        { "whl": "dbfs:/libs/prodi-1.4.0.whl" }
+        { "whl": "dbfs:/libs/mvp-config-driven.whl" }
       ],
       "wheel_task": {
         "package_name": "prodi",
         "entry_point": "run-layer",
         "parameters": [
           "--layer", "bronze",
-          "--config", "dbfs:/cfg/run/bronze.yml",
+          "--config", "dbfs:/cfg/bronze/example.yml",
           "--env", "prod"
         ]
       }
@@ -50,14 +50,14 @@
       "depends_on": [{ "task_key": "bronze" }],
       "job_cluster_key": "shared_cluster",
       "libraries": [
-        { "whl": "dbfs:/libs/prodi-1.4.0.whl" }
+        { "whl": "dbfs:/libs/mvp-config-driven.whl" }
       ],
       "wheel_task": {
         "package_name": "prodi",
         "entry_point": "run-layer",
         "parameters": [
           "--layer", "silver",
-          "--config", "dbfs:/cfg/run/silver.yml",
+          "--config", "dbfs:/cfg/silver/example.yml",
           "--env", "prod"
         ]
       }
@@ -67,14 +67,14 @@
       "depends_on": [{ "task_key": "silver" }],
       "job_cluster_key": "shared_cluster",
       "libraries": [
-        { "whl": "dbfs:/libs/prodi-1.4.0.whl" }
+        { "whl": "dbfs:/libs/mvp-config-driven.whl" }
       ],
       "wheel_task": {
         "package_name": "prodi",
         "entry_point": "run-layer",
         "parameters": [
           "--layer", "gold",
-          "--config", "dbfs:/cfg/run/gold.yml",
+          "--config", "dbfs:/cfg/gold/example.yml",
           "--env", "prod"
         ]
       }

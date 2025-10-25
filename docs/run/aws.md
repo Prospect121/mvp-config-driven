@@ -9,9 +9,11 @@ gold) en AWS Glue utilizando jobs basados en wheel y comandos `prodi run-layer`.
    ```bash
    poetry build -f wheel
    ```
-2. Carga el artefacto a un bucket S3 accesible desde Glue:
+2. Carga el artefacto a un bucket S3 accesible desde Glue junto con las
+   configuraciones declarativas:
    ```bash
-   aws s3 cp dist/prodi-1.4.0-py3-none-any.whl s3://datalake-artifacts/prodi/
+   aws s3 cp dist/mvp_config_driven-0.1.0-py3-none-any.whl s3://datalake-artifacts/prodi/
+   aws s3 sync cfg s3://datalake-artifacts/cfg/
    ```
 
 ## 2. Configurar el Job de Glue
@@ -29,10 +31,10 @@ aws glue create-job \
     "ScriptLocation": "s3://datalake-artifacts/scripts/prodi_glue_entry.py"
   }' \
   --default-arguments '{
-    "--additional-python-modules": "s3://datalake-artifacts/prodi/prodi-1.4.0-py3-none-any.whl",
-    "--extra-py-files": "s3://datalake-artifacts/config/cfg.zip",
+    "--additional-python-modules": "s3://datalake-artifacts/prodi/mvp_config_driven-0.1.0-py3-none-any.whl",
+    "--extra-py-files": "s3://datalake-artifacts/cfg.zip",
     "--layer": "raw",
-    "--config": "s3://datalake-artifacts/cfg/run/raw.yml"
+    "--config": "s3://datalake-artifacts/cfg/raw/example.yml"
   }'
 ```
 
@@ -48,7 +50,9 @@ if __name__ == "__main__":
 ### Encadenar capas
 
 Define un job por capa y utiliza Workflows de Glue o Step Functions para
-ejecutarlos secuencialmente:
+ejecutarlos secuencialmente. El archivo [`docs/run/jobs/aws_stepfunctions.json`](jobs/aws_stepfunctions.json)
+ya referencia las rutas `cfg/<layer>/example.yml` y puede importarse sin
+modificaciones.
 
 ```json
 {
@@ -68,7 +72,20 @@ ejecutarlos secuencialmente:
 }
 ```
 
-Consulta definiciones listas para usar en [`docs/run/jobs/`](jobs/).
+Para ejecuciones sobre EMR o EMR Serverless, lanza un `spark-submit` por capa
+con el mismo wheel:
+
+```bash
+spark-submit \
+  --deploy-mode cluster \
+  --py-files s3://datalake-artifacts/prodi/mvp_config_driven-0.1.0-py3-none-any.whl \
+  s3://datalake-artifacts/scripts/prodi_emr_entry.py \
+  --layer bronze \
+  --config s3://datalake-artifacts/cfg/bronze/example.yml
+```
+
+El script `prodi_emr_entry.py` debe delegar en `prodi.cli.main(["run-layer", ...])`,
+idéntico al usado en Glue y Dataproc.
 
 ## 3. Validación `dry-run`
 
