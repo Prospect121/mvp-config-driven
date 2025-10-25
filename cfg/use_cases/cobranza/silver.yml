@@ -1,19 +1,15 @@
 layer: silver
-base_config: ../../finance/silver/transactions.yml
+extends: "../../finance/silver/transactions.yml"
 transform:
   sql: |
     SELECT
-      transaction_id,
       account_id,
-      amount,
-      currency,
       posted_date,
-      is_reversal,
-      days_past_due,
-      collection_stage
-    FROM __INPUT__
-dq:
-  expectations:
-    - type: range
-      column: days_past_due
-      min: 0
+      amount,
+      CASE
+        WHEN days_between(now(), posted_date) <= 30 THEN '0-30'
+        WHEN days_between(now(), posted_date) <= 60 THEN '31-60'
+        WHEN days_between(now(), posted_date) <= 90 THEN '61-90'
+        ELSE '90+'
+      END AS bucket
+    FROM __BASE__

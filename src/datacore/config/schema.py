@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import Any, Dict, List, Optional
+from typing import Annotated, Any, Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -12,39 +12,282 @@ class FlexibleModel(BaseModel):
     model_config = ConfigDict(extra="allow")
 
 
+class SparkConfig(FlexibleModel):
+    app_name: Optional[str] = Field(default=None, description="Spark application name")
+    options: Dict[str, Any] = Field(
+        default_factory=dict, description="Spark configuration overrides"
+    )
+
+
 class ComputeConfig(FlexibleModel):
     engine: str = Field(default="spark", description="Execution engine identifier")
-    options: Dict[str, Any] = Field(
-        default_factory=dict, description="Engine specific tuning options"
+    spark: SparkConfig = Field(
+        default_factory=SparkConfig,
+        description="Spark specific execution configuration",
     )
+
+
+class WatermarkConfig(FlexibleModel):
+    field: Optional[str] = Field(default=None, description="Column used as watermark")
+    state_id: Optional[str] = Field(
+        default=None, description="Persistent identifier used to store the watermark"
+    )
+    default: Optional[str] = Field(
+        default="1970-01-01T00:00:00Z",
+        description="Fallback value applied when no persisted state exists",
+    )
+    param: Optional[str] = Field(
+        default=None,
+        description="Optional HTTP parameter name used when applying the watermark",
+    )
+    placeholder: Optional[str] = Field(
+        default=None,
+        description="Optional placeholder replaced within SQL queries",
+    )
+    from_env: Optional[str] = Field(
+        default=None, description="Environment variable used as fallback value"
+    )
+
+
+class IncrementalConfig(FlexibleModel):
+    watermark: Optional[WatermarkConfig] = Field(
+        default=None, description="Watermark definition for incremental ingestion"
+    )
+
+
+class PaginationConfig(FlexibleModel):
+    strategy: str = Field(
+        default="none",
+        description="Pagination strategy (none|param_increment|cursor|link_header)",
+    )
+    param: Optional[str] = Field(
+        default=None, description="Query parameter used for param_increment pagination"
+    )
+    cursor_param: Optional[str] = Field(
+        default=None, description="Cursor parameter used for cursor pagination"
+    )
+    cursor_field: Optional[str] = Field(
+        default=None, description="Payload field containing the next cursor"
+    )
+    max_pages: Optional[int] = Field(
+        default=None, description="Maximum number of pages to request"
+    )
+    stop_on_empty: Optional[bool] = Field(
+        default=True, description="Whether to stop when an empty page is encountered"
+    )
+
+
+class RateLimitConfig(FlexibleModel):
+    requests_per_minute: Optional[float] = Field(
+        default=None, description="Maximum number of requests per minute"
+    )
+
+
+class RetryConfig(FlexibleModel):
+    max_attempts: Optional[int] = Field(default=3, description="Maximum retry attempts")
+    backoff: Optional[float] = Field(default=1.5, description="Backoff factor")
+    jitter: Optional[float] = Field(default=0.25, description="Jitter factor")
+    status_forcelist: Optional[List[int]] = Field(
+        default=None, description="HTTP status codes that should trigger retries"
+    )
+
+
+class HTTPAuthConfig(FlexibleModel):
+    type: str = Field(default="none", description="Authentication strategy identifier")
+    env: Optional[str] = Field(
+        default=None, description="Environment variable used by bearer/api-key auth"
+    )
+    header: Optional[str] = Field(
+        default=None, description="Header name for api_key_header authentication"
+    )
+    username_env: Optional[str] = Field(
+        default=None, description="Environment variable holding the username"
+    )
+    password_env: Optional[str] = Field(
+        default=None, description="Environment variable holding the password"
+    )
+    token_url: Optional[str] = Field(
+        default=None, description="Token endpoint for OAuth2 client credentials"
+    )
+    client_id_env: Optional[str] = Field(
+        default=None, description="Environment variable with the OAuth client id"
+    )
+    client_secret_env: Optional[str] = Field(
+        default=None, description="Environment variable with the OAuth client secret"
+    )
+    scope: Optional[str] = Field(
+        default=None, description="Scope requested during OAuth token acquisition"
+    )
+
+
+class HTTPSchema(FlexibleModel):
+    type: Literal["http"] = "http"
+    url: str = Field(description="Endpoint URL")
+    method: str = Field(default="GET", description="HTTP verb to use")
+    headers: Dict[str, Any] = Field(
+        default_factory=dict, description="Static HTTP headers to include"
+    )
+    params: Dict[str, Any] = Field(
+        default_factory=dict, description="Static query parameters"
+    )
+    pagination: PaginationConfig = Field(
+        default_factory=PaginationConfig, description="Pagination settings"
+    )
+    rate_limit: RateLimitConfig = Field(
+        default_factory=RateLimitConfig, description="Rate limiting configuration"
+    )
+    retries: RetryConfig = Field(
+        default_factory=RetryConfig, description="Retry configuration"
+    )
+    timeout: Optional[float] = Field(
+        default=30, description="Request timeout in seconds"
+    )
+    auth: HTTPAuthConfig = Field(
+        default_factory=HTTPAuthConfig, description="Authentication configuration"
+    )
+    incremental: IncrementalConfig = Field(
+        default_factory=IncrementalConfig, description="Incremental ingestion hints"
+    )
+
+
+class JDBCAuthConfig(FlexibleModel):
+    mode: Optional[str] = Field(
+        default=None, description="Authentication mode (managed_identity|basic_env)"
+    )
+    user_env: Optional[str] = Field(
+        default=None, description="Environment variable containing the username"
+    )
+    username_env: Optional[str] = Field(
+        default=None, description="Alternate username environment variable"
+    )
+    password_env: Optional[str] = Field(
+        default=None, description="Environment variable containing the password"
+    )
+    use_managed_identity: Optional[bool] = Field(
+        default=None, description="Whether to use a managed identity"
+    )
+    user: Optional[str] = Field(default=None, description="Explicit username override")
+    username: Optional[str] = Field(
+        default=None, description="Explicit username override"
+    )
+    password: Optional[str] = Field(default=None, description="Explicit password")
+
+
+class JDBCPartitioningConfig(FlexibleModel):
+    column: Optional[str] = Field(
+        default=None, description="Column used to partition the JDBC load"
+    )
+    num_partitions: Optional[int] = Field(
+        default=None, description="Number of partitions to create"
+    )
+    lower_bound: Optional[Any] = Field(
+        default=None, description="Lower bound used for partitioning"
+    )
+    upper_bound: Optional[Any] = Field(
+        default=None, description="Upper bound used for partitioning"
+    )
+    discover: Optional[bool] = Field(
+        default=True,
+        description="Whether bounds should be auto-discovered when not provided",
+    )
+    alias: Optional[str] = Field(
+        default=None,
+        description="Optional alias used when computing bounds via sub-queries",
+    )
+
+
+class JDBCSchema(FlexibleModel):
+    type: Literal["jdbc"] = "jdbc"
+    url: str = Field(description="JDBC URL")
+    driver: str = Field(description="JDBC driver class")
+    query: Optional[str] = Field(default=None, description="Query to execute")
+    table: Optional[str] = Field(default=None, description="Table to select from")
+    options: Dict[str, Any] = Field(
+        default_factory=dict, description="Additional Spark reader options"
+    )
+    auth: JDBCAuthConfig = Field(
+        default_factory=JDBCAuthConfig, description="Authentication configuration"
+    )
+    incremental: IncrementalConfig = Field(
+        default_factory=IncrementalConfig, description="Incremental ingestion hints"
+    )
+    partitioning: JDBCPartitioningConfig = Field(
+        default_factory=JDBCPartitioningConfig,
+        description="Partitioning configuration",
+    )
+
+
+class FileIOSchema(FlexibleModel):
+    type: Literal["files"] = "files"
+    uri: Optional[str] = Field(default=None, description="Fully qualified URI")
+    path: Optional[str] = Field(default=None, description="Filesystem path")
+    format: Optional[str] = Field(default=None, description="Dataset format")
+    options: Dict[str, Any] = Field(
+        default_factory=dict, description="Reader/Writer specific options"
+    )
+    filesystem: Dict[str, Any] = Field(
+        default_factory=dict, description="Filesystem adapter overrides"
+    )
+    mode: Optional[str] = Field(default=None, description="Write mode when used as sink")
+    partition_by: Optional[List[str]] = Field(
+        default=None, description="Partitioning columns when writing"
+    )
+    coalesce: Optional[int] = Field(
+        default=None, description="Number of partitions to coalesce to when writing"
+    )
+    repartition: Optional[int] = Field(
+        default=None, description="Number of partitions to repartition to when writing"
+    )
+
+
+LayerIOSpec = Annotated[
+    Union[HTTPSchema, JDBCSchema, FileIOSchema],
+    Field(discriminator="type"),
+]
 
 
 class IOConfig(FlexibleModel):
-    source: Optional[Dict[str, Any] | List[Dict[str, Any]]] = Field(
-        default_factory=dict, description="Source declaration for the layer"
+    source: Optional[Union[LayerIOSpec, Dict[str, Any], List[Union[LayerIOSpec, Dict[str, Any]]]]] = Field(
+        default=None, description="Source declaration for the layer"
     )
-    sink: Optional[Dict[str, Any] | List[Dict[str, Any]]] = Field(
-        default_factory=dict, description="Sink declaration for the layer"
+    sink: Optional[Union[LayerIOSpec, Dict[str, Any], List[Union[LayerIOSpec, Dict[str, Any]]]]] = Field(
+        default=None, description="Sink declaration for the layer"
     )
 
 
 class TransformConfig(FlexibleModel):
-    steps: List[Dict[str, Any]] = Field(
-        default_factory=list, description="Declarative ordered list of transformations"
+    pre: List[Dict[str, Any]] = Field(
+        default_factory=list, description="List of pre-processing transformations"
     )
-    standardization: Dict[str, Any] = Field(
-        default_factory=dict,
-        description="Legacy standardization block kept as part of the transform stage",
+    sql: Optional[Union[str, List[str]]] = Field(
+        default=None, description="SQL statements applied during the transform stage"
+    )
+    functions: List[Any] = Field(
+        default_factory=list, description="Callable transformations"
     )
     references: Dict[str, Any] = Field(
         default_factory=dict, description="External references (SQL, schemas, etc.)"
     )
 
 
+class DQReportConfig(FlexibleModel):
+    path: Optional[str] = Field(
+        default=None, description="Base path used to persist DQ reports"
+    )
+    base_path: Optional[str] = Field(
+        default=None, description="Legacy alias for 'path'"
+    )
+
+
 class DQConfig(FlexibleModel):
-    expectations: Dict[str, Any] = Field(
-        default_factory=dict,
-        description="Quality expectations and quarantine configuration",
+    expectations: Union[List[Dict[str, Any]], Dict[str, Any]] = Field(
+        default_factory=list, description="Quality expectations"
+    )
+    fail_on_error: bool = Field(
+        default=True, description="Whether expectation failures should abort execution"
+    )
+    report: Optional[DQReportConfig] = Field(
+        default=None, description="Report persistence configuration"
     )
 
 
@@ -70,8 +313,8 @@ class DatasetConfigModel(FlexibleModel):
 
 
 class LayerRuntimeIO(FlexibleModel):
-    source: Dict[str, Any] = Field(default_factory=dict)
-    sink: Dict[str, Any] = Field(default_factory=dict)
+    source: Optional[Union[LayerIOSpec, Dict[str, Any], List[Union[LayerIOSpec, Dict[str, Any]]]]] = Field(default=None)
+    sink: Optional[Union[LayerIOSpec, Dict[str, Any], List[Union[LayerIOSpec, Dict[str, Any]]]]] = Field(default=None)
 
 
 class LayerRuntimeConfigModel(FlexibleModel):
@@ -80,9 +323,12 @@ class LayerRuntimeConfigModel(FlexibleModel):
     environment: str = Field(default="default", description="Target environment identifier")
     compute: ComputeConfig = Field(default_factory=ComputeConfig)
     io: LayerRuntimeIO = Field(default_factory=LayerRuntimeIO)
-    transform: Dict[str, Any] = Field(default_factory=dict)
-    dq: Dict[str, Any] = Field(default_factory=dict)
+    transform: TransformConfig = Field(default_factory=TransformConfig)
+    dq: DQConfig = Field(default_factory=DQConfig)
     storage: Dict[str, Any] = Field(default_factory=dict)
+    extends: Optional[str] = Field(
+        default=None, description="Optional base configuration used for inheritance"
+    )
     legacy_aliases: Dict[str, str] = Field(
         default_factory=dict,
         alias="_legacy_aliases",
@@ -233,10 +479,23 @@ def dataset_json_schema() -> Dict[str, Any]:
 
 
 __all__ = [
+    "SparkConfig",
     "ComputeConfig",
+    "WatermarkConfig",
+    "IncrementalConfig",
+    "PaginationConfig",
+    "RateLimitConfig",
+    "RetryConfig",
+    "HTTPAuthConfig",
+    "HTTPSchema",
+    "JDBCAuthConfig",
+    "JDBCPartitioningConfig",
+    "JDBCSchema",
+    "FileIOSchema",
     "IOConfig",
     "TransformConfig",
     "DQConfig",
+    "DQReportConfig",
     "LayerBlock",
     "LayerRuntimeConfigModel",
     "LayerRuntimeIO",

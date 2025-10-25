@@ -392,6 +392,8 @@ def read_df(
             metadata["http"] = metrics
             if getattr(metrics, "watermark", None):
                 metadata["watermark"] = metrics.watermark
+            if getattr(metrics, "state_id", None):
+                metadata["watermark_state_id"] = metrics.state_id
             return df, metadata
         if source_type == "jdbc":
             df, watermark = _read_jdbc(source, spark)

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import random
 import time
 from dataclasses import dataclass
@@ -35,6 +36,7 @@ class HttpFetchMetrics:
     pages: int = 0
     records: int = 0
     watermark: Optional[str] = None
+    state_id: Optional[str] = None
 
 
 class _RetryableSession:
@@ -128,15 +130,20 @@ def _respect_rate_limit(next_deadline: Optional[float], interval: float) -> Opti
     return max(next_deadline + interval, now)
 
 
-def _apply_watermark(params: MutableMapping[str, Any], cfg: Mapping[str, Any]) -> Optional[str]:
+def _apply_watermark(
+    params: MutableMapping[str, Any], cfg: Mapping[str, Any], metrics: HttpFetchMetrics
+) -> Optional[str]:
     incremental_cfg = cfg.get("incremental") or {}
     watermark_cfg = incremental_cfg.get("watermark") or {}
     value = watermark_cfg.get("value") or watermark_cfg.get("resolved_value")
+    if value is None and "default" in watermark_cfg:
+        value = watermark_cfg.get("default")
     if value is None:
         return None
     field_name = watermark_cfg.get("param") or watermark_cfg.get("field")
     if field_name:
         params.setdefault(str(field_name), value)
+    metrics.state_id = watermark_cfg.get("state_id")
     return str(value)
 
 
@@ -188,24 +195,105 @@ def _prepare_headers(cfg: Mapping[str, Any]) -> Dict[str, str]:
         if value is None:
             continue
         headers[str(key)] = str(value)
-    auth_cfg = cfg.get("auth") or {}
-    auth_type = (auth_cfg.get("type") or "").lower()
-    if auth_type == "bearer":
-        token = auth_cfg.get("token") or auth_cfg.get("value")
-        if token:
-            headers.setdefault("Authorization", f"Bearer {token}")
     return headers
 
 
-def _prepare_auth(cfg: Mapping[str, Any]) -> Optional[Tuple[str, str]]:
+def _env_value(name: Any) -> Optional[str]:
+    if not name:
+        return None
+    value = os.getenv(str(name))
+    if value is None:
+        return None
+    value = value.strip()
+    return value or None
+
+
+def _resolve_bearer_env(auth_cfg: Mapping[str, Any]) -> Optional[str]:
+    token = _env_value(auth_cfg.get("env") or auth_cfg.get("var"))
+    if token:
+        return f"Bearer {token}"
+    return None
+
+
+def _resolve_api_key_header(auth_cfg: Mapping[str, Any]) -> Tuple[Optional[str], Optional[str]]:
+    header = auth_cfg.get("header") or auth_cfg.get("name")
+    value = _env_value(auth_cfg.get("env") or auth_cfg.get("value_env"))
+    if header and value:
+        return str(header), value
+    return None, None
+
+
+def _resolve_basic_env(auth_cfg: Mapping[str, Any]) -> Optional[Tuple[str, str]]:
+    username = _env_value(auth_cfg.get("username_env") or auth_cfg.get("user_env"))
+    password = _env_value(auth_cfg.get("password_env"))
+    if username and password:
+        return username, password
+    return None
+
+
+def _resolve_oauth_client_credentials(auth_cfg: Mapping[str, Any]) -> Optional[str]:
+    token_url = auth_cfg.get("token_url") or auth_cfg.get("url")
+    if not token_url:
+        raise ValueError("OAuth2 client credentials auth requires 'token_url'")
+    client_id = _env_value(auth_cfg.get("client_id_env") or auth_cfg.get("client_id_var"))
+    client_secret = _env_value(
+        auth_cfg.get("client_secret_env") or auth_cfg.get("client_secret_var")
+    )
+    if not client_id or not client_secret:
+        raise ValueError("OAuth2 client credentials auth requires client credentials in env")
+
+    data = {"grant_type": "client_credentials"}
+    scope = auth_cfg.get("scope")
+    if scope:
+        data["scope"] = str(scope)
+    extra_params = auth_cfg.get("params")
+    if isinstance(extra_params, Mapping):
+        for key, value in extra_params.items():
+            if value is not None:
+                data[str(key)] = str(value)
+
+    response = requests.post(
+        str(token_url),
+        data=data,
+        auth=(client_id, client_secret),
+        timeout=float(auth_cfg.get("timeout", 10) or 10),
+    )
+    response.raise_for_status()
+    payload = response.json()
+    token = payload.get("access_token")
+    if not token:
+        raise RuntimeError("OAuth2 token endpoint did not return 'access_token'")
+    token_type = payload.get("token_type", "Bearer")
+    return f"{str(token_type).title()} {token}"
+
+
+def _prepare_auth(cfg: Mapping[str, Any]) -> Tuple[Dict[str, str], Optional[Tuple[str, str]]]:
     auth_cfg = cfg.get("auth") or {}
     auth_type = (auth_cfg.get("type") or "").lower()
-    if auth_type == "basic":
+    headers: Dict[str, str] = {}
+    auth: Optional[Tuple[str, str]] = None
+
+    if auth_type in {"bearer_env", "env_bearer"}:
+        token = _resolve_bearer_env(auth_cfg)
+        if token:
+            headers.setdefault("Authorization", token)
+    elif auth_type in {"api_key_header", "api-key"}:
+        header, value = _resolve_api_key_header(auth_cfg)
+        if header and value:
+            headers.setdefault(header, value)
+    elif auth_type in {"basic_env", "env_basic"}:
+        auth = _resolve_basic_env(auth_cfg)
+    elif auth_type in {"basic", "user_password"}:
         user = auth_cfg.get("username") or auth_cfg.get("user")
         password = auth_cfg.get("password")
         if user and password:
-            return str(user), str(password)
-    return None
+            auth = (str(user), str(password))
+    elif auth_type in {"oauth2", "oauth2_client_credentials", "client_credentials"}:
+        token = _resolve_oauth_client_credentials(auth_cfg)
+        if token:
+            headers.setdefault("Authorization", token)
+
+    return headers, auth
 
 
 def _ensure_compatible_frame(records: List[Dict[str, Any]], spark: Any | None) -> Any:
@@ -272,7 +360,8 @@ def fetch_json_to_df(cfg: Mapping[str, Any], *, spark: Any | None = None) -> Tup
     params: Dict[str, Any] = dict(cfg.get("params") or {})
     data_payload = cfg.get("body")
 
-    watermark_value = _apply_watermark(params, cfg)
+    metrics = HttpFetchMetrics()
+    watermark_value = _apply_watermark(params, cfg, metrics)
 
     pagination_cfg = cfg.get("pagination") or {}
     strategy = (pagination_cfg.get("strategy") or "none").lower()
@@ -302,10 +391,10 @@ def fetch_json_to_df(cfg: Mapping[str, Any], *, spark: Any | None = None) -> Tup
     )
 
     headers = _prepare_headers(cfg)
-    auth = _prepare_auth(cfg)
+    auth_headers, auth = _prepare_auth(cfg)
+    headers.update(auth_headers)
 
     records: List[Dict[str, Any]] = []
-    metrics = HttpFetchMetrics()
     next_cursor: Optional[str] = None
 
     for page in range(1, max_pages + 1):

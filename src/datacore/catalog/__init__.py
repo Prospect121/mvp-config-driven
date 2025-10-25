@@ -1,17 +1,11 @@
 """Catalog helpers for persistent dataset metadata."""
 
-from .state import (
-    WatermarkState,
-    load_dataset_state,
-    read_watermark,
-    save_dataset_state,
-    update_watermark,
-)
+from .state import WatermarkState, get_watermark, load_state, save_state, set_watermark
 
 __all__ = [
     "WatermarkState",
-    "load_dataset_state",
-    "read_watermark",
-    "save_dataset_state",
-    "update_watermark",
+    "load_state",
+    "get_watermark",
+    "save_state",
+    "set_watermark",
 ]

@@ -16,6 +16,23 @@ Plataforma modular de ingesta y transformación basada en configuración. Expone
    - Repetir con `bronze`, `silver` y `gold` para validar el flujo completo usando los datasets sintéticos de `samples/`.
    - El ejemplo de Raw escribe `parquet` en `data/raw/toy_customers/`; las capas superiores permanecen en `dry_run` para evitar side-effects.
 
+## Validación de configuraciones y estado incremental
+
+- `prodi validate -c cfg/finance/raw/transactions_http.yml` ejecuta únicamente la validación de esquema sobre un YAML.
+- Todos los comandos aceptan `--dq-fail-on-error/--dq-no-fail-on-error` para sobreescribir la severidad efectiva de los checks.
+- Los watermarks incrementales se persisten automáticamente en `data/_state/<state_id>.json`; basta con declarar `incremental.watermark.state_id` en cada fuente para reutilizar el último valor exitoso.
+
+### Autenticación soportada
+
+| Bloque (`io.source`) | Tipo (`auth.type`)         | Uso previsto                                                         |
+| -------------------- | -------------------------- | -------------------------------------------------------------------- |
+| HTTP                 | `bearer_env`               | Inserta `Authorization: Bearer <token>` leyendo la variable `env`.    |
+|                      | `api_key_header`           | Configura el header indicado con el valor tomado del entorno.        |
+|                      | `basic_env`                | Resuelve `username_env`/`password_env` sin escribir secretos en YAML. |
+|                      | `oauth2_client_credentials`| Ejecuta el flujo client-credentials (`token_url`, `scope`, timeout).  |
+| JDBC                 | `managed_identity`         | Enciende `azure.identity.auth.type=ManagedIdentity`.                  |
+|                      | `basic_env`                | Usa credenciales almacenadas en variables de entorno.                |
+
 ## Política de no-Docker
 
 El repositorio ya no contiene archivos de build Docker ni manifests docker compose. CI falla si reaparecen artefactos bajo `docker/`, `.docker/` o manifests de build/compose. Las ejecuciones deben empaquetarse como wheel (`python -m build`) y desplegarse en la plataforma de elección.

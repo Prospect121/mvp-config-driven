@@ -28,6 +28,11 @@ class DummyReader:
         return self
 
     def load(self):
+        query = self._options.get("query", "")
+        if "MIN(" in str(query):
+            return DummyDataFrame([
+                {"lower_bound": 1, "upper_bound": 99},
+            ])
         return DummyDataFrame([
             {"id": 1, "updated_at": "2024-01-01T00:00:00Z"},
             {"id": 2, "updated_at": "2024-01-02T00:00:00Z"},
@@ -82,3 +87,35 @@ def test_read_jdbc_rejects_tls_disable():
 
     with pytest.raises(JDBCConfigurationError):
         read_jdbc(cfg, spark)
+
+
+def test_read_jdbc_auto_discovers_bounds():
+    spark = DummySparkSession()
+    cfg = {
+        "url": "jdbc:postgresql://example:5432/db",
+        "driver": "org.postgresql.Driver",
+        "table": "transactions",
+        "partitioning": {"column": "id", "num_partitions": 4},
+    }
+
+    df, watermark = read_jdbc(cfg, spark)
+    assert isinstance(df, DummyDataFrame)
+    assert watermark is None
+    assert spark.reader._options["partitionColumn"] == "id"
+    assert spark.reader._options["lowerBound"] == 1
+    assert spark.reader._options["upperBound"] == 99
+    assert spark.reader._options["numPartitions"] == 4
+
+
+def test_read_jdbc_managed_identity_auth():
+    spark = DummySparkSession()
+    cfg = {
+        "url": "jdbc:sqlserver://example:1433/db",
+        "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver",
+        "table": "transactions",
+        "auth": {"mode": "managed_identity"},
+    }
+
+    read_jdbc(cfg, spark)
+
+    assert spark.reader._options["azure.identity.auth.type"] == "ManagedIdentity"

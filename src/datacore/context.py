@@ -45,8 +45,18 @@ class LayerConfig:
         normalized = migrate_layer_config(data or {})
         runtime_model = LayerRuntimeConfigModel.model_validate(normalized)
 
-        source_cfg = runtime_model.io.source or {}
-        sink_cfg = runtime_model.io.sink or {}
+        io_dump = runtime_model.io.model_dump(by_alias=True)
+        source_cfg_raw = io_dump.get("source") or {}
+        sink_cfg_raw = io_dump.get("sink") or {}
+
+        if isinstance(source_cfg_raw, list):
+            source_cfg = source_cfg_raw[0] if source_cfg_raw else {}
+        else:
+            source_cfg = source_cfg_raw
+        if isinstance(sink_cfg_raw, list):
+            sink_cfg = sink_cfg_raw[0] if sink_cfg_raw else {}
+        else:
+            sink_cfg = sink_cfg_raw
 
         dataset = source_cfg.get("dataset_config") or source_cfg.get("dataset")
         env = (
@@ -65,9 +75,9 @@ class LayerConfig:
             dry_run=bool(runtime_model.dry_run),
             layer=str(runtime_model.layer or "raw"),
             compute=runtime_model.compute.model_dump(by_alias=True),
-            io=runtime_model.io.model_dump(by_alias=True),
-            transform=dict(runtime_model.transform),
-            dq=dict(runtime_model.dq),
+            io=io_dump,
+            transform=runtime_model.transform.model_dump(by_alias=True),
+            dq=runtime_model.dq.model_dump(by_alias=True),
             storage=dict(runtime_model.storage),
             aliases=dict(runtime_model.legacy_aliases),
         )

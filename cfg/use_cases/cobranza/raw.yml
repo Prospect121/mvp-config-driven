@@ -1,5 +1,5 @@
 layer: raw
-base_config: ../../finance/raw/transactions_jdbc.yml
+extends: "../../finance/raw/transactions_jdbc.yml"
 io:
   source:
     query: |
@@ -10,7 +10,7 @@ transform:
   sql:
     - |
       SELECT *
-      FROM __INPUT__
+      FROM __BASE__
       WHERE status IN ('overdue','delinquent')
 dq:
   expectations:
