@@ -30,3 +30,14 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 addopts = "-q"
 pythonpath = ["src"]
+
+[tool.coverage.run]
+branch = true
+source = ["src/datacore"]
+
+[tool.coverage.report]
+fail_under = 60
+include = [
+    "src/datacore/layers/*",
+    "src/datacore/pipeline/*",
+]
