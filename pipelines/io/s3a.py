@@ -1,11 +1,15 @@
 from typing import Dict
-from pyspark.sql import SparkSession
-from pipelines.common import maybe_config_s3a
+
+from datacore.io import build_storage_adapter
 
 
-def configure_s3a(spark: SparkSession, path: str, env_cfg: Dict) -> None:
-    """Ensure S3A is configured in Spark for the given path.
+def configure_s3a(_spark, path: str, env_cfg: Dict) -> None:
+    """Backward compatible shim that resolves storage adapters.
 
-    This wraps the existing maybe_config_s3a helper for consistency.
+    The legacy S3A configuration relied on Spark Hadoop settings. Newer
+    versions use :func:`datacore.io.build_storage_adapter` to resolve neutral
+    credentials so this helper simply instantiates the adapter to trigger
+    validation.
     """
-    maybe_config_s3a(spark, path or "", env_cfg)
+
+    build_storage_adapter(path, env_cfg)

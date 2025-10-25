@@ -76,7 +76,7 @@ def generate_test_data():
             '--records', '500000',  # 500K registros
             '--batch-size', '25000',
             '--error-rate', '0.10',  # 10% de errores para probar validaciones extremas
-            '--output-dir', 's3a://raw/casos-uso/events-multiformat/'
+            '--output-dir', 's3://raw/casos-uso/events-multiformat/'
         ]
         
         start_time = time.time()

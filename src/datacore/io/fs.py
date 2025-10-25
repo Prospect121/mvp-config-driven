@@ -87,11 +87,54 @@ def storage_options_from_env(uri: str, env_cfg: Optional[Dict[str, Any]] = None)
     protocol, _ = _split_uri(uri)
     opts: Dict[str, Any] = {}
 
+    storage_section = (env_cfg.get("storage") or {}).get(protocol, {})
+    credentials_cfg = storage_section.get("credentials") or {}
+
     if protocol == "s3":
-        access_key = _load_env_value(env_cfg, "s3a_access_key_env", "AWS_ACCESS_KEY_ID")
-        secret_key = _load_env_value(env_cfg, "s3a_secret_key_env", "AWS_SECRET_ACCESS_KEY")
-        session_token = _load_env_value(env_cfg, "s3a_session_token_env", "AWS_SESSION_TOKEN")
-        endpoint = env_cfg.get("s3a_endpoint") or os.environ.get("AWS_ENDPOINT_URL")
+        access_key = credentials_cfg.get("access_key")
+        if access_key is None:
+            env_var = credentials_cfg.get("access_key_env") or env_cfg.get("s3a_access_key_env")
+            if env_var:
+                access_key = os.environ.get(str(env_var))
+            else:
+                access_key = os.environ.get("AWS_ACCESS_KEY_ID")
+
+        secret_key = credentials_cfg.get("secret_key")
+        if secret_key is None:
+            env_var = credentials_cfg.get("secret_key_env") or env_cfg.get("s3a_secret_key_env")
+            if env_var:
+                secret_key = os.environ.get(str(env_var))
+            else:
+                secret_key = os.environ.get("AWS_SECRET_ACCESS_KEY")
+
+        session_token = credentials_cfg.get("session_token")
+        if session_token is None:
+            env_var = credentials_cfg.get("session_token_env") or env_cfg.get("s3a_session_token_env")
+            if env_var:
+                session_token = os.environ.get(str(env_var))
+            else:
+                session_token = os.environ.get("AWS_SESSION_TOKEN")
+
+        endpoint = credentials_cfg.get("endpoint")
+        if endpoint is None:
+            env_var = credentials_cfg.get("endpoint_env")
+            if env_var:
+                endpoint = os.environ.get(str(env_var))
+        if endpoint is None:
+            endpoint = env_cfg.get("s3a_endpoint") or os.environ.get("AWS_ENDPOINT_URL")
+
+        disable_ssl_flag = credentials_cfg.get("disable_ssl")
+        if disable_ssl_flag is None:
+            env_var = credentials_cfg.get("disable_ssl_env")
+            if env_var:
+                disable_ssl_flag = os.environ.get(str(env_var))
+        if disable_ssl_flag is None:
+            disable_ssl_flag = env_cfg.get("s3a_disable_ssl") or os.environ.get("S3A_DISABLE_SSL")
+
+        if _boolish(disable_ssl_flag):
+            raise ValueError(
+                "TLS must remain enabled for S3 connections. Remove the disable flag from the configuration."
+            )
 
         if access_key:
             opts["key"] = access_key
@@ -103,13 +146,87 @@ def storage_options_from_env(uri: str, env_cfg: Optional[Dict[str, Any]] = None)
         client_kwargs: Dict[str, Any] = {}
         if endpoint:
             client_kwargs["endpoint_url"] = endpoint
-
-        disable_ssl = env_cfg.get("s3a_disable_ssl") or os.environ.get("S3A_DISABLE_SSL")
-        if disable_ssl is not None:
-            client_kwargs["use_ssl"] = not _boolish(disable_ssl)
+        if disable_ssl_flag is not None:
+            client_kwargs.setdefault("use_ssl", True)
 
         if client_kwargs:
             opts["client_kwargs"] = client_kwargs
+
+    elif protocol == "abfss":
+        account_name = credentials_cfg.get("account_name")
+        if account_name is None:
+            env_var = credentials_cfg.get("account_name_env") or env_cfg.get("abfss_account_name_env")
+            if env_var:
+                account_name = os.environ.get(str(env_var))
+            else:
+                account_name = os.environ.get("AZURE_STORAGE_ACCOUNT_NAME")
+
+        account_key = credentials_cfg.get("account_key")
+        if account_key is None:
+            env_var = credentials_cfg.get("account_key_env") or env_cfg.get("abfss_account_key_env")
+            if env_var:
+                account_key = os.environ.get(str(env_var))
+            else:
+                account_key = os.environ.get("AZURE_STORAGE_ACCOUNT_KEY")
+
+        sas_token = credentials_cfg.get("sas_token")
+        if sas_token is None:
+            env_var = credentials_cfg.get("sas_token_env") or env_cfg.get("abfss_sas_token_env")
+            if env_var:
+                sas_token = os.environ.get(str(env_var))
+            else:
+                sas_token = os.environ.get("AZURE_STORAGE_SAS_TOKEN")
+
+        tenant_id = credentials_cfg.get("tenant_id")
+        if tenant_id is None:
+            env_var = credentials_cfg.get("tenant_id_env") or env_cfg.get("abfss_tenant_id_env")
+            if env_var:
+                tenant_id = os.environ.get(str(env_var))
+
+        client_id = credentials_cfg.get("client_id")
+        if client_id is None:
+            env_var = credentials_cfg.get("client_id_env") or env_cfg.get("abfss_client_id_env")
+            if env_var:
+                client_id = os.environ.get(str(env_var))
+
+        client_secret = credentials_cfg.get("client_secret")
+        if client_secret is None:
+            env_var = credentials_cfg.get("client_secret_env") or env_cfg.get("abfss_client_secret_env")
+            if env_var:
+                client_secret = os.environ.get(str(env_var))
+
+        if account_name:
+            opts["account_name"] = account_name
+        if account_key:
+            opts["account_key"] = account_key
+        if sas_token:
+            opts["sas_token"] = sas_token
+        if tenant_id and client_id and client_secret:
+            opts["tenant_id"] = tenant_id
+            opts["client_id"] = client_id
+            opts["client_secret"] = client_secret
+
+    elif protocol == "gs":
+        token = credentials_cfg.get("token")
+        if token is None:
+            env_var = credentials_cfg.get("token_env") or env_cfg.get("gs_token_env")
+            if env_var:
+                token = os.environ.get(str(env_var))
+            else:
+                token = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+
+        project = credentials_cfg.get("project")
+        if project is None:
+            env_var = credentials_cfg.get("project_env") or env_cfg.get("gs_project_env")
+            if env_var:
+                project = os.environ.get(str(env_var))
+            else:
+                project = os.environ.get("GCP_PROJECT")
+
+        if token:
+            opts["token"] = token
+        if project:
+            opts["project"] = project
 
     return opts
 

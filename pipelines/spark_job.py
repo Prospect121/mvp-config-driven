@@ -4,7 +4,8 @@ from pyspark.sql import SparkSession, functions as F
 from pyspark.sql.window import Window
 
 # Importar funciones comunes
-from common import norm_type, parse_order, safe_cast, maybe_config_s3a
+from common import norm_type, parse_order, safe_cast
+from datacore.io import build_storage_adapter
 
 
 # -------- helpers de esquema --------
@@ -187,8 +188,8 @@ spark = (
 
 src = cfg['source']
 out = cfg['output']['silver']
-maybe_config_s3a(spark, src['path'], env)
-maybe_config_s3a(spark, out['path'], env)
+build_storage_adapter(src.get('path'), env, src)
+build_storage_adapter(out.get('path'), env, out)
 
 reader = spark.read.options(**src.get('options', {}))
 fmt = src['input_format']
@@ -268,7 +269,7 @@ if 'quality' in cfg and cfg['quality'].get('expectations_ref'):
     q = load_expectations(cfg['quality']['expectations_ref'])
     rules = q.get('rules', [])
     quarantine_path = cfg['quality'].get('quarantine')
-    maybe_config_s3a(spark, quarantine_path or "", env)
+    build_storage_adapter(quarantine_path, env, quality_cfg)
     df, _, stats = apply_quality(df, rules, quarantine_path, run_id)
     print("[quality] stats:", stats)
 

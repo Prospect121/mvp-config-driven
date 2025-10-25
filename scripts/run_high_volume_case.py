@@ -51,7 +51,7 @@ def generate_test_data():
             '--records', '1000000',  # 1M registros
             '--batch-size', '50000',
             '--error-rate', '0.05',  # 5% de errores para probar validaciones
-            '--output-dir', 's3a://raw/casos-uso/payments-high-volume/'
+            '--output-dir', 's3://raw/casos-uso/payments-high-volume/'
         ]
         
         start_time = time.time()

@@ -2,8 +2,6 @@
 Módulo común con configuraciones y funciones compartidas entre pipelines.
 """
 
-import logging
-import os
 import re
 from typing import Any, Dict, List, Optional
 from pyspark.sql import DataFrame
@@ -126,65 +124,3 @@ def safe_cast(df: DataFrame, column: str, target_type: str, format_hint: Optiona
         # Cast normal (puede fallar)
         return apply_cast()
 
-_LOGGER = logging.getLogger(__name__)
-
-
-def _bool_from_env(value: Any) -> bool:
-    if isinstance(value, bool):
-        return value
-    if value is None:
-        return False
-    return str(value).strip().lower() in {"1", "true", "yes", "y", "on"}
-
-
-def _redact(value: Optional[str], visible: int = 4) -> str:
-    if not value:
-        return "<not set>"
-    if len(value) <= visible:
-        return "*" * len(value)
-    return f"{value[:visible]}***"
-
-
-def _load_from_env(env: Dict[str, Any], config_key: str, default_env_var: str) -> Optional[str]:
-    env_var_name = env.get(config_key)
-    if env_var_name:
-        return os.environ.get(env_var_name)
-    return os.environ.get(default_env_var)
-
-
-def maybe_config_s3a(spark, path: str, env: Dict[str, Any]) -> str:
-    """Configurar S3A si la ruta lo requiere."""
-    if not path.startswith("s3a://"):
-        return path
-
-    access_key = _load_from_env(env, "s3a_access_key_env", "AWS_ACCESS_KEY_ID")
-    secret_key = _load_from_env(env, "s3a_secret_key_env", "AWS_SECRET_ACCESS_KEY")
-    session_token = _load_from_env(env, "s3a_session_token_env", "AWS_SESSION_TOKEN")
-    endpoint = env.get("s3a_endpoint") or os.environ.get("AWS_ENDPOINT_URL")
-
-    _LOGGER.info("[S3A] Configuring S3A for path: %s", path)
-    _LOGGER.info("[S3A] Access Key: %s", _redact(access_key))
-    if session_token:
-        _LOGGER.info("[S3A] Session Token: %s", _redact(session_token))
-    if endpoint:
-        _LOGGER.info("[S3A] Endpoint: %s", endpoint)
-
-    if access_key:
-        spark.conf.set("spark.hadoop.fs.s3a.access.key", access_key)
-    if secret_key:
-        spark.conf.set("spark.hadoop.fs.s3a.secret.key", secret_key)
-    if session_token:
-        spark.conf.set("spark.hadoop.fs.s3a.session.token", session_token)
-    if endpoint:
-        spark.conf.set("spark.hadoop.fs.s3a.endpoint", endpoint)
-
-    spark.conf.set("spark.hadoop.fs.s3a.path.style.access", "true")
-    spark.conf.set("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
-
-    disable_ssl_flag = env.get("s3a_disable_ssl") or os.environ.get("S3A_DISABLE_SSL")
-    if _bool_from_env(disable_ssl_flag):
-        raise ValueError(
-            "TLS must remain enabled for S3A connections. Remove 's3a_disable_ssl' or 'S3A_DISABLE_SSL'."
-        )
-
-    return path
