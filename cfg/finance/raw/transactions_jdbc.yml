@@ -1,0 +1,40 @@
+layer: raw
+compute:
+  engine: spark
+  spark:
+    app_name: "raw_fin_transactions_jdbc"
+    options:
+      spark.sql.session.timeZone: "UTC"
+io:
+  source:
+    type: jdbc
+    url: "jdbc:postgresql://pg.company:5432/core"
+    driver: "org.postgresql.Driver"
+    auth:
+      use_managed_identity: true
+    query: |
+      SELECT *
+      FROM transactions
+      WHERE updated_at >= '${RAW_WM_TS}'
+    partitioning:
+      column: id
+      lower_bound: 1
+      upper_bound: 100000000
+      num_partitions: 16
+    incremental:
+      watermark:
+        field: updated_at
+        from_env: RAW_WM_TS
+        default: "1970-01-01T00:00:00Z"
+  sink:
+    type: files
+    format: parquet
+    path: "abfss://datalake@account.dfs.core.windows.net/raw/finance/transactions/"
+dq:
+  expectations:
+    - type: not_null
+      column: transaction_id
+    - type: unique
+      column: transaction_id
+    - type: non_negative
+      column: amount

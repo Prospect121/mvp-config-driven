@@ -1,0 +1,20 @@
+layer: silver
+base_config: ../../finance/silver/transactions.yml
+transform:
+  sql: |
+    SELECT
+      transaction_id,
+      account_id,
+      merchant_id,
+      amount,
+      currency,
+      posted_date,
+      is_reversal,
+      risk_flag,
+      score,
+      CASE WHEN score >= 80 THEN 'critical' WHEN score >= 60 THEN 'high' ELSE 'medium' END AS risk_bucket
+    FROM __INPUT__
+dq:
+  expectations:
+    - type: condition
+      expr: "score >= 0"

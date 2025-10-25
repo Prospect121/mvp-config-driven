@@ -1,9 +1,12 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Iterable, Mapping, Tuple
+import os
+from typing import Any, Dict, Iterable, List, Mapping, Tuple
 
 from datacore.context import PipelineContext, build_context, ensure_spark, stop_spark
 from datacore.io import build_storage_adapter, read_df, write_df
+from datacore.catalog.state import read_watermark, update_watermark
+from datacore.quality import apply_expectations
 
 try:  # pragma: no cover - pyspark optional in unit tests
     from pyspark.sql import DataFrame as SparkDataFrame  # type: ignore
@@ -120,7 +123,90 @@ def _resolve_uri(
     raise ValueError("No URI available for raw IO entry")
 
 
+def _watermark_dataset_id(context: PipelineContext) -> str:
+    dataset_id = context.dataset_cfg.get("id") if context.dataset_cfg else None
+    if dataset_id:
+        return str(dataset_id)
+    if context.layer_config.dataset_config:
+        return os.path.splitext(os.path.basename(context.layer_config.dataset_config))[0]
+    return "default"
+
+
+def _watermark_key(entry: Mapping[str, Any]) -> str:
+    for key in ("state_key", "name", "alias", "table", "url", "path", "type"):
+        value = entry.get(key)
+        if isinstance(value, str) and value:
+            return value
+    return "source"
+
+
+def _compute_watermark_from_frame(df: Any, field: str) -> str | None:
+    if not field:
+        return None
+    if hasattr(df, "select") and hasattr(df, "collect"):
+        try:
+            from pyspark.sql import functions as F  # type: ignore
+
+            result = df.select(F.max(F.col(field)).alias("wm")).collect()
+            if result:
+                value = result[0]["wm"]
+                return None if value is None else str(value)
+        except Exception:
+            pass
+    if hasattr(df, "toPandas"):
+        try:
+            pdf = df.toPandas()  # type: ignore[no-untyped-call]
+        except Exception:
+            pdf = None
+        if pdf is not None and field in pdf.columns and not pdf.empty:
+            value = pdf[field].max()
+            return None if value is None else str(value)
+    if hasattr(df, "collect") and callable(getattr(df, "collect")):
+        try:
+            rows = df.collect()
+            if rows and hasattr(rows[0], field):
+                values = [getattr(row, field) for row in rows]
+                values = [value for value in values if value is not None]
+                if values:
+                    return str(max(values))
+        except Exception:
+            return None
+    return None
+
+
+def _resolve_watermark_seed(
+    dataset_id: str,
+    entry: Mapping[str, Any],
+) -> Tuple[str | None, Dict[str, Any]]:
+    incremental_cfg = dict(entry.get("incremental") or {})
+    watermark_cfg = dict(incremental_cfg.get("watermark") or {})
+    if not watermark_cfg:
+        return None, dict(entry)
+
+    state_key = watermark_cfg.get("state_key") or _watermark_key(entry)
+    state = read_watermark(dataset_id, state_key)
+    value = state.value
+
+    env_var = watermark_cfg.get("from_env")
+    if not value and env_var:
+        env_value = os.getenv(str(env_var))
+        if env_value:
+            value = env_value
+
+    if not value:
+        default = watermark_cfg.get("default") or "1970-01-01T00:00:00Z"
+        value = str(default)
+
+    watermark_cfg["resolved_value"] = value
+    incremental_cfg["watermark"] = watermark_cfg
+    resolved_entry = dict(entry)
+    resolved_entry["incremental"] = incremental_cfg
+
+    return state_key, resolved_entry
+
+
 def _read_sources(
+    context: PipelineContext,
     engine: Any,
     source_cfg: Mapping[str, Any] | Iterable[Mapping[str, Any]],
     env_cfg: Mapping[str, Any],
@@ -138,37 +224,59 @@ def _read_sources(
 
     spark = engine if _looks_like_spark(engine) else None
     frames = []
+    watermark_updates: List[Tuple[str, str, str | None]] = []
+
+    dataset_id = _watermark_dataset_id(context)
 
     for entry in entries:
         if not isinstance(entry, Mapping):
             raise TypeError("Raw source configuration entries must be mappings")
 
-        prefer_local = bool(entry.get("use_local_fallback"))
-        uri = _resolve_uri(entry, storage_cfg=storage_cfg, default_local=prefer_local)
-        adapter = build_storage_adapter(uri, env_cfg, entry.get("filesystem"))
-        fmt = str(entry.get("format") or entry.get("type") or "parquet")
-        reader_options = adapter.merge_reader_options(entry.get("options"))
-        df = read_df(
-            uri=adapter.uri,
-            fmt=fmt,
-            spark=spark,
-            engine="spark" if spark is not None else "auto",
-            storage_options=adapter.storage_options,
-            reader_options=reader_options,
-        )
+        resolved_entry = dict(entry)
+        state_key, resolved_entry = _resolve_watermark_seed(dataset_id, resolved_entry)
+
+        if resolved_entry.get("type") in {"http", "jdbc"}:
+            df, metadata = read_df(
+                resolved_entry,
+                spark=spark,
+                engine="spark" if spark is not None else "auto",
+            )
+        else:
+            prefer_local = bool(resolved_entry.get("use_local_fallback"))
+            uri = _resolve_uri(resolved_entry, storage_cfg=storage_cfg, default_local=prefer_local)
+            adapter = build_storage_adapter(uri, env_cfg, resolved_entry.get("filesystem"))
+            fmt = str(resolved_entry.get("format") or resolved_entry.get("type") or "parquet")
+            reader_options = adapter.merge_reader_options(resolved_entry.get("options"))
+            df, metadata = read_df(
+                adapter.uri,
+                fmt,
+                spark=spark,
+                engine="spark" if spark is not None else "auto",
+                storage_options=adapter.storage_options,
+                reader_options=reader_options,
+            )
+
+        if state_key:
+            wm_cfg = ((resolved_entry.get("incremental") or {}).get("watermark") or {})
+            watermark_field = wm_cfg.get("field")
+            watermark_value = metadata.get("watermark") if isinstance(metadata, dict) else None
+            if not watermark_value and watermark_field:
+                watermark_value = _compute_watermark_from_frame(df, str(watermark_field))
+            if watermark_value:
+                watermark_updates.append((state_key, str(watermark_value), watermark_field))
         frames.append(df)
 
     if not frames:
         raise ValueError("Raw layer requires at least one source")
 
     if len(frames) == 1:
-        return frames[0]
+        return frames[0], watermark_updates
 
     if spark is not None:
         result = frames[0]
         for frame in frames[1:]:
             result = result.unionByName(frame)
-        return result
+        return result, watermark_updates
 
     if _pd is None:
         raise TypeError("Unable to merge multiple raw sources without pandas support")
@@ -184,7 +292,7 @@ def _read_sources(
                 pdfs.append(frame.to_pandas())  # type: ignore[attr-defined]
             except Exception as exc:  # pragma: no cover - defensive
                 raise TypeError("Unsupported frame type for concatenation") from exc
-    return _pd.concat(pdfs, ignore_index=True)
+    return _pd.concat(pdfs, ignore_index=True), watermark_updates
 
 
 def _call_with_compatible_args(func: Any, *args: Any) -> Any:
@@ -245,32 +353,68 @@ def _apply_dq(engine: Any, df: Any, dq_cfg: Mapping[str, Any]) -> Any:
             df = result
 
     expectations = dq_cfg.get("expectations") or {}
-    if expectations:
+    expectation_list: List[Mapping[str, Any]] = []
+
+    if isinstance(expectations, Mapping):
         min_rows = expectations.get("min_row_count")
         if min_rows is not None:
             row_count: int | None = None
-            if hasattr(df, "count") and callable(getattr(df, "count")):
+            if hasattr(df, "shape"):
+                try:
+                    row_count = int(df.shape[0])  # type: ignore[index]
+                except Exception:
+                    row_count = None
+            if row_count is None and hasattr(df, "__len__"):
+                try:
+                    row_count = int(len(df))  # type: ignore[arg-type]
+                except Exception:
+                    row_count = None
+            if row_count is None and hasattr(df, "count") and callable(getattr(df, "count")):
                 count_result = df.count()
                 if isinstance(count_result, (int, float)):
                     row_count = int(count_result)
-                else:
+                elif isinstance(count_result, dict):
+                    values = list(count_result.values())
+                    if values:
+                        row_count = int(values[0])
+                elif hasattr(count_result, "__iter__"):
                     try:
-                        row_count = int(getattr(count_result, "max")())  # type: ignore[call-arg]
+                        first = next(iter(count_result))
+                        row_count = int(first)
                     except Exception:
-                        try:
-                            row_count = int(len(df))  # type: ignore[arg-type]
-                        except Exception as exc:  # pragma: no cover - fallback guard
-                            raise ValueError("Unable to determine row count for expectations") from exc
-            elif hasattr(df, "__len__"):
-                row_count = int(len(df))  # type: ignore[arg-type]
-            elif hasattr(df, "shape"):
-                row_count = int(df.shape[0])
-            else:
-                raise ValueError("Unable to determine row count for expectations")
-            if row_count < int(min_rows):
+                        row_count = None
+            if row_count is not None and row_count < int(min_rows):
                 raise ValueError(
                     f"Raw data-quality check failed: expected at least {min_rows} rows, found {row_count}"
                 )
+
+        required_columns = expectations.get("expect_columns_to_exist")
+        if required_columns:
+            if hasattr(df, "columns"):
+                available = set(df.columns)  # type: ignore[attr-defined]
+            elif hasattr(df, "schema"):
+                available = {field.name for field in df.schema}  # type: ignore[attr-defined]
+            else:
+                available = set()
+            missing = [col for col in required_columns if col not in available]
+            if missing:
+                raise ValueError(f"Missing required columns: {', '.join(missing)}")
+
+        rules = expectations.get("rules")
+        if isinstance(rules, Iterable) and not isinstance(rules, (str, bytes)):
+            expectation_list.extend(rules)  # type: ignore[arg-type]
+
+        if isinstance(expectations.get("checks"), Iterable):
+            expectation_list.extend(expectations["checks"])  # type: ignore[arg-type]
+
+        if "type" in expectations:
+            expectation_list.append(expectations)
+
+    elif isinstance(expectations, Iterable) and not isinstance(expectations, (str, bytes)):
+        expectation_list.extend(expectations)  # type: ignore[arg-type]
+
+    if expectation_list:
+        apply_expectations(df, expectation_list)
 
     return df
 
@@ -330,10 +474,15 @@ def _write_sink(
 def execute(context: PipelineContext, engine: Any) -> Any:
     source_cfg, sink_cfg, transform_cfg, dq_cfg, storage_cfg = _normalize_layer_sections(context)
 
-    df = _read_sources(engine, source_cfg, context.env_cfg, storage_cfg)
+    df, watermark_updates = _read_sources(context, engine, source_cfg, context.env_cfg, storage_cfg)
     df = _apply_transforms(engine, df, transform_cfg)
     df = _apply_dq(engine, df, dq_cfg)
     df = _write_sink(engine, df, sink_cfg, context.env_cfg, storage_cfg)
+
+    dataset_id = _watermark_dataset_id(context)
+    for state_key, value, field in watermark_updates:
+        update_watermark(dataset_id, state_key, value, field=str(field) if field else None)
+
     return df
 
 

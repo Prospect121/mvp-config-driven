@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Iterable, List
 
 import sys
 import typer
+from string import Template
+
 import yaml
 
 from datacore.layers.raw import main as raw_main
@@ -36,11 +38,31 @@ def _should_force_dry_run() -> bool:
     return value.strip().lower() not in {"", "0", "false", "no"}
 
 
-def _load_config(path: Path) -> Any:
+def _render_template(content: str, variables: Dict[str, str] | None) -> str:
+    if not variables:
+        return content
+    template = Template(content)
+    return template.safe_substitute(variables)
+
+
+def _load_config(path: Path, variables: Dict[str, str] | None = None) -> Any:
     if not path.exists():
         raise typer.BadParameter(f"Configuration file not found: {path}")
-    with path.open("r", encoding="utf-8") as handle:
-        return yaml.safe_load(handle) or {}
+    raw_text = path.read_text(encoding="utf-8")
+    rendered = _render_template(raw_text, variables)
+    return yaml.safe_load(rendered) or {}
+
+
+def _parse_vars(values: Iterable[str]) -> Dict[str, str]:
+    parsed: Dict[str, str] = {}
+    for entry in values:
+        if not entry:
+            continue
+        key, sep, value = entry.partition("=")
+        if not sep:
+            raise typer.BadParameter(f"Variables must be provided as key=value, got '{entry}'")
+        parsed[key.strip()] = value
+    return parsed
 
 
 def _normalize_layer_name(layer: str) -> str:
@@ -108,9 +130,11 @@ def _execute_layer(layer: str, cfg: Dict[str, Any]) -> Any:
 def run_layer(
     layer: str = typer.Argument(..., help="Layer to execute"),
     config: Path = typer.Option(..., "-c", "--config", help="Path to layer configuration"),
+    vars_: List[str] = typer.Option([], "--vars", help="Template variables as key=value"),
 ) -> None:
     layer_name = _normalize_layer_name(layer)
-    raw_config = _load_config(config)
+    variables = _parse_vars(vars_)
+    raw_config = _load_config(config, variables)
     normalized_cfg = _validate_normalized_cfg(raw_config, layer_name)
     _execute_layer(layer_name, normalized_cfg)
 
@@ -118,8 +142,10 @@ def run_layer(
 @app.command("run-pipeline")
 def run_pipeline(
     pipeline: Path = typer.Option(..., "-p", "--pipeline", help="Pipeline declaration file"),
+    vars_: List[str] = typer.Option([], "--vars", help="Template variables as key=value"),
 ) -> None:
-    raw_pipeline_cfg = _load_config(pipeline)
+    variables = _parse_vars(vars_)
+    raw_pipeline_cfg = _load_config(pipeline, variables)
 
     if isinstance(raw_pipeline_cfg, dict):
         steps: Any = raw_pipeline_cfg.get("steps")
@@ -153,7 +179,7 @@ def run_pipeline(
         if not config_path.is_absolute():
             config_path = (pipeline.parent / config_path).resolve()
 
-        layer_cfg = _load_config(config_path)
+        layer_cfg = _load_config(config_path, variables)
         normalized_cfg = _validate_normalized_cfg(layer_cfg, layer_name)
         _execute_layer(layer_name, normalized_cfg)
 

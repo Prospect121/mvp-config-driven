@@ -1,0 +1,16 @@
+layer: raw
+base_config: ../../finance/raw/transactions_http.yml
+io:
+  source:
+    params:
+      risk_profile: fraud
+transform:
+  sql:
+    - |
+      SELECT *
+      FROM __INPUT__
+      WHERE risk_flag = true OR score >= 70
+dq:
+  expectations:
+    - type: condition
+      expr: "score <= 100"

@@ -1,0 +1,9 @@
+steps:
+  - layer: raw
+    config: ../finance/raw/transactions_http.yml
+  - layer: bronze
+    config: ../finance/bronze/transactions.yml
+  - layer: silver
+    config: ../finance/silver/transactions.yml
+  - layer: gold
+    config: ../finance/gold/transactions.yml
