@@ -11,7 +11,7 @@ Dataproc utilizando jobs de tipo PySpark que consumen el wheel de `prodi`.
    ```
 2. Publica el wheel y las configuraciones productivas en un bucket regional:
    ```bash
-   gsutil cp dist/mvp_config_driven-0.2.0-py3-none-any.whl gs://datalake-artifacts/libs/
+   gsutil cp dist/mvp_config_driven-0.2.1-py3-none-any.whl gs://datalake-artifacts/libs/
    gsutil cp -r cfg gs://datalake-artifacts/cfg
    ```
 
@@ -34,7 +34,45 @@ if __name__ == "__main__":
     main(["run-layer", *sys.argv[1:]])
 ```
 
-## 3. Validación `dry-run`
+## 3. Producción (finanzas)
+
+Para ejecutar el pipeline financiero en Dataproc reutiliza el wheel 0.2.1 y las
+configuraciones `cfg/finance/**/*.prod.yml`. Los siguientes comandos ilustran la
+cadena completa (ajusta el bucket `<bucket>` y el clúster a tu entorno). Cambia
+`transactions_http` por `transactions_jdbc` cuando necesites ingerir vía JDBC:
+
+```bash
+gcloud dataproc jobs submit pyspark gs://<bucket>/scripts/prodi_dataproc_entry.py \
+  --cluster=dp-finanzas \
+  --region=us-central1 \
+  --jars=gs://<bucket>/libs/mvp_config_driven-0.2.1-py3-none-any.whl \
+  -- \
+  --layer raw \
+  --config gs://<bucket>/cfg/finance/raw/transactions_http.gcp.prod.yml
+gcloud dataproc jobs submit pyspark gs://<bucket>/scripts/prodi_dataproc_entry.py \
+  --cluster=dp-finanzas \
+  --region=us-central1 \
+  --jars=gs://<bucket>/libs/mvp_config_driven-0.2.1-py3-none-any.whl \
+  -- \
+  --layer bronze \
+  --config gs://<bucket>/cfg/finance/bronze/transactions.gcp.prod.yml
+gcloud dataproc jobs submit pyspark gs://<bucket>/scripts/prodi_dataproc_entry.py \
+  --cluster=dp-finanzas \
+  --region=us-central1 \
+  --jars=gs://<bucket>/libs/mvp_config_driven-0.2.1-py3-none-any.whl \
+  -- \
+  --layer silver \
+  --config gs://<bucket>/cfg/finance/silver/transactions.gcp.prod.yml
+gcloud dataproc jobs submit pyspark gs://<bucket>/scripts/prodi_dataproc_entry.py \
+  --cluster=dp-finanzas \
+  --region=us-central1 \
+  --jars=gs://<bucket>/libs/mvp_config_driven-0.2.1-py3-none-any.whl \
+  -- \
+  --layer gold \
+  --config gs://<bucket>/cfg/finance/gold/kpis.gcp.prod.yml
+```
+
+## 4. Validación `dry-run`
 
 Antes de calendarizar el workflow, ejecuta un job aislado habilitando el override
 por identidad administrada:
@@ -43,7 +81,7 @@ por identidad administrada:
 gcloud dataproc jobs submit pyspark gs://datalake-artifacts/scripts/prodi_dataproc_entry.py \
   --cluster=dp-ops-validation \
   --region=us-central1 \
-  --jars=gs://datalake-artifacts/libs/mvp_config_driven-0.2.0-py3-none-any.whl \
+  --jars=gs://datalake-artifacts/libs/mvp_config_driven-0.2.1-py3-none-any.whl \
   -- \
   --layer raw \
   --config gs://datalake-artifacts/cfg/raw/gcp.prod.yml \
@@ -54,7 +92,7 @@ El parámetro `--env.PRODI_FORCE_DRY_RUN=true` aplica el mismo mecanismo que la
 job `smoke-prod` en CI y evita side-effects aun cuando `dry_run: false` está
 configurado en los YAML productivos.
 
-## 4. Buenas prácticas operativas
+## 5. Buenas prácticas operativas
 
 * Activa [diagnostic logs](https://cloud.google.com/dataproc/docs/guides/logging) y
   envía los logs de `stdout` a Cloud Logging con filtros por `step-id`.
