@@ -1,0 +1,3781 @@
+{
+  "meta": {
+    "branch": "feature/main-codex",
+    "commit": "e270820641ad3006c6653668bf930aba18b4da54",
+    "generated_at": "2025-10-25T02:12:40.659025Z"
+  },
+  "summary": {
+    "totals": {
+      "keep": 128,
+      "remove": 1,
+      "quarantine": 4
+    },
+    "savings_mb_estimate": 0.02
+  },
+  "items": [
+    {
+      "path": ".env",
+      "type": "other",
+      "size_kb": 0.48,
+      "last_commit": "2025-09-28",
+      "references": {
+        "code": [
+          "scripts/run_high_volume_case.py:29",
+          "scripts/run_high_volume_case.py:30",
+          "scripts/run_high_volume_case.py:31",
+          "scripts/run_high_volume_case.py:39",
+          "scripts/run_multiformat_case.py:38",
+          "scripts/run_multiformat_case.py:39",
+          "scripts/run_multiformat_case.py:40",
+          "scripts/run_multiformat_case.py:44"
+        ],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/report.json:174",
+          "docs/report.json:175",
+          "docs/report.json:176",
+          "docs/report.json:177",
+          "docs/run/jobs/aws_stepfunctions.json:12",
+          "docs/run/jobs/aws_stepfunctions.json:24",
+          "docs/run/jobs/aws_stepfunctions.json:36",
+          "docs/run/jobs/aws_stepfunctions.json:48"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": ".env.example",
+      "type": "other",
+      "size_kb": 0.55,
+      "last_commit": "2025-10-06",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:53",
+          "docs/CLEANUP_REPORT.md:20",
+          "docs/CLEANUP_REPORT.md:163"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": ".gitignore",
+      "type": "other",
+      "size_kb": 6.04,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [
+          "data/output/.gitkeep:2",
+          "data/processed/.gitkeep:2",
+          "data/raw/.gitkeep:2"
+        ],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:75",
+          "docs/CLEANUP_REPORT.md:21",
+          "docs/CLEANUP_REPORT.md:170"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": ".mc/config.json",
+      "type": "config",
+      "size_kb": 0.69,
+      "last_commit": "2025-09-29",
+      "references": {
+        "code": [
+          "tools/audit_cleanup.py:26",
+          "tools/audit_cleanup.py:28"
+        ],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/diagrams/deps_cleanup.md:11",
+          "docs/cleanup.json:101",
+          "docs/cleanup.json:131",
+          "docs/cleanup.json:150",
+          "docs/CLEANUP_REPORT.md:22",
+          "docs/CLEANUP_REPORT.md:23",
+          "docs/CLEANUP_REPORT.md:178",
+          "docs/CLEANUP_REPORT.md:186"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": ".mc/config.json.old",
+      "type": "other",
+      "size_kb": 0.69,
+      "last_commit": "2025-09-29",
+      "references": {
+        "code": [
+          "tools/audit_cleanup.py:26"
+        ],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/diagrams/deps_cleanup.md:11",
+          "docs/cleanup.json:131",
+          "docs/CLEANUP_REPORT.md:23",
+          "docs/CLEANUP_REPORT.md:186"
+        ],
+        "jobs": []
+      },
+      "classification": "REMOVE",
+      "reason": "Archivo de respaldo antiguo de MinIO; reemplazado por config.json",
+      "risk": "low",
+      "proposed_action": "delete",
+      "notes": "No se usa en CI ni en scripts actuales."
+    },
+    {
+      "path": ".mc/share/downloads.json",
+      "type": "config",
+      "size_kb": 0.03,
+      "last_commit": "2025-09-29",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:156",
+          "docs/CLEANUP_REPORT.md:24",
+          "docs/CLEANUP_REPORT.md:195"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": ".mc/share/uploads.json",
+      "type": "config",
+      "size_kb": 0.03,
+      "last_commit": "2025-09-29",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/CLEANUP_REPORT.md:25",
+          "docs/CLEANUP_REPORT.md:202",
+          "docs/cleanup.json:178"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": ".pre-commit-config.yaml",
+      "type": "config",
+      "size_kb": 0.34,
+      "last_commit": "2025-10-21",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/PROJECT_DOCUMENTATION.md:91",
+          "docs/cleanup.json:200",
+          "docs/CLEANUP_REPORT.md:26",
+          "docs/CLEANUP_REPORT.md:209"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "README.md",
+      "type": "doc",
+      "size_kb": 1.93,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [
+          "tools/audit_cleanup.py:210"
+        ],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/PROJECT_DOCUMENTATION.md:107",
+          "docs/cleanup.json:223",
+          "docs/cleanup.json:525",
+          "docs/cleanup.json:1376",
+          "docs/cleanup.json:1377",
+          "docs/cleanup.json:1378",
+          "docs/cleanup.json:1751",
+          "docs/cleanup.json:2169"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Governance or generated artifact",
+      "risk": "low",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "cfg/bronze/template.yml",
+      "type": "config",
+      "size_kb": 0.52,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [
+          "tests/test_cli_smoke.py:20",
+          "tests/test_cli_smoke.py:27"
+        ],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:252",
+          "docs/cleanup.json:282",
+          "docs/cleanup.json:312",
+          "docs/cleanup.json:342",
+          "docs/cleanup.json:1369",
+          "docs/cleanup.json:1370",
+          "docs/cleanup.json:1371",
+          "docs/cleanup.json:1372"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "cfg/gold/template.yml",
+      "type": "config",
+      "size_kb": 0.51,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [
+          "tests/test_cli_smoke.py:20",
+          "tests/test_cli_smoke.py:27"
+        ],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:252",
+          "docs/cleanup.json:282",
+          "docs/cleanup.json:312",
+          "docs/cleanup.json:342",
+          "docs/cleanup.json:1369",
+          "docs/cleanup.json:1370",
+          "docs/cleanup.json:1371",
+          "docs/cleanup.json:1372"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "cfg/raw/template.yml",
+      "type": "config",
+      "size_kb": 0.51,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [
+          "tests/test_cli_smoke.py:20",
+          "tests/test_cli_smoke.py:27"
+        ],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:252",
+          "docs/cleanup.json:282",
+          "docs/cleanup.json:312",
+          "docs/cleanup.json:342",
+          "docs/cleanup.json:1369",
+          "docs/cleanup.json:1370",
+          "docs/cleanup.json:1371",
+          "docs/cleanup.json:1372"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "cfg/silver/template.yml",
+      "type": "config",
+      "size_kb": 0.52,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [
+          "tests/test_cli_smoke.py:20",
+          "tests/test_cli_smoke.py:27"
+        ],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:252",
+          "docs/cleanup.json:282",
+          "docs/cleanup.json:312",
+          "docs/cleanup.json:342",
+          "docs/cleanup.json:1369",
+          "docs/cleanup.json:1370",
+          "docs/cleanup.json:1371",
+          "docs/cleanup.json:1372"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "ci/build-test.yml",
+      "type": "config",
+      "size_kb": 0.97,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:372",
+          "docs/cleanup.json:2862",
+          "docs/CLEANUP_REPORT.md:32",
+          "docs/CLEANUP_REPORT.md:256",
+          "docs/CLEANUP_REPORT.md:933"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "ci/check_config.sh",
+      "type": "ci",
+      "size_kb": 0.25,
+      "last_commit": "2025-09-28",
+      "references": {
+        "code": [],
+        "configs": [
+          "ci/lint.yml:18"
+        ],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:396",
+          "docs/cleanup.json:1004",
+          "docs/cleanup.json:1157",
+          "docs/CLEANUP_REPORT.md:33",
+          "docs/CLEANUP_REPORT.md:263",
+          "docs/CLEANUP_REPORT.md:429",
+          "docs/CLEANUP_REPORT.md:466",
+          "docs/REPORT.md:114"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "ci/docker-compose.override.yml",
+      "type": "config",
+      "size_kb": 0.1,
+      "last_commit": "2025-10-08",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:425",
+          "docs/CLEANUP_REPORT.md:34",
+          "docs/CLEANUP_REPORT.md:271"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "ci/lint.yml",
+      "type": "config",
+      "size_kb": 0.34,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:403",
+          "docs/cleanup.json:447",
+          "docs/CLEANUP_REPORT.md:35",
+          "docs/CLEANUP_REPORT.md:267",
+          "docs/CLEANUP_REPORT.md:278",
+          "docs/REPORT.md:114",
+          "docs/REPORT.md:128"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "ci/test_dataset.yml",
+      "type": "config",
+      "size_kb": 0.34,
+      "last_commit": "2025-09-28",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:473",
+          "docs/cleanup.json:1001",
+          "docs/cleanup.json:1154",
+          "docs/cleanup.json:1537",
+          "docs/cleanup.json:1637",
+          "docs/CLEANUP_REPORT.md:36",
+          "docs/CLEANUP_REPORT.md:285",
+          "docs/CLEANUP_REPORT.md:428"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "config/database.yml",
+      "type": "config",
+      "size_kb": 1.93,
+      "last_commit": "2025-10-09",
+      "references": {
+        "code": [
+          "scripts/run_high_volume_case.py:79",
+          "scripts/runner.sh:7",
+          "scripts/runner_with_db.sh:7",
+          "scripts/generate_synthetic_data.py:580",
+          "scripts/generate_synthetic_data.py:639",
+          "scripts/run_multiformat_case.py:104"
+        ],
+        "configs": [
+          "config/datasets/finanzas/payments_v2/dataset.yml:44",
+          "config/datasets/finanzas/payments_v3/dataset.yml:6",
+          "config/datasets/finanzas/payments_v3/dataset.yml:78",
+          "config/datasets/finanzas/payments_v3/dataset_api.yml:5",
+          "config/datasets/finanzas/payments_v3/dataset_api.yml:83",
+          "config/datasets/finanzas/payments_v1/dataset.yml:49",
+          "config/datasets/casos_uso/payments_high_volume.yml:69",
+          "config/datasets/casos_uso/events_multiformat.yml:71"
+        ],
+        "ci": [],
+        "docs": [
+          "README.md:13",
+          "docs/PROJECT_DOCUMENTATION.md:10",
+          "docs/PROJECT_DOCUMENTATION.md:31",
+          "docs/PROJECT_DOCUMENTATION.md:40",
+          "docs/run/configs.md:22",
+          "docs/run/configs.md:57",
+          "docs/cleanup.json:500",
+          "docs/CLEANUP_REPORT.md:37"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "config/datasets/casos_uso/events_multiformat.yml",
+      "type": "config",
+      "size_kb": 3.88,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [
+          "scripts/run_multiformat_case.py:102"
+        ],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:521",
+          "docs/cleanup.json:543",
+          "docs/cleanup.json:581",
+          "docs/cleanup.json:607",
+          "docs/cleanup.json:631",
+          "docs/cleanup.json:854",
+          "docs/cleanup.json:1000",
+          "docs/cleanup.json:1041"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "config/datasets/casos_uso/events_multiformat_expectations.yml",
+      "type": "config",
+      "size_kb": 7.29,
+      "last_commit": "2025-10-16",
+      "references": {
+        "code": [
+          "scripts/generate_synthetic_data.py:624"
+        ],
+        "configs": [
+          "config/datasets/casos_uso/events_multiformat.yml:42"
+        ],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:572",
+          "docs/CLEANUP_REPORT.md:39",
+          "docs/CLEANUP_REPORT.md:309"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "config/datasets/casos_uso/events_multiformat_schema.json",
+      "type": "config",
+      "size_kb": 2.14,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [
+          "scripts/generate_synthetic_data.py:621"
+        ],
+        "configs": [
+          "config/datasets/casos_uso/events_multiformat.yml:46"
+        ],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:598",
+          "docs/CLEANUP_REPORT.md:40",
+          "docs/CLEANUP_REPORT.md:318"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "config/datasets/casos_uso/events_multiformat_transforms.yml",
+      "type": "config",
+      "size_kb": 0.85,
+      "last_commit": "2025-10-16",
+      "references": {
+        "code": [],
+        "configs": [
+          "config/datasets/casos_uso/events_multiformat.yml:50"
+        ],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:624",
+          "docs/CLEANUP_REPORT.md:41",
+          "docs/CLEANUP_REPORT.md:327"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "config/datasets/casos_uso/payments_high_volume.yml",
+      "type": "config",
+      "size_kb": 2.96,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [
+          "scripts/run_high_volume_case.py:77",
+          "scripts/generate_synthetic_data.py:599",
+          "scripts/generate_synthetic_data.py:603",
+          "scripts/generate_synthetic_data.py:782"
+        ],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:520",
+          "docs/cleanup.json:648",
+          "docs/cleanup.json:689",
+          "docs/cleanup.json:715",
+          "docs/cleanup.json:784",
+          "docs/cleanup.json:962",
+          "docs/cleanup.json:999",
+          "docs/cleanup.json:1115"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "config/datasets/casos_uso/payments_high_volume_expectations.yml",
+      "type": "config",
+      "size_kb": 5.62,
+      "last_commit": "2025-10-09",
+      "references": {
+        "code": [
+          "scripts/generate_synthetic_data.py:562"
+        ],
+        "configs": [
+          "config/datasets/casos_uso/payments_high_volume.yml:45"
+        ],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:680",
+          "docs/CLEANUP_REPORT.md:43",
+          "docs/CLEANUP_REPORT.md:343"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "config/datasets/casos_uso/payments_high_volume_schema.json",
+      "type": "config",
+      "size_kb": 2.42,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [
+          "scripts/generate_synthetic_data.py:566"
+        ],
+        "configs": [
+          "config/datasets/casos_uso/payments_high_volume.yml:49"
+        ],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:706",
+          "docs/CLEANUP_REPORT.md:44",
+          "docs/CLEANUP_REPORT.md:352"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "config/datasets/finanzas/payments_db_only/dataset.yml",
+      "type": "config",
+      "size_kb": 2.28,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [
+          "scripts/runner.sh:5",
+          "scripts/runner_with_db.sh:5"
+        ],
+        "configs": [
+          "config/datasets/finanzas/payments_v3/dataset.yml:5",
+          "config/datasets/finanzas/payments_v3/dataset.yml:6",
+          "config/datasets/finanzas/payments_v3/dataset.yml:90"
+        ],
+        "ci": [],
+        "docs": [
+          "docs/PROJECT_DOCUMENTATION.md:10",
+          "docs/PROJECT_DOCUMENTATION.md:24",
+          "docs/cleanup.json:473",
+          "docs/cleanup.json:514",
+          "docs/cleanup.json:515",
+          "docs/cleanup.json:516",
+          "docs/cleanup.json:519",
+          "docs/cleanup.json:732"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "config/datasets/finanzas/payments_db_only/expectations.yml",
+      "type": "config",
+      "size_kb": 0.46,
+      "last_commit": "2025-10-20",
+      "references": {
+        "code": [
+          "scripts/generate_synthetic_data.py:562",
+          "scripts/generate_synthetic_data.py:624",
+          "tests/test_config_schema.py:30"
+        ],
+        "configs": [
+          "config/datasets/finanzas/payments_multi/dataset.yml:74",
+          "config/datasets/finanzas/payments_v2/dataset.yml:29",
+          "config/datasets/finanzas/payments_db_only/dataset.yml:54",
+          "config/datasets/finanzas/payments_v3/dataset.yml:63",
+          "config/datasets/finanzas/payments_v3/dataset_api.yml:69",
+          "config/datasets/finanzas/payments_v3/dataset_api.yml:150",
+          "config/datasets/finanzas/payments_v1/dataset.yml:30",
+          "config/datasets/casos_uso/payments_high_volume.yml:45"
+        ],
+        "ci": [],
+        "docs": [
+          "docs/run/configs.md:52",
+          "docs/cleanup.json:572",
+          "docs/cleanup.json:680",
+          "docs/cleanup.json:766",
+          "docs/cleanup.json:944",
+          "docs/cleanup.json:1097",
+          "docs/cleanup.json:1242",
+          "docs/CLEANUP_REPORT.md:39"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "config/datasets/finanzas/payments_db_only/schema.yml",
+      "type": "config",
+      "size_kb": 0.69,
+      "last_commit": "2025-10-20",
+      "references": {
+        "code": [],
+        "configs": [
+          "config/datasets/finanzas/payments_multi/dataset.yml:34",
+          "config/datasets/finanzas/payments_db_only/dataset.yml:47",
+          "config/datasets/finanzas/payments_v3/dataset.yml:2",
+          "config/datasets/finanzas/payments_v3/dataset.yml:56",
+          "config/datasets/finanzas/payments_v3/dataset_api.yml:2",
+          "config/datasets/finanzas/payments_v3/dataset_api.yml:63"
+        ],
+        "ci": [],
+        "docs": [
+          "docs/CLEANUP_REPORT.md:47",
+          "docs/CLEANUP_REPORT.md:60",
+          "docs/CLEANUP_REPORT.md:379",
+          "docs/CLEANUP_REPORT.md:496",
+          "docs/cleanup.json:806",
+          "docs/cleanup.json:1282"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "config/datasets/finanzas/payments_db_only/transforms.yml",
+      "type": "config",
+      "size_kb": 1.16,
+      "last_commit": "2025-10-20",
+      "references": {
+        "code": [
+          "pipelines/transforms/apply.py:10"
+        ],
+        "configs": [
+          "config/datasets/finanzas/payments_multi/dataset.yml:77",
+          "config/datasets/finanzas/payments_db_only/dataset.yml:51",
+          "config/datasets/finanzas/payments_v3/dataset.yml:2",
+          "config/datasets/finanzas/payments_v3/dataset.yml:60",
+          "config/datasets/finanzas/payments_v3/dataset_api.yml:2",
+          "config/datasets/finanzas/payments_v3/dataset_api.yml:66",
+          "config/datasets/finanzas/payments_v1/dataset.yml:11",
+          "config/datasets/casos_uso/events_multiformat.yml:50"
+        ],
+        "ci": [],
+        "docs": [
+          "docs/PROJECT_DOCUMENTATION.md:28",
+          "docs/cleanup.json:624",
+          "docs/cleanup.json:838",
+          "docs/cleanup.json:1025",
+          "docs/cleanup.json:1314",
+          "docs/CLEANUP_REPORT.md:41",
+          "docs/CLEANUP_REPORT.md:48",
+          "docs/CLEANUP_REPORT.md:53"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "config/datasets/finanzas/payments_multi/dataset.yml",
+      "type": "config",
+      "size_kb": 1.65,
+      "last_commit": "2025-10-20",
+      "references": {
+        "code": [
+          "scripts/runner.sh:5",
+          "scripts/runner_with_db.sh:5"
+        ],
+        "configs": [
+          "config/datasets/finanzas/payments_v3/dataset.yml:5",
+          "config/datasets/finanzas/payments_v3/dataset.yml:6",
+          "config/datasets/finanzas/payments_v3/dataset.yml:90"
+        ],
+        "ci": [],
+        "docs": [
+          "docs/PROJECT_DOCUMENTATION.md:10",
+          "docs/PROJECT_DOCUMENTATION.md:24",
+          "docs/cleanup.json:473",
+          "docs/cleanup.json:514",
+          "docs/cleanup.json:515",
+          "docs/cleanup.json:516",
+          "docs/cleanup.json:519",
+          "docs/cleanup.json:732"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "config/datasets/finanzas/payments_v1/dataset.yml",
+      "type": "config",
+      "size_kb": 2.15,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [
+          "scripts/runner.sh:5",
+          "scripts/runner_with_db.sh:5"
+        ],
+        "configs": [
+          "config/datasets/finanzas/payments_v3/dataset.yml:5",
+          "config/datasets/finanzas/payments_v3/dataset.yml:6",
+          "config/datasets/finanzas/payments_v3/dataset.yml:90"
+        ],
+        "ci": [],
+        "docs": [
+          "docs/PROJECT_DOCUMENTATION.md:10",
+          "docs/PROJECT_DOCUMENTATION.md:24",
+          "docs/cleanup.json:473",
+          "docs/cleanup.json:514",
+          "docs/cleanup.json:515",
+          "docs/cleanup.json:516",
+          "docs/cleanup.json:519",
+          "docs/cleanup.json:732"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "config/datasets/finanzas/payments_v1/expectations.yml",
+      "type": "config",
+      "size_kb": 0.79,
+      "last_commit": "2025-10-08",
+      "references": {
+        "code": [
+          "scripts/generate_synthetic_data.py:562",
+          "scripts/generate_synthetic_data.py:624",
+          "tests/test_config_schema.py:30"
+        ],
+        "configs": [
+          "config/datasets/finanzas/payments_multi/dataset.yml:74",
+          "config/datasets/finanzas/payments_v2/dataset.yml:29",
+          "config/datasets/finanzas/payments_db_only/dataset.yml:54",
+          "config/datasets/finanzas/payments_v3/dataset.yml:63",
+          "config/datasets/finanzas/payments_v3/dataset_api.yml:69",
+          "config/datasets/finanzas/payments_v3/dataset_api.yml:150",
+          "config/datasets/finanzas/payments_v1/dataset.yml:30",
+          "config/datasets/casos_uso/payments_high_volume.yml:45"
+        ],
+        "ci": [],
+        "docs": [
+          "docs/run/configs.md:52",
+          "docs/cleanup.json:572",
+          "docs/cleanup.json:680",
+          "docs/cleanup.json:766",
+          "docs/cleanup.json:944",
+          "docs/cleanup.json:1097",
+          "docs/cleanup.json:1242",
+          "docs/CLEANUP_REPORT.md:39"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "config/datasets/finanzas/payments_v1/schema.json",
+      "type": "config",
+      "size_kb": 1.79,
+      "last_commit": "2025-10-15",
+      "references": {
+        "code": [
+          "scripts/generate_synthetic_data.py:566",
+          "scripts/generate_synthetic_data.py:621",
+          "pipelines/database/db_manager.py:706",
+          "pipelines/database/__init__.py:1",
+          "pipelines/database/schema_mapper.py:428"
+        ],
+        "configs": [
+          "config/datasets/finanzas/payments_v2/dataset.yml:25",
+          "config/datasets/finanzas/payments_v1/dataset.yml:34",
+          "config/datasets/casos_uso/payments_high_volume.yml:49",
+          "config/datasets/casos_uso/events_multiformat.yml:46",
+          "ci/test_dataset.yml:9"
+        ],
+        "ci": [
+          "ci/check_config.sh:6"
+        ],
+        "docs": [
+          "docs/cleanup.json:598",
+          "docs/cleanup.json:706",
+          "docs/cleanup.json:984",
+          "docs/cleanup.json:1137",
+          "docs/CLEANUP_REPORT.md:40",
+          "docs/CLEANUP_REPORT.md:44",
+          "docs/CLEANUP_REPORT.md:52",
+          "docs/CLEANUP_REPORT.md:56"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "config/datasets/finanzas/payments_v1/transforms.yml",
+      "type": "config",
+      "size_kb": 0.4,
+      "last_commit": "2025-10-13",
+      "references": {
+        "code": [
+          "pipelines/transforms/apply.py:10"
+        ],
+        "configs": [
+          "config/datasets/finanzas/payments_multi/dataset.yml:77",
+          "config/datasets/finanzas/payments_db_only/dataset.yml:51",
+          "config/datasets/finanzas/payments_v3/dataset.yml:2",
+          "config/datasets/finanzas/payments_v3/dataset.yml:60",
+          "config/datasets/finanzas/payments_v3/dataset_api.yml:2",
+          "config/datasets/finanzas/payments_v3/dataset_api.yml:66",
+          "config/datasets/finanzas/payments_v1/dataset.yml:11",
+          "config/datasets/casos_uso/events_multiformat.yml:50"
+        ],
+        "ci": [],
+        "docs": [
+          "docs/PROJECT_DOCUMENTATION.md:28",
+          "docs/cleanup.json:624",
+          "docs/cleanup.json:838",
+          "docs/cleanup.json:1025",
+          "docs/cleanup.json:1314",
+          "docs/CLEANUP_REPORT.md:41",
+          "docs/CLEANUP_REPORT.md:48",
+          "docs/CLEANUP_REPORT.md:53"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "config/datasets/finanzas/payments_v2/dataset.yml",
+      "type": "config",
+      "size_kb": 1.69,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [
+          "scripts/runner.sh:5",
+          "scripts/runner_with_db.sh:5"
+        ],
+        "configs": [
+          "config/datasets/finanzas/payments_v3/dataset.yml:5",
+          "config/datasets/finanzas/payments_v3/dataset.yml:6",
+          "config/datasets/finanzas/payments_v3/dataset.yml:90"
+        ],
+        "ci": [],
+        "docs": [
+          "docs/PROJECT_DOCUMENTATION.md:10",
+          "docs/PROJECT_DOCUMENTATION.md:24",
+          "docs/CLEANUP_REPORT.md:36",
+          "docs/CLEANUP_REPORT.md:45",
+          "docs/CLEANUP_REPORT.md:49",
+          "docs/CLEANUP_REPORT.md:50",
+          "docs/CLEANUP_REPORT.md:54",
+          "docs/CLEANUP_REPORT.md:57"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "config/datasets/finanzas/payments_v2/expectations.yml",
+      "type": "config",
+      "size_kb": 0.79,
+      "last_commit": "2025-10-06",
+      "references": {
+        "code": [
+          "scripts/generate_synthetic_data.py:562",
+          "scripts/generate_synthetic_data.py:624",
+          "tests/test_config_schema.py:30"
+        ],
+        "configs": [
+          "config/datasets/finanzas/payments_multi/dataset.yml:74",
+          "config/datasets/finanzas/payments_v2/dataset.yml:29",
+          "config/datasets/finanzas/payments_db_only/dataset.yml:54",
+          "config/datasets/finanzas/payments_v3/dataset.yml:63",
+          "config/datasets/finanzas/payments_v3/dataset_api.yml:69",
+          "config/datasets/finanzas/payments_v3/dataset_api.yml:150",
+          "config/datasets/finanzas/payments_v1/dataset.yml:30",
+          "config/datasets/casos_uso/payments_high_volume.yml:45"
+        ],
+        "ci": [],
+        "docs": [
+          "docs/run/configs.md:52",
+          "docs/cleanup.json:572",
+          "docs/cleanup.json:680",
+          "docs/cleanup.json:766",
+          "docs/cleanup.json:944",
+          "docs/cleanup.json:1097",
+          "docs/cleanup.json:1242",
+          "docs/CLEANUP_REPORT.md:39"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "config/datasets/finanzas/payments_v2/schema.json",
+      "type": "config",
+      "size_kb": 0.47,
+      "last_commit": "2025-10-08",
+      "references": {
+        "code": [
+          "scripts/generate_synthetic_data.py:566",
+          "scripts/generate_synthetic_data.py:621",
+          "pipelines/database/db_manager.py:706",
+          "pipelines/database/__init__.py:1",
+          "pipelines/database/schema_mapper.py:428"
+        ],
+        "configs": [
+          "config/datasets/finanzas/payments_v2/dataset.yml:25",
+          "config/datasets/finanzas/payments_v1/dataset.yml:34",
+          "config/datasets/casos_uso/payments_high_volume.yml:49",
+          "config/datasets/casos_uso/events_multiformat.yml:46",
+          "ci/test_dataset.yml:9"
+        ],
+        "ci": [
+          "ci/check_config.sh:6"
+        ],
+        "docs": [
+          "docs/cleanup.json:598",
+          "docs/cleanup.json:706",
+          "docs/cleanup.json:984",
+          "docs/cleanup.json:1137",
+          "docs/CLEANUP_REPORT.md:40",
+          "docs/CLEANUP_REPORT.md:44",
+          "docs/CLEANUP_REPORT.md:52",
+          "docs/CLEANUP_REPORT.md:56"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "config/datasets/finanzas/payments_v3/dataset.yml",
+      "type": "config",
+      "size_kb": 2.82,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [
+          "scripts/runner.sh:5",
+          "scripts/runner_with_db.sh:5"
+        ],
+        "configs": [
+          "config/datasets/finanzas/payments_v3/dataset.yml:5",
+          "config/datasets/finanzas/payments_v3/dataset.yml:6",
+          "config/datasets/finanzas/payments_v3/dataset.yml:90"
+        ],
+        "ci": [],
+        "docs": [
+          "docs/PROJECT_DOCUMENTATION.md:10",
+          "docs/PROJECT_DOCUMENTATION.md:24",
+          "docs/cleanup.json:473",
+          "docs/cleanup.json:514",
+          "docs/cleanup.json:515",
+          "docs/cleanup.json:516",
+          "docs/cleanup.json:519",
+          "docs/cleanup.json:732"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "config/datasets/finanzas/payments_v3/dataset_api.yml",
+      "type": "config",
+      "size_kb": 4.19,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [
+          "config/datasets/finanzas/payments_v3/dataset_api.yml:4",
+          "config/datasets/finanzas/payments_v3/dataset_api.yml:5"
+        ],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:517",
+          "docs/cleanup.json:518",
+          "docs/cleanup.json:781",
+          "docs/cleanup.json:782",
+          "docs/cleanup.json:817",
+          "docs/cleanup.json:818",
+          "docs/cleanup.json:851",
+          "docs/cleanup.json:852"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "config/datasets/finanzas/payments_v3/expectations.yml",
+      "type": "config",
+      "size_kb": 0.46,
+      "last_commit": "2025-10-16",
+      "references": {
+        "code": [
+          "scripts/generate_synthetic_data.py:562",
+          "scripts/generate_synthetic_data.py:624",
+          "tests/test_config_schema.py:30"
+        ],
+        "configs": [
+          "config/datasets/finanzas/payments_multi/dataset.yml:74",
+          "config/datasets/finanzas/payments_v2/dataset.yml:29",
+          "config/datasets/finanzas/payments_db_only/dataset.yml:54",
+          "config/datasets/finanzas/payments_v3/dataset.yml:63",
+          "config/datasets/finanzas/payments_v3/dataset_api.yml:69",
+          "config/datasets/finanzas/payments_v3/dataset_api.yml:150",
+          "config/datasets/finanzas/payments_v1/dataset.yml:30",
+          "config/datasets/casos_uso/payments_high_volume.yml:45"
+        ],
+        "ci": [],
+        "docs": [
+          "docs/run/configs.md:52",
+          "docs/cleanup.json:572",
+          "docs/cleanup.json:680",
+          "docs/cleanup.json:766",
+          "docs/cleanup.json:944",
+          "docs/cleanup.json:1097",
+          "docs/cleanup.json:1242",
+          "docs/CLEANUP_REPORT.md:39"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "config/datasets/finanzas/payments_v3/schema.yml",
+      "type": "config",
+      "size_kb": 0.7,
+      "last_commit": "2025-10-16",
+      "references": {
+        "code": [],
+        "configs": [
+          "config/datasets/finanzas/payments_multi/dataset.yml:34",
+          "config/datasets/finanzas/payments_db_only/dataset.yml:47",
+          "config/datasets/finanzas/payments_v3/dataset.yml:2",
+          "config/datasets/finanzas/payments_v3/dataset.yml:56",
+          "config/datasets/finanzas/payments_v3/dataset_api.yml:2",
+          "config/datasets/finanzas/payments_v3/dataset_api.yml:63"
+        ],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:806",
+          "docs/cleanup.json:1282",
+          "docs/CLEANUP_REPORT.md:47",
+          "docs/CLEANUP_REPORT.md:60",
+          "docs/CLEANUP_REPORT.md:379",
+          "docs/CLEANUP_REPORT.md:496"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "config/datasets/finanzas/payments_v3/transforms.yml",
+      "type": "config",
+      "size_kb": 1.36,
+      "last_commit": "2025-10-20",
+      "references": {
+        "code": [
+          "pipelines/transforms/apply.py:10"
+        ],
+        "configs": [
+          "config/datasets/finanzas/payments_multi/dataset.yml:77",
+          "config/datasets/finanzas/payments_db_only/dataset.yml:51",
+          "config/datasets/finanzas/payments_v3/dataset.yml:2",
+          "config/datasets/finanzas/payments_v3/dataset.yml:60",
+          "config/datasets/finanzas/payments_v3/dataset_api.yml:2",
+          "config/datasets/finanzas/payments_v3/dataset_api.yml:66",
+          "config/datasets/finanzas/payments_v1/dataset.yml:11",
+          "config/datasets/casos_uso/events_multiformat.yml:50"
+        ],
+        "ci": [],
+        "docs": [
+          "docs/PROJECT_DOCUMENTATION.md:28",
+          "docs/cleanup.json:624",
+          "docs/cleanup.json:838",
+          "docs/cleanup.json:1025",
+          "docs/cleanup.json:1314",
+          "docs/CLEANUP_REPORT.md:41",
+          "docs/CLEANUP_REPORT.md:48",
+          "docs/CLEANUP_REPORT.md:53"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "config/env.yml",
+      "type": "config",
+      "size_kb": 0.65,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [
+          "scripts/runner.sh:6",
+          "scripts/runner_with_db.sh:6",
+          "pipelines/sources.py:113",
+          "pipelines/sources.py:117",
+          "src/datacore/io/adapters.py:63"
+        ],
+        "configs": [
+          "config/datasets/finanzas/payments_v3/dataset.yml:6",
+          "config/datasets/finanzas/payments_v3/dataset_api.yml:5",
+          "config/datasets/finanzas/payments_v3/dataset_api.yml:15",
+          "config/datasets/finanzas/payments_v3/dataset_api.yml:103",
+          "cfg/raw/template.yml:7",
+          "cfg/gold/template.yml:7",
+          "cfg/silver/template.yml:7",
+          "cfg/bronze/template.yml:7"
+        ],
+        "ci": [],
+        "docs": [
+          "README.md:13",
+          "README.md:15",
+          "README.md:38",
+          "docs/PROJECT_DOCUMENTATION.md:10",
+          "docs/PROJECT_DOCUMENTATION.md:22",
+          "docs/PROJECT_DOCUMENTATION.md:40",
+          "docs/PROJECT_DOCUMENTATION.md:42",
+          "docs/run/configs.md:20"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "config/schema_mapping.yml",
+      "type": "config",
+      "size_kb": 1.89,
+      "last_commit": "2025-10-08",
+      "references": {
+        "code": [
+          "pipelines/database/schema_mapper.py:48"
+        ],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/CLEANUP_REPORT.md:63",
+          "docs/CLEANUP_REPORT.md:522",
+          "docs/CLEANUP_REPORT.md:795",
+          "docs/cleanup.json:1394",
+          "docs/cleanup.json:2354"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "data/casos-uso/multi-format/events_batch_001.json",
+      "type": "other",
+      "size_kb": 5709.05,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/CLEANUP_REPORT.md:64",
+          "docs/CLEANUP_REPORT.md:530",
+          "docs/cleanup.json:1420"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "data/output/.gitkeep",
+      "type": "other",
+      "size_kb": 0.14,
+      "last_commit": "2025-10-08",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:81",
+          "docs/cleanup.json:82",
+          "docs/cleanup.json:83",
+          "docs/cleanup.json:1442",
+          "docs/cleanup.json:1469",
+          "docs/cleanup.json:1496",
+          "docs/CLEANUP_REPORT.md:65",
+          "docs/CLEANUP_REPORT.md:66"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "data/processed/.gitkeep",
+      "type": "other",
+      "size_kb": 0.16,
+      "last_commit": "2025-10-08",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:81",
+          "docs/cleanup.json:82",
+          "docs/cleanup.json:83",
+          "docs/cleanup.json:1442",
+          "docs/cleanup.json:1469",
+          "docs/cleanup.json:1496",
+          "docs/CLEANUP_REPORT.md:65",
+          "docs/CLEANUP_REPORT.md:66"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "data/raw/.gitkeep",
+      "type": "other",
+      "size_kb": 0.15,
+      "last_commit": "2025-10-08",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:81",
+          "docs/cleanup.json:82",
+          "docs/cleanup.json:83",
+          "docs/cleanup.json:1442",
+          "docs/cleanup.json:1469",
+          "docs/cleanup.json:1496",
+          "docs/CLEANUP_REPORT.md:65",
+          "docs/CLEANUP_REPORT.md:66"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "data/raw/payments/sample.csv",
+      "type": "other",
+      "size_kb": 0.64,
+      "last_commit": "2025-10-15",
+      "references": {
+        "code": [
+          "scripts/generate_big_payments.py:6",
+          "tests/test_io_fs.py:185",
+          "tests/test_io_fs.py:186",
+          "tests/test_io_fs.py:187",
+          "tests/test_io_fs.py:211"
+        ],
+        "configs": [
+          "config/datasets/finanzas/payments_v2/dataset.yml:5",
+          "ci/test_dataset.yml:5"
+        ],
+        "ci": [],
+        "docs": [
+          "docs/CLEANUP_REPORT.md:68",
+          "docs/CLEANUP_REPORT.md:72",
+          "docs/CLEANUP_REPORT.md:558",
+          "docs/CLEANUP_REPORT.md:588",
+          "docs/cleanup.json:1523",
+          "docs/cleanup.json:1623"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "data/s3a-staging/finanzas/payments/raw/sample.jsonl",
+      "type": "other",
+      "size_kb": 0.31,
+      "last_commit": "2025-10-20",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:1557",
+          "docs/CLEANUP_REPORT.md:69",
+          "docs/CLEANUP_REPORT.md:567"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "data/s3a-staging/raw/casos-uso/payments-high-volume/payments-high-volume/payments_batch_001.csv",
+      "type": "other",
+      "size_kb": 588.43,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:1579",
+          "docs/CLEANUP_REPORT.md:70",
+          "docs/CLEANUP_REPORT.md:574"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "data/s3a-staging/raw/casos-uso/payments-high-volume/payments-high-volume/payments_batch_002.csv",
+      "type": "other",
+      "size_kb": 588.26,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:1601",
+          "docs/CLEANUP_REPORT.md:71",
+          "docs/CLEANUP_REPORT.md:581"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "data/s3a-staging/raw/payments_v3/sample.csv",
+      "type": "other",
+      "size_kb": 0.34,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [
+          "scripts/generate_big_payments.py:6",
+          "tests/test_io_fs.py:185",
+          "tests/test_io_fs.py:186",
+          "tests/test_io_fs.py:187",
+          "tests/test_io_fs.py:211"
+        ],
+        "configs": [
+          "config/datasets/finanzas/payments_v2/dataset.yml:5",
+          "ci/test_dataset.yml:5"
+        ],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:1523",
+          "docs/cleanup.json:1623",
+          "docs/CLEANUP_REPORT.md:68",
+          "docs/CLEANUP_REPORT.md:72",
+          "docs/CLEANUP_REPORT.md:558",
+          "docs/CLEANUP_REPORT.md:588"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "docker/spark-pandas-udf/Dockerfile",
+      "type": "docker",
+      "size_kb": 0.34,
+      "last_commit": "2025-10-13",
+      "references": {
+        "code": [
+          "tools/audit_cleanup.py:131"
+        ],
+        "configs": [
+          "docker-compose.yml:49",
+          "docker-compose.yml:65",
+          "docker-compose.yml:81"
+        ],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:1657",
+          "docs/CLEANUP_REPORT.md:73",
+          "docs/CLEANUP_REPORT.md:597"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "docker-compose.yml",
+      "type": "config",
+      "size_kb": 3.98,
+      "last_commit": "2025-10-13",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:1666",
+          "docs/cleanup.json:1667",
+          "docs/cleanup.json:1668",
+          "docs/cleanup.json:1685",
+          "docs/cleanup.json:2889",
+          "docs/cleanup.json:3032",
+          "docs/cleanup.json:3033",
+          "docs/CLEANUP_REPORT.md:74"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "docs/CLEANUP_REPORT.md",
+      "type": "doc",
+      "size_kb": 110.83,
+      "last_commit": "",
+      "references": {
+        "code": [
+          "tools/audit_cleanup.py:211",
+          "tools/audit_cleanup.py:527"
+        ],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/diagrams/deps_cleanup.md:15",
+          "docs/cleanup.json:63",
+          "docs/cleanup.json:64",
+          "docs/cleanup.json:89",
+          "docs/cleanup.json:90",
+          "docs/cleanup.json:117",
+          "docs/cleanup.json:118",
+          "docs/cleanup.json:119"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Governance or generated artifact",
+      "risk": "low",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "docs/PROJECT_DOCUMENTATION.md",
+      "type": "doc",
+      "size_kb": 5.29,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "README.md:33",
+          "docs/cleanup.json:209",
+          "docs/cleanup.json:234",
+          "docs/cleanup.json:526",
+          "docs/cleanup.json:527",
+          "docs/cleanup.json:528",
+          "docs/cleanup.json:748",
+          "docs/cleanup.json:749"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "docs/REPORT.md",
+      "type": "doc",
+      "size_kb": 12.38,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [
+          "tools/audit_cleanup.py:33",
+          "tools/audit_cleanup.py:211",
+          "tools/audit_cleanup.py:527"
+        ],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/diagrams/deps_cleanup.md:9",
+          "docs/diagrams/deps_cleanup.md:15",
+          "docs/cleanup.json:63",
+          "docs/cleanup.json:64",
+          "docs/cleanup.json:89",
+          "docs/cleanup.json:90",
+          "docs/cleanup.json:117",
+          "docs/cleanup.json:118"
+        ],
+        "jobs": []
+      },
+      "classification": "QUARANTINE",
+      "reason": "Reporte legacy previo a la documentación modular.",
+      "risk": "medium",
+      "proposed_action": "move_to_legacy",
+      "notes": "Conservar en /legacy/docs hasta validar que no sea referencia externa."
+    },
+    {
+      "path": "docs/cleanup.json",
+      "type": "doc",
+      "size_kb": 135.98,
+      "last_commit": "",
+      "references": {
+        "code": [
+          "tools/audit_cleanup.py:212",
+          "tools/audit_cleanup.py:526"
+        ],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:62",
+          "docs/cleanup.json:88",
+          "docs/cleanup.json:114",
+          "docs/cleanup.json:115",
+          "docs/cleanup.json:116",
+          "docs/cleanup.json:143",
+          "docs/cleanup.json:165",
+          "docs/cleanup.json:187"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Governance or generated artifact",
+      "risk": "low",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "docs/diagrams/dependencies.md",
+      "type": "doc",
+      "size_kb": 1.24,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/REPORT.md:45",
+          "docs/cleanup.json:1830",
+          "docs/CLEANUP_REPORT.md:79",
+          "docs/CLEANUP_REPORT.md:645"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "docs/diagrams/deps_cleanup.md",
+      "type": "doc",
+      "size_kb": 0.64,
+      "last_commit": "",
+      "references": {
+        "code": [
+          "tools/audit_cleanup.py:213"
+        ],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:113",
+          "docs/cleanup.json:142",
+          "docs/cleanup.json:1724",
+          "docs/cleanup.json:1782",
+          "docs/cleanup.json:1783",
+          "docs/cleanup.json:1853",
+          "docs/cleanup.json:1945",
+          "docs/cleanup.json:2917"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Governance or generated artifact",
+      "risk": "low",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "docs/diagrams/pipeline_flow.md",
+      "type": "doc",
+      "size_kb": 1.17,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:1881",
+          "docs/cleanup.json:2511",
+          "docs/cleanup.json:2550",
+          "docs/CLEANUP_REPORT.md:81",
+          "docs/CLEANUP_REPORT.md:660",
+          "docs/CLEANUP_REPORT.md:838",
+          "docs/CLEANUP_REPORT.md:847",
+          "docs/REPORT.md:46"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "docs/policies/DEP-001-legacy-removal.md",
+      "type": "doc",
+      "size_kb": 2.08,
+      "last_commit": "",
+      "references": {
+        "code": [
+          "tools/audit_cleanup.py:214"
+        ],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:1908",
+          "docs/CLEANUP_REPORT.md:82",
+          "docs/CLEANUP_REPORT.md:667"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Governance or generated artifact",
+      "risk": "low",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "docs/report.json",
+      "type": "doc",
+      "size_kb": 5.92,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [
+          "tools/audit_cleanup.py:40"
+        ],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/diagrams/deps_cleanup.md:10",
+          "docs/cleanup.json:35",
+          "docs/cleanup.json:36",
+          "docs/cleanup.json:37",
+          "docs/cleanup.json:38",
+          "docs/cleanup.json:1934",
+          "docs/cleanup.json:2222",
+          "docs/cleanup.json:2223"
+        ],
+        "jobs": []
+      },
+      "classification": "QUARANTINE",
+      "reason": "Export JSON antiguo duplicando reportes actuales.",
+      "risk": "medium",
+      "proposed_action": "move_to_legacy",
+      "notes": "Generado por tooling previo; no usado en pipelines."
+    },
+    {
+      "path": "docs/run/aws.md",
+      "type": "doc",
+      "size_kb": 3.11,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/PROJECT_DOCUMENTATION.md:49",
+          "docs/cleanup.json:1963",
+          "docs/CLEANUP_REPORT.md:84",
+          "docs/CLEANUP_REPORT.md:684"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "docs/run/azure.md",
+      "type": "doc",
+      "size_kb": 3.28,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/PROJECT_DOCUMENTATION.md:51",
+          "docs/cleanup.json:1986",
+          "docs/CLEANUP_REPORT.md:85",
+          "docs/CLEANUP_REPORT.md:691",
+          "docs/CLEANUP_REPORT.md:1336",
+          "docs/CLEANUP_REPORT.md:1337"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "docs/run/configs.md",
+      "type": "doc",
+      "size_kb": 2.69,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:529",
+          "docs/cleanup.json:530",
+          "docs/cleanup.json:788",
+          "docs/cleanup.json:966",
+          "docs/cleanup.json:1119",
+          "docs/cleanup.json:1264",
+          "docs/cleanup.json:1383",
+          "docs/cleanup.json:2011"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "docs/run/databricks.md",
+      "type": "doc",
+      "size_kb": 3.15,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/PROJECT_DOCUMENTATION.md:48",
+          "docs/cleanup.json:2038",
+          "docs/CLEANUP_REPORT.md:87",
+          "docs/CLEANUP_REPORT.md:705",
+          "docs/CLEANUP_REPORT.md:1338",
+          "docs/CLEANUP_REPORT.md:1339",
+          "docs/CLEANUP_REPORT.md:1340"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "docs/run/gcp.md",
+      "type": "doc",
+      "size_kb": 3.61,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/PROJECT_DOCUMENTATION.md:50",
+          "docs/cleanup.json:2064",
+          "docs/CLEANUP_REPORT.md:88",
+          "docs/CLEANUP_REPORT.md:712"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "docs/run/jobs/aws_stepfunctions.json",
+      "type": "doc",
+      "size_kb": 1.28,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:39",
+          "docs/cleanup.json:40",
+          "docs/cleanup.json:41",
+          "docs/cleanup.json:42",
+          "docs/cleanup.json:2087",
+          "docs/CLEANUP_REPORT.md:89",
+          "docs/CLEANUP_REPORT.md:160",
+          "docs/CLEANUP_REPORT.md:719"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "docs/run/jobs/databricks_job.json",
+      "type": "doc",
+      "size_kb": 2.03,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:2114",
+          "docs/CLEANUP_REPORT.md:90",
+          "docs/CLEANUP_REPORT.md:726"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "docs/run/jobs/dataproc_workflow.yaml",
+      "type": "config",
+      "size_kb": 1.68,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [
+          "tools/audit_cleanup.py:54"
+        ],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:2136",
+          "docs/CLEANUP_REPORT.md:91",
+          "docs/CLEANUP_REPORT.md:733"
+        ],
+        "jobs": []
+      },
+      "classification": "QUARANTINE",
+      "reason": "Plantilla Dataproc sin referencias en CI/CD.",
+      "risk": "medium",
+      "proposed_action": "move_to_legacy",
+      "notes": "Considerar mover a legacy/infra antes de eliminar."
+    },
+    {
+      "path": "docs/tools/list_io.py",
+      "type": "code",
+      "size_kb": 2.94,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "README.md:40",
+          "docs/cleanup.json:2160",
+          "docs/cleanup.json:3737",
+          "docs/CLEANUP_REPORT.md:92",
+          "docs/CLEANUP_REPORT.md:151",
+          "docs/CLEANUP_REPORT.md:742",
+          "docs/CLEANUP_REPORT.md:1166",
+          "docs/CLEANUP_REPORT.md:1259"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "pipelines/__init__.py",
+      "type": "code",
+      "size_kb": 0.16,
+      "last_commit": "2025-10-21",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:993",
+          "docs/cleanup.json:1146",
+          "docs/cleanup.json:2186",
+          "docs/cleanup.json:2240",
+          "docs/cleanup.json:2293",
+          "docs/cleanup.json:2376",
+          "docs/cleanup.json:2566",
+          "docs/cleanup.json:2620"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "pipelines/common.py",
+      "type": "code",
+      "size_kb": 4.32,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/report.json:128",
+          "docs/report.json:144",
+          "docs/cleanup.json:2213",
+          "docs/CLEANUP_REPORT.md:94",
+          "docs/CLEANUP_REPORT.md:756",
+          "docs/CLEANUP_REPORT.md:1196",
+          "docs/CLEANUP_REPORT.md:1260",
+          "docs/CLEANUP_REPORT.md:1261"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "pipelines/config/__init__.py",
+      "type": "code",
+      "size_kb": 0.05,
+      "last_commit": "2025-10-21",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:993",
+          "docs/cleanup.json:1146",
+          "docs/cleanup.json:2186",
+          "docs/cleanup.json:2240",
+          "docs/cleanup.json:2293",
+          "docs/cleanup.json:2376",
+          "docs/cleanup.json:2566",
+          "docs/cleanup.json:2620"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "pipelines/config/loader.py",
+      "type": "code",
+      "size_kb": 0.75,
+      "last_commit": "2025-10-21",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/PROJECT_DOCUMENTATION.md:15",
+          "docs/cleanup.json:2267",
+          "docs/CLEANUP_REPORT.md:96",
+          "docs/CLEANUP_REPORT.md:770",
+          "docs/CLEANUP_REPORT.md:1197",
+          "docs/CLEANUP_REPORT.md:1198",
+          "docs/CLEANUP_REPORT.md:1199",
+          "docs/CLEANUP_REPORT.md:1265"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "pipelines/database/__init__.py",
+      "type": "code",
+      "size_kb": 0.06,
+      "last_commit": "2025-10-08",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:993",
+          "docs/cleanup.json:1146",
+          "docs/cleanup.json:2186",
+          "docs/cleanup.json:2240",
+          "docs/cleanup.json:2293",
+          "docs/cleanup.json:2376",
+          "docs/cleanup.json:2566",
+          "docs/cleanup.json:2620"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "pipelines/database/db_manager.py",
+      "type": "code",
+      "size_kb": 29.79,
+      "last_commit": "2025-10-15",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:992",
+          "docs/cleanup.json:1145",
+          "docs/cleanup.json:2320",
+          "docs/CLEANUP_REPORT.md:98",
+          "docs/CLEANUP_REPORT.md:427",
+          "docs/CLEANUP_REPORT.md:464",
+          "docs/CLEANUP_REPORT.md:784",
+          "docs/CLEANUP_REPORT.md:1200"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "pipelines/database/schema_mapper.py",
+      "type": "code",
+      "size_kb": 18.59,
+      "last_commit": "2025-10-09",
+      "references": {
+        "code": [],
+        "configs": [
+          "config/schema_mapping.yml:2"
+        ],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:994",
+          "docs/cleanup.json:1147",
+          "docs/cleanup.json:1400",
+          "docs/cleanup.json:2347",
+          "docs/CLEANUP_REPORT.md:99",
+          "docs/CLEANUP_REPORT.md:427",
+          "docs/CLEANUP_REPORT.md:464",
+          "docs/CLEANUP_REPORT.md:526"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "pipelines/io/__init__.py",
+      "type": "code",
+      "size_kb": 0.06,
+      "last_commit": "2025-10-21",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:993",
+          "docs/cleanup.json:1146",
+          "docs/cleanup.json:2186",
+          "docs/cleanup.json:2240",
+          "docs/cleanup.json:2293",
+          "docs/cleanup.json:2376",
+          "docs/cleanup.json:2566",
+          "docs/cleanup.json:2620"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "pipelines/io/reader.py",
+      "type": "code",
+      "size_kb": 1.48,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/PROJECT_DOCUMENTATION.md:16",
+          "docs/cleanup.json:2403",
+          "docs/CLEANUP_REPORT.md:101",
+          "docs/CLEANUP_REPORT.md:806",
+          "docs/CLEANUP_REPORT.md:1219",
+          "docs/CLEANUP_REPORT.md:1273",
+          "docs/CLEANUP_REPORT.md:1274",
+          "docs/CLEANUP_REPORT.md:1275"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "pipelines/io/s3a.py",
+      "type": "code",
+      "size_kb": 0.48,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/PROJECT_DOCUMENTATION.md:16",
+          "docs/cleanup.json:2427",
+          "docs/CLEANUP_REPORT.md:102",
+          "docs/CLEANUP_REPORT.md:813",
+          "docs/CLEANUP_REPORT.md:1220",
+          "docs/CLEANUP_REPORT.md:1276"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "pipelines/io/writer.py",
+      "type": "code",
+      "size_kb": 1.42,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/PROJECT_DOCUMENTATION.md:16",
+          "docs/PROJECT_DOCUMENTATION.md:79",
+          "docs/cleanup.json:2451",
+          "docs/CLEANUP_REPORT.md:103",
+          "docs/CLEANUP_REPORT.md:820",
+          "docs/CLEANUP_REPORT.md:1277",
+          "docs/CLEANUP_REPORT.md:1278"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "pipelines/sources.py",
+      "type": "code",
+      "size_kb": 13.96,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/report.json:61",
+          "docs/report.json:68",
+          "docs/PROJECT_DOCUMENTATION.md:18",
+          "docs/PROJECT_DOCUMENTATION.md:56",
+          "docs/REPORT.md:155",
+          "docs/REPORT.md:156",
+          "docs/cleanup.json:1360",
+          "docs/cleanup.json:1361"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "pipelines/spark_job.py",
+      "type": "code",
+      "size_kb": 11.51,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/diagrams/pipeline_flow.md:7",
+          "docs/report.json:75",
+          "docs/cleanup.json:2502",
+          "docs/CLEANUP_REPORT.md:105",
+          "docs/CLEANUP_REPORT.md:834",
+          "docs/CLEANUP_REPORT.md:1221",
+          "docs/CLEANUP_REPORT.md:1282",
+          "docs/CLEANUP_REPORT.md:1283"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "pipelines/spark_job_with_db.py",
+      "type": "code",
+      "size_kb": 2.11,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [
+          "scripts/run_high_volume_case.py:85",
+          "scripts/runner.sh:106",
+          "scripts/runner_with_db.sh:61",
+          "scripts/generate_synthetic_data.py:782",
+          "scripts/run_multiformat_case.py:110",
+          "pipelines/spark_job_with_db.py:13"
+        ],
+        "configs": [
+          "config/datasets/finanzas/payments_v3/dataset.yml:6",
+          "config/datasets/finanzas/payments_v3/dataset_api.yml:5"
+        ],
+        "ci": [],
+        "docs": [
+          "README.md:13",
+          "README.md:29",
+          "docs/diagrams/pipeline_flow.md:8",
+          "docs/PROJECT_DOCUMENTATION.md:17",
+          "docs/PROJECT_DOCUMENTATION.md:40",
+          "docs/cleanup.json:2529",
+          "docs/cleanup.json:2540",
+          "docs/CLEANUP_REPORT.md:106"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "pipelines/transforms/__init__.py",
+      "type": "code",
+      "size_kb": 0.05,
+      "last_commit": "2025-10-21",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:993",
+          "docs/cleanup.json:1146",
+          "docs/cleanup.json:2186",
+          "docs/cleanup.json:2240",
+          "docs/cleanup.json:2293",
+          "docs/cleanup.json:2376",
+          "docs/cleanup.json:2566",
+          "docs/cleanup.json:2620"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "pipelines/transforms/apply.py",
+      "type": "code",
+      "size_kb": 4.82,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/PROJECT_DOCUMENTATION.md:14",
+          "docs/PROJECT_DOCUMENTATION.md:90",
+          "docs/cleanup.json:844",
+          "docs/cleanup.json:1031",
+          "docs/cleanup.json:1320",
+          "docs/cleanup.json:2593",
+          "docs/cleanup.json:2647",
+          "docs/CLEANUP_REPORT.md:108"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "pipelines/transforms/tests/__init__.py",
+      "type": "code",
+      "size_kb": 0.03,
+      "last_commit": "2025-10-21",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:993",
+          "docs/cleanup.json:1146",
+          "docs/cleanup.json:2186",
+          "docs/cleanup.json:2240",
+          "docs/cleanup.json:2293",
+          "docs/cleanup.json:2376",
+          "docs/cleanup.json:2566",
+          "docs/cleanup.json:2620"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "pipelines/transforms/tests/test_apply.py",
+      "type": "code",
+      "size_kb": 1.23,
+      "last_commit": "2025-10-21",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/PROJECT_DOCUMENTATION.md:90",
+          "docs/cleanup.json:2647",
+          "docs/CLEANUP_REPORT.md:110",
+          "docs/CLEANUP_REPORT.md:871",
+          "docs/CLEANUP_REPORT.md:1293",
+          "docs/CLEANUP_REPORT.md:1294",
+          "docs/CLEANUP_REPORT.md:1295"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "pipelines/udf_catalog.py",
+      "type": "code",
+      "size_kb": 4.79,
+      "last_commit": "2025-10-13",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:2670",
+          "docs/CLEANUP_REPORT.md:111",
+          "docs/CLEANUP_REPORT.md:878",
+          "docs/CLEANUP_REPORT.md:1222",
+          "docs/CLEANUP_REPORT.md:1223",
+          "docs/CLEANUP_REPORT.md:1224",
+          "docs/CLEANUP_REPORT.md:1225",
+          "docs/CLEANUP_REPORT.md:1226"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "pipelines/utils/__init__.py",
+      "type": "code",
+      "size_kb": 0.06,
+      "last_commit": "2025-10-21",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/CLEANUP_REPORT.md:93",
+          "docs/CLEANUP_REPORT.md:95",
+          "docs/CLEANUP_REPORT.md:97",
+          "docs/CLEANUP_REPORT.md:100",
+          "docs/CLEANUP_REPORT.md:107",
+          "docs/CLEANUP_REPORT.md:109",
+          "docs/CLEANUP_REPORT.md:112",
+          "docs/CLEANUP_REPORT.md:115"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "pipelines/utils/logger.py",
+      "type": "code",
+      "size_kb": 1.16,
+      "last_commit": "2025-10-21",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/PROJECT_DOCUMENTATION.md:12",
+          "docs/cleanup.json:2724",
+          "docs/CLEANUP_REPORT.md:113",
+          "docs/CLEANUP_REPORT.md:892"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "pipelines/utils/parallel.py",
+      "type": "code",
+      "size_kb": 0.95,
+      "last_commit": "2025-10-21",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/PROJECT_DOCUMENTATION.md:12",
+          "docs/cleanup.json:2747",
+          "docs/CLEANUP_REPORT.md:114",
+          "docs/CLEANUP_REPORT.md:899",
+          "docs/CLEANUP_REPORT.md:1230",
+          "docs/CLEANUP_REPORT.md:1231"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "pipelines/validation/__init__.py",
+      "type": "code",
+      "size_kb": 0.08,
+      "last_commit": "2025-10-21",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:993",
+          "docs/cleanup.json:1146",
+          "docs/cleanup.json:2186",
+          "docs/cleanup.json:2240",
+          "docs/cleanup.json:2293",
+          "docs/cleanup.json:2376",
+          "docs/cleanup.json:2566",
+          "docs/cleanup.json:2620"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "pipelines/validation/quality.py",
+      "type": "code",
+      "size_kb": 4.31,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/report.json:119",
+          "docs/PROJECT_DOCUMENTATION.md:13",
+          "docs/cleanup.json:2799",
+          "docs/CLEANUP_REPORT.md:116",
+          "docs/CLEANUP_REPORT.md:913",
+          "docs/CLEANUP_REPORT.md:1300",
+          "docs/CLEANUP_REPORT.md:1301",
+          "docs/REPORT.md:124"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "pyproject.toml",
+      "type": "config",
+      "size_kb": 0.81,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [
+          "tools/audit_cleanup.py:208"
+        ],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/PROJECT_DOCUMENTATION.md:91",
+          "docs/cleanup.json:2824",
+          "docs/CLEANUP_REPORT.md:117",
+          "docs/CLEANUP_REPORT.md:920",
+          "docs/REPORT.md:84"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Governance or generated artifact",
+      "risk": "low",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "requirements.txt",
+      "type": "other",
+      "size_kb": 0.68,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [
+          "scripts/runner.sh:29",
+          "scripts/runner.sh:30",
+          "scripts/runner_with_db.sh:31",
+          "tools/audit_cleanup.py:209"
+        ],
+        "configs": [
+          "ci/build-test.yml:28"
+        ],
+        "ci": [],
+        "docs": [
+          "README.md:11",
+          "docs/PROJECT_DOCUMENTATION.md:39",
+          "docs/cleanup.json:2850",
+          "docs/CLEANUP_REPORT.md:118",
+          "docs/CLEANUP_REPORT.md:928",
+          "docs/REPORT.md:116"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Governance or generated artifact",
+      "risk": "low",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "scripts/db/init.sql",
+      "type": "other",
+      "size_kb": 1.67,
+      "last_commit": "2025-10-08",
+      "references": {
+        "code": [],
+        "configs": [
+          "docker-compose.yml:22"
+        ],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:2882",
+          "docs/CLEANUP_REPORT.md:119",
+          "docs/CLEANUP_REPORT.md:937"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "scripts/generate_big_payments.py",
+      "type": "code",
+      "size_kb": 1.27,
+      "last_commit": "2025-09-29",
+      "references": {
+        "code": [
+          "tools/audit_cleanup.py:47"
+        ],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/diagrams/deps_cleanup.md:8",
+          "docs/CLEANUP_REPORT.md:120",
+          "docs/CLEANUP_REPORT.md:562",
+          "docs/CLEANUP_REPORT.md:592",
+          "docs/CLEANUP_REPORT.md:945",
+          "docs/cleanup.json:1529",
+          "docs/cleanup.json:1629",
+          "docs/cleanup.json:2906"
+        ],
+        "jobs": []
+      },
+      "classification": "QUARANTINE",
+      "reason": "Script de generación legacy reemplazado por generate_synthetic_data.py.",
+      "risk": "medium",
+      "proposed_action": "move_to_legacy",
+      "notes": "No referenciado desde CLI actuales."
+    },
+    {
+      "path": "scripts/generate_synthetic_data.py",
+      "type": "code",
+      "size_kb": 34.54,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [
+          "scripts/run_high_volume_case.py:49",
+          "scripts/generate_synthetic_data.py:21",
+          "scripts/generate_synthetic_data.py:22",
+          "scripts/generate_synthetic_data.py:23",
+          "scripts/generate_synthetic_data.py:670",
+          "scripts/generate_synthetic_data.py:671",
+          "scripts/generate_synthetic_data.py:672",
+          "scripts/generate_synthetic_data.py:673"
+        ],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/diagrams/deps_cleanup.md:7",
+          "docs/cleanup.json:509",
+          "docs/cleanup.json:510",
+          "docs/cleanup.json:578",
+          "docs/cleanup.json:604",
+          "docs/cleanup.json:655",
+          "docs/cleanup.json:656",
+          "docs/cleanup.json:657"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "scripts/run_high_volume_case.py",
+      "type": "code",
+      "size_kb": 8.63,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/report.json:161",
+          "docs/cleanup.json:23",
+          "docs/cleanup.json:24",
+          "docs/cleanup.json:25",
+          "docs/cleanup.json:26",
+          "docs/cleanup.json:506",
+          "docs/cleanup.json:654",
+          "docs/cleanup.json:2535"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "scripts/run_multiformat_case.py",
+      "type": "code",
+      "size_kb": 15.11,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:27",
+          "docs/cleanup.json:28",
+          "docs/cleanup.json:29",
+          "docs/cleanup.json:30",
+          "docs/cleanup.json:511",
+          "docs/cleanup.json:549",
+          "docs/cleanup.json:2539",
+          "docs/cleanup.json:2998"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "scripts/runner.sh",
+      "type": "other",
+      "size_kb": 4.07,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [
+          "docker-compose.yml:85",
+          "docker-compose.yml:86"
+        ],
+        "ci": [],
+        "docs": [
+          "README.md:15",
+          "docs/report.json:136",
+          "docs/report.json:154",
+          "docs/PROJECT_DOCUMENTATION.md:42",
+          "docs/cleanup.json:507",
+          "docs/cleanup.json:738",
+          "docs/cleanup.json:882",
+          "docs/cleanup.json:916"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "scripts/runner_with_db.sh",
+      "type": "other",
+      "size_kb": 3.03,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/report.json:132",
+          "docs/report.json:149",
+          "docs/report.json:166",
+          "docs/cleanup.json:508",
+          "docs/cleanup.json:739",
+          "docs/cleanup.json:883",
+          "docs/cleanup.json:917",
+          "docs/cleanup.json:1070"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "src/datacore/__init__.py",
+      "type": "code",
+      "size_kb": 0.32,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:993",
+          "docs/cleanup.json:1146",
+          "docs/cleanup.json:2186",
+          "docs/cleanup.json:2240",
+          "docs/cleanup.json:2293",
+          "docs/cleanup.json:2376",
+          "docs/cleanup.json:2566",
+          "docs/cleanup.json:2620"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "src/datacore/cli.py",
+      "type": "code",
+      "size_kb": 4.91,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:3109",
+          "docs/CLEANUP_REPORT.md:127",
+          "docs/CLEANUP_REPORT.md:998",
+          "docs/CLEANUP_REPORT.md:1234",
+          "docs/CLEANUP_REPORT.md:1307",
+          "docs/CLEANUP_REPORT.md:1308",
+          "docs/CLEANUP_REPORT.md:1309",
+          "docs/CLEANUP_REPORT.md:1310"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "src/datacore/config/schema.py",
+      "type": "code",
+      "size_kb": 8.37,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/run/configs.md:5",
+          "docs/run/configs.md:77",
+          "docs/cleanup.json:774",
+          "docs/cleanup.json:952",
+          "docs/cleanup.json:1105",
+          "docs/cleanup.json:1250",
+          "docs/cleanup.json:3134",
+          "docs/cleanup.json:3589"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "src/datacore/context.py",
+      "type": "code",
+      "size_kb": 6.29,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:3161",
+          "docs/CLEANUP_REPORT.md:129",
+          "docs/CLEANUP_REPORT.md:1012",
+          "docs/CLEANUP_REPORT.md:1241",
+          "docs/CLEANUP_REPORT.md:1313",
+          "docs/CLEANUP_REPORT.md:1314",
+          "docs/CLEANUP_REPORT.md:1315"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "src/datacore/io/__init__.py",
+      "type": "code",
+      "size_kb": 0.31,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:993",
+          "docs/cleanup.json:1146",
+          "docs/cleanup.json:2186",
+          "docs/cleanup.json:2240",
+          "docs/cleanup.json:2293",
+          "docs/cleanup.json:2376",
+          "docs/cleanup.json:2566",
+          "docs/cleanup.json:2620"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "src/datacore/io/adapters.py",
+      "type": "code",
+      "size_kb": 3.37,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:1362",
+          "docs/cleanup.json:3211",
+          "docs/cleanup.json:3616",
+          "docs/CLEANUP_REPORT.md:131",
+          "docs/CLEANUP_REPORT.md:146",
+          "docs/CLEANUP_REPORT.md:517",
+          "docs/CLEANUP_REPORT.md:1026",
+          "docs/CLEANUP_REPORT.md:1131"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "src/datacore/io/fs.py",
+      "type": "code",
+      "size_kb": 19.87,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:1530",
+          "docs/cleanup.json:1531",
+          "docs/cleanup.json:1532",
+          "docs/cleanup.json:1533",
+          "docs/cleanup.json:1630",
+          "docs/cleanup.json:1631",
+          "docs/cleanup.json:1632",
+          "docs/cleanup.json:1633"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "src/datacore/layers/__init__.py",
+      "type": "code",
+      "size_kb": 0.0,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:993",
+          "docs/cleanup.json:1146",
+          "docs/cleanup.json:2186",
+          "docs/cleanup.json:2240",
+          "docs/cleanup.json:2293",
+          "docs/cleanup.json:2376",
+          "docs/cleanup.json:2566",
+          "docs/cleanup.json:2620"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "src/datacore/layers/bronze/__init__.py",
+      "type": "code",
+      "size_kb": 0.0,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:993",
+          "docs/cleanup.json:1146",
+          "docs/cleanup.json:2186",
+          "docs/cleanup.json:2240",
+          "docs/cleanup.json:2293",
+          "docs/cleanup.json:2376",
+          "docs/cleanup.json:2566",
+          "docs/cleanup.json:2620"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "src/datacore/layers/bronze/main.py",
+      "type": "code",
+      "size_kb": 6.72,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/report.json:17",
+          "docs/report.json:31",
+          "docs/report.json:46",
+          "docs/cleanup.json:3319",
+          "docs/cleanup.json:3373",
+          "docs/cleanup.json:3427",
+          "docs/cleanup.json:3481",
+          "docs/CLEANUP_REPORT.md:135"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "src/datacore/layers/gold/__init__.py",
+      "type": "code",
+      "size_kb": 0.0,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:993",
+          "docs/cleanup.json:1146",
+          "docs/cleanup.json:2186",
+          "docs/cleanup.json:2240",
+          "docs/cleanup.json:2293",
+          "docs/cleanup.json:2376",
+          "docs/cleanup.json:2566",
+          "docs/cleanup.json:2620"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "src/datacore/layers/gold/main.py",
+      "type": "code",
+      "size_kb": 6.58,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/report.json:17",
+          "docs/report.json:31",
+          "docs/report.json:46",
+          "docs/CLEANUP_REPORT.md:135",
+          "docs/CLEANUP_REPORT.md:137",
+          "docs/CLEANUP_REPORT.md:139",
+          "docs/CLEANUP_REPORT.md:141",
+          "docs/CLEANUP_REPORT.md:1054"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "src/datacore/layers/raw/__init__.py",
+      "type": "code",
+      "size_kb": 0.0,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:993",
+          "docs/cleanup.json:1146",
+          "docs/cleanup.json:2186",
+          "docs/cleanup.json:2240",
+          "docs/cleanup.json:2293",
+          "docs/cleanup.json:2376",
+          "docs/cleanup.json:2566",
+          "docs/cleanup.json:2620"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "src/datacore/layers/raw/main.py",
+      "type": "code",
+      "size_kb": 0.62,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/report.json:17",
+          "docs/report.json:31",
+          "docs/report.json:46",
+          "docs/cleanup.json:3319",
+          "docs/cleanup.json:3373",
+          "docs/cleanup.json:3427",
+          "docs/cleanup.json:3481",
+          "docs/CLEANUP_REPORT.md:135"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "src/datacore/layers/silver/__init__.py",
+      "type": "code",
+      "size_kb": 0.0,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:993",
+          "docs/cleanup.json:1146",
+          "docs/cleanup.json:2186",
+          "docs/cleanup.json:2240",
+          "docs/cleanup.json:2293",
+          "docs/cleanup.json:2376",
+          "docs/cleanup.json:2566",
+          "docs/cleanup.json:2620"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "src/datacore/layers/silver/main.py",
+      "type": "code",
+      "size_kb": 6.17,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/report.json:17",
+          "docs/report.json:31",
+          "docs/report.json:46",
+          "docs/cleanup.json:3319",
+          "docs/cleanup.json:3373",
+          "docs/cleanup.json:3427",
+          "docs/cleanup.json:3481",
+          "docs/CLEANUP_REPORT.md:135"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "src/datacore/pipeline/__init__.py",
+      "type": "code",
+      "size_kb": 0.0,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:993",
+          "docs/cleanup.json:1146",
+          "docs/cleanup.json:2186",
+          "docs/cleanup.json:2240",
+          "docs/cleanup.json:2293",
+          "docs/cleanup.json:2376",
+          "docs/cleanup.json:2566",
+          "docs/cleanup.json:2620"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "src/datacore/pipeline/utils.py",
+      "type": "code",
+      "size_kb": 24.75,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/report.json:82",
+          "docs/report.json:91",
+          "docs/report.json:98",
+          "docs/report.json:105",
+          "docs/report.json:112",
+          "docs/cleanup.json:3535",
+          "docs/CLEANUP_REPORT.md:143",
+          "docs/CLEANUP_REPORT.md:1110"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "tests/test_cli_smoke.py",
+      "type": "code",
+      "size_kb": 2.76,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:258",
+          "docs/cleanup.json:259",
+          "docs/cleanup.json:288",
+          "docs/cleanup.json:289",
+          "docs/cleanup.json:318",
+          "docs/cleanup.json:319",
+          "docs/cleanup.json:348",
+          "docs/cleanup.json:349"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "tests/test_config_schema.py",
+      "type": "code",
+      "size_kb": 2.22,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/run/configs.md:77",
+          "docs/cleanup.json:774",
+          "docs/cleanup.json:952",
+          "docs/cleanup.json:1105",
+          "docs/cleanup.json:1250",
+          "docs/cleanup.json:3589",
+          "docs/CLEANUP_REPORT.md:145",
+          "docs/CLEANUP_REPORT.md:374"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "tests/test_io_adapters.py",
+      "type": "code",
+      "size_kb": 1.88,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:3616",
+          "docs/CLEANUP_REPORT.md:146",
+          "docs/CLEANUP_REPORT.md:1131",
+          "docs/CLEANUP_REPORT.md:1249"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "tests/test_io_fs.py",
+      "type": "code",
+      "size_kb": 7.97,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:1530",
+          "docs/cleanup.json:1531",
+          "docs/cleanup.json:1532",
+          "docs/cleanup.json:1533",
+          "docs/cleanup.json:1630",
+          "docs/cleanup.json:1631",
+          "docs/cleanup.json:1632",
+          "docs/cleanup.json:1633"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "tests/test_layers_config.py",
+      "type": "code",
+      "size_kb": 2.24,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:3666",
+          "docs/CLEANUP_REPORT.md:148",
+          "docs/CLEANUP_REPORT.md:1145"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "tests/test_security.py",
+      "type": "code",
+      "size_kb": 0.95,
+      "last_commit": "2025-10-24",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:3688",
+          "docs/CLEANUP_REPORT.md:149",
+          "docs/CLEANUP_REPORT.md:1152"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "tools/audit_cleanup.py",
+      "type": "code",
+      "size_kb": 20.54,
+      "last_commit": "",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:107",
+          "docs/cleanup.json:108",
+          "docs/cleanup.json:137",
+          "docs/cleanup.json:229",
+          "docs/cleanup.json:1663",
+          "docs/cleanup.json:1718",
+          "docs/cleanup.json:1719",
+          "docs/cleanup.json:1775"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "tools/list_io.py",
+      "type": "code",
+      "size_kb": 3.18,
+      "last_commit": "",
+      "references": {
+        "code": [],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "README.md:40",
+          "docs/cleanup.json:2160",
+          "docs/cleanup.json:3737",
+          "docs/CLEANUP_REPORT.md:92",
+          "docs/CLEANUP_REPORT.md:151",
+          "docs/CLEANUP_REPORT.md:742",
+          "docs/CLEANUP_REPORT.md:1166",
+          "docs/CLEANUP_REPORT.md:1259"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Referenced or recently modified.",
+      "risk": "medium",
+      "proposed_action": "keep",
+      "notes": ""
+    }
+  ]
+}
