@@ -1,8 +1,10 @@
 import json
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, Tuple
 
 import pytest
+import requests
 
+import datacore.io.http as http_module
 from datacore.io.http import HttpFetchMetrics, fetch_json_to_df
 
 
@@ -130,53 +132,56 @@ def test_http_rate_limit_respected(monkeypatch):
     assert sum(slept) == pytest.approx(50.0, rel=1e-6)
 
 
-def test_http_bearer_env_auth(monkeypatch):
+@pytest.mark.parametrize(
+    "auth_cfg, env_values, expected_headers, expected_auth",
+    [
+        (
+            {"type": "bearer_env", "env": "FINBANK_TOKEN"},
+            {"FINBANK_TOKEN": "secret-token"},
+            {"Authorization": "Bearer secret-token"},
+            None,
+        ),
+        (
+            {"type": "api_key_header", "header": "X-API-Key", "env": "API_TOKEN"},
+            {"API_TOKEN": "key123"},
+            {"X-API-Key": "key123"},
+            None,
+        ),
+        (
+            {
+                "type": "basic_env",
+                "username_env": "HTTP_USER",
+                "password_env": "HTTP_PASS",
+            },
+            {"HTTP_USER": "svc-user", "HTTP_PASS": "svc-pass"},
+            {},
+            ("svc-user", "svc-pass"),
+        ),
+    ],
+)
+def test_http_auth_modes_snapshot(
+    monkeypatch,
+    auth_cfg: Dict[str, Any],
+    env_values: Dict[str, str],
+    expected_headers: Dict[str, str],
+    expected_auth: Optional[Tuple[str, str]],
+) -> None:
     dummy_session = DummySession([DummyResponse({"data": []})])
     monkeypatch.setattr("datacore.io.http._RetryableSession", lambda *a, **k: dummy_session)
-    monkeypatch.setenv("FINBANK_TOKEN", "secret-token")
+
+    for key, value in env_values.items():
+        monkeypatch.setenv(key, value)
 
     cfg = {
         "url": "https://api.example.com/transactions",
-        "auth": {"type": "bearer_env", "env": "FINBANK_TOKEN"},
+        "auth": auth_cfg,
     }
 
     fetch_json_to_df(cfg)
 
     _, _, kwargs = dummy_session.calls[0]
-    assert kwargs["headers"]["Authorization"] == "Bearer secret-token"
-
-
-def test_http_basic_env_auth(monkeypatch):
-    dummy_session = DummySession([DummyResponse({"data": []})])
-    monkeypatch.setattr("datacore.io.http._RetryableSession", lambda *a, **k: dummy_session)
-    monkeypatch.setenv("HTTP_USER", "svc-user")
-    monkeypatch.setenv("HTTP_PASS", "svc-pass")
-
-    cfg = {
-        "url": "https://api.example.com/transactions",
-        "auth": {"type": "basic_env", "username_env": "HTTP_USER", "password_env": "HTTP_PASS"},
-    }
-
-    fetch_json_to_df(cfg)
-
-    _, _, kwargs = dummy_session.calls[0]
-    assert kwargs["auth"] == ("svc-user", "svc-pass")
-
-
-def test_http_api_key_header_auth(monkeypatch):
-    dummy_session = DummySession([DummyResponse({"data": []})])
-    monkeypatch.setattr("datacore.io.http._RetryableSession", lambda *a, **k: dummy_session)
-    monkeypatch.setenv("API_TOKEN", "key123")
-
-    cfg = {
-        "url": "https://api.example.com/transactions",
-        "auth": {"type": "api_key_header", "header": "X-API-Key", "env": "API_TOKEN"},
-    }
-
-    fetch_json_to_df(cfg)
-
-    _, _, kwargs = dummy_session.calls[0]
-    assert kwargs["headers"]["X-API-Key"] == "key123"
+    assert kwargs["headers"] == expected_headers
+    assert kwargs["auth"] == expected_auth
 
 
 def test_http_oauth_client_credentials(monkeypatch):
@@ -223,4 +228,91 @@ def test_http_oauth_client_credentials(monkeypatch):
     assert captured["auth"] == ("client-id", "client-secret")
     assert captured["data"]["scope"] == "transactions:read"
     _, _, kwargs = dummy_session.calls[0]
-    assert kwargs["headers"]["Authorization"] == "Bearer token-value"
+    assert kwargs["headers"] == {"Authorization": "Bearer token-value"}
+
+
+def test_retry_session_retries_on_429(monkeypatch):
+    sleeps: List[float] = []
+
+    class FakeResponse:
+        def __init__(self, status_code: int) -> None:
+            self.status_code = status_code
+            self.headers = {"Content-Type": "application/json"}
+
+        def raise_for_status(self) -> None:
+            if self.status_code >= 400:
+                raise requests.HTTPError(f"HTTP {self.status_code}", response=self)
+
+    class FakeSession:
+        def __init__(self) -> None:
+            self.verify = False
+            self._calls = 0
+
+        def request(self, method: str, url: str, timeout: float, **kwargs: Any) -> FakeResponse:
+            self._calls += 1
+            if self._calls == 1:
+                return FakeResponse(429)
+            return FakeResponse(200)
+
+    monkeypatch.setattr(http_module.requests, "Session", lambda: FakeSession())
+    monkeypatch.setattr(http_module.random, "uniform", lambda a, b: 0.0)
+
+    def fake_sleep(seconds: float) -> None:
+        sleeps.append(seconds)
+
+    monkeypatch.setattr(http_module.time, "sleep", fake_sleep)
+
+    session = http_module._RetryableSession(
+        retries=2,
+        backoff_factor=1.0,
+        timeout=5.0,
+        jitter=0.0,
+    )
+
+    response = session.request("GET", "https://api.example.com/transactions")
+    assert response.status_code == 200
+    assert sleeps == [1.0]
+
+
+def test_retry_session_retries_on_configured_401(monkeypatch):
+    sleeps: List[float] = []
+
+    class FakeResponse:
+        def __init__(self, status_code: int) -> None:
+            self.status_code = status_code
+            self.headers = {"Content-Type": "application/json"}
+
+        def raise_for_status(self) -> None:
+            if self.status_code >= 400:
+                raise requests.HTTPError(f"HTTP {self.status_code}", response=self)
+
+    class FakeSession:
+        def __init__(self) -> None:
+            self.verify = False
+            self._calls = 0
+
+        def request(self, method: str, url: str, timeout: float, **kwargs: Any) -> FakeResponse:
+            self._calls += 1
+            if self._calls == 1:
+                return FakeResponse(401)
+            return FakeResponse(200)
+
+    monkeypatch.setattr(http_module.requests, "Session", lambda: FakeSession())
+    monkeypatch.setattr(http_module.random, "uniform", lambda a, b: 0.0)
+
+    def fake_sleep(seconds: float) -> None:
+        sleeps.append(seconds)
+
+    monkeypatch.setattr(http_module.time, "sleep", fake_sleep)
+
+    session = http_module._RetryableSession(
+        retries=2,
+        backoff_factor=0.5,
+        timeout=5.0,
+        jitter=0.0,
+        retry_statuses=[401],
+    )
+
+    response = session.request("GET", "https://api.example.com/transactions")
+    assert response.status_code == 200
+    assert sleeps == [0.5]

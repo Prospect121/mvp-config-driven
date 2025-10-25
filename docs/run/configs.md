@@ -78,6 +78,15 @@ dq:
 No dupliques la cabecera `Authorization`: cuando se declara un bloque `auth`
 no es necesario (ni seguro) inyectar la cabecera manualmente en `io.source.headers`.
 
+### Particionamiento JDBC
+
+Cuando un conector JDBC declara `partitioning.column` pero omite
+`lower_bound`/`upper_bound`, el runtime calcula automáticamente ambos valores
+ejecutando una consulta segura con `MIN()`/`MAX()` sobre la subconsulta base.
+Esta heurística (habilitada por defecto) permite mantener los YAML limpios sin
+perder el particionado paralelo. Se puede desactivar fijando
+`partitioning.discover: false` o declarando manualmente los límites.
+
 ### Herencia (`extends`)
 
 Los overlays definen `extends: "../base.yml"` para reutilizar una configuración

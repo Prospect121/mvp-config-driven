@@ -1,0 +1,6 @@
+layer: raw
+extends: "./transactions_http.yml"
+environment: production
+io:
+  sink:
+    path: "gs://finance-prod/raw/transactions/date={{ds}}/"
