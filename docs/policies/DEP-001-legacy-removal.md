@@ -1,34 +1,26 @@
-# DEP-001: Legacy Asset Retirement Policy
+# DEP-001: Política de retiro definitivo de artefactos legacy
 
 ## Objetivo
-Garantizar que los artefactos obsoletos del repositorio se aíslen y retiren de forma controlada, preservando trazabilidad y reduciendo el riesgo operativo.
+Eliminar de forma inmediata los artefactos obsoletos del repositorio evitando zonas de cuarentena o directorios `legacy`.
 
 ## Alcance
-Esta política aplica a cualquier archivo marcado como **QUARANTINE** o **REMOVE NOW** en los reportes de auditoría, incluyendo código, configuraciones, infraestructura, notebooks, documentación y activos de datos de ejemplo.
+Aplica a cualquier activo marcado como obsoleto por `tools/audit_cleanup.py`, reportes de seguridad o revisiones de arquitectura: código, configuraciones, notebooks, documentación y assets auxiliares (Docker, scripts).
 
 ## Principios
-- **Seguridad primero**: los activos productivos o regulados se mantienen como KEEP hasta contar con aprobación explícita del área de plataformas.
-- **Trazabilidad completa**: cualquier movimiento a `/legacy/` o `/attic/` debe acompañarse de un README local con fecha, owner y motivo.
-- **Reversibilidad**: toda acción de eliminación definitiva requiere verificar que exista un commit de respaldo y que los pipelines críticos pasen.
+- **Cero cuarentenas**: no se permiten rutas `legacy` ni `attic`. Los artefactos obsoletos se eliminan en el mismo PR.
+- **Auditoría automática**: `tools/audit_cleanup.py --check` falla si reaparece un activo retirado.
+- **Transparencia**: la documentación (`README.md`, `docs/CLEANUP_REPORT.md`) debe registrar cada purga relevante.
 
-## Flujo de cuarentena
-1. Crear un subdirectorio bajo `/legacy/<dominio>/YYYY-MM-DD-<slug>`.
-2. Mover los archivos marcados como QUARANTINE, agregando un README con:
-   - Identificador del hallazgo en `cleanup.json`.
-   - Owner responsable y canal de contacto.
-   - Fecha objetivo de retiro definitivo.
-3. Actualizar documentación para señalar la nueva ubicación.
-4. Mantener el asset en cuarentena durante **30 días**. Durante este periodo, monitorear alertas en CI/CD o soporte.
+## Flujo de eliminación
+1. Abrir PR describiendo el activo y la justificación de retiro.
+2. Ejecutar `python tools/audit_cleanup.py --check` y adjuntar evidencia antes y después de la purga.
+3. Actualizar documentación y CI para bloquear la reintroducción (tests, scripts, workflows).
+4. Fusionar tras aprobación del Tech Lead correspondiente.
 
-## Eliminación definitiva
-- Se ejecuta una vez transcurridos 30 días sin incidentes reportados.
-- Requiere aprobación del **Tech Lead** y del **Data Governance Officer**.
-- Antes de borrar, realizar `git tag legacy-cleanup-<fecha>` apuntando al último commit donde existía el archivo.
-- Registrar la acción en el changelog de plataforma con enlace al PR de remoción.
-
-## Excepciones
-- Artefactos normativos (políticas, ADRs, diagramas regulatorios) no pueden moverse a `/legacy/` sin aprobación del área legal.
-- Datos de ejemplo con restricciones de uso deben anonimizarse antes de la cuarentena.
+## Guardas complementarias
+- `tools/list_io.py --json` verifica que no existan runners heredados.
+- CI ejecuta scripts de seguridad (`tools/check_cross_layer.py`, tests de TLS/secrets) en cada PR.
+- `docs/cleanup.json` y `docs/CLEANUP_REPORT.md` resumen el estado post-purga.
 
 ## Revisión
-La política se revisa cada 6 meses o ante eventos significativos (incidentes operativos, auditorías externas).
+La política se revisa trimestralmente o cuando el owner de plataforma requiera eliminar nuevas familias de artefactos.

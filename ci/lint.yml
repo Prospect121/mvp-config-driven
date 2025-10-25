@@ -20,6 +20,40 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Check forbidden artifacts
+        run: |
+          python - <<'PY'
+import sys
+from pathlib import Path
+
+repo = Path('.').resolve()
+forbidden_dirs = ['pipelines', 'legacy', 'docker', '.docker']
+forbidden_globs = [
+    'Docker' + 'file*',
+    '*.' + 'dockerfile',
+    'docker' + '-compose.yml',
+    'docker' + '-compose.*.yml',
+]
+
+issues = []
+for name in forbidden_dirs:
+    for path in repo.rglob(name):
+        if '.git' in path.parts:
+            continue
+        if path.is_dir():
+            issues.append(f"Forbidden directory present: {path.relative_to(repo)}")
+for pattern in forbidden_globs:
+    for path in repo.rglob(pattern):
+        if '.git' in path.parts:
+            continue
+        if path.is_file():
+            issues.append(f"Forbidden Docker artifact present: {path.relative_to(repo)}")
+
+if issues:
+    for issue in issues:
+        print(issue, file=sys.stderr)
+    sys.exit(1)
+PY
       - name: Set up Python
         uses: actions/setup-python@v5
         with:

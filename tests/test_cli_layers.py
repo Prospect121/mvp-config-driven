@@ -24,11 +24,3 @@ def test_run_layer_examples_are_dry(layer: str) -> None:
     result = runner.invoke(app, ["run-layer", layer, "-c", str(config_path)])
     assert result.exit_code == 0
     assert "Dry run requested" in result.stdout
-
-
-def test_run_pipeline_example_config() -> None:
-    runner = CliRunner()
-    pipeline_cfg = Path("cfg/pipelines/example.yml")
-    assert pipeline_cfg.exists(), "Missing example pipeline config"
-    result = runner.invoke(app, ["run-pipeline", "-p", str(pipeline_cfg)])
-    assert result.exit_code == 0

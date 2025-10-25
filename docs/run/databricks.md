@@ -12,7 +12,7 @@ preparación del artefacto, la configuración del job y comandos de verificació
    poetry build -f wheel
    ```
 2. Publica el wheel (`dist/mvp_config_driven-0.1.0-py3-none-any.whl`) y las
-   configuraciones de ejemplo (`cfg/*/example.yml`, `cfg/pipelines/example.yml`)
+   configuraciones de ejemplo (`cfg/*/example.yml`)
    en DBFS o en un repositorio de artefactos accesible desde Databricks:
    ```bash
    databricks fs cp dist/mvp_config_driven-0.1.0-py3-none-any.whl dbfs:/libs/mvp-config-driven.whl
@@ -69,7 +69,6 @@ prueba que sólo evalúa la configuración:
 ```bash
 prodi run-layer raw -c cfg/raw/example.yml
 prodi run-layer bronze -c cfg/bronze/example.yml
-prodi run-pipeline -p cfg/pipelines/example.yml
 ```
 
 Para tareas en Databricks, agrega `"parameters": ["--dry-run", ...]` a la tarea

@@ -87,10 +87,9 @@ gcloud dataproc jobs submit pyspark gs://datalake-artifacts/scripts/prodi_datapr
 Puedes repetir el comando para cada capa, o bien crear una versión alternativa
 del template que fije `args: [..., "--dry-run"]` para entornos de QA.
 
-Cuando necesites ejecutar la cadena completa desde un orchestrator externo
-puedes referenciar el manifiesto declarativo `cfg/pipelines/example.yml` y
-ejecutarlo con `prodi run-pipeline -p cfg/pipelines/example.yml` antes de
-escalar a Dataproc.
+Cuando necesites ejecutar la cadena completa desde un orquestador externo,
+crea una tarea por capa reutilizando el mismo wheel. Encadena `run-layer` para
+raw → bronze → silver → gold y mantén `--dry-run` hasta validar la integración.
 
 ## 5. Buenas prácticas operativas
 

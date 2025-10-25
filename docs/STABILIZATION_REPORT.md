@@ -6,8 +6,9 @@
   (`tests/test_cleanup_canary.py`) que demuestra la falla controlada cuando se forzan dichos accesos.
 - Se incorporó `tools/check_cross_layer.py` junto con pruebas y jobs de CI para impedir imports cruzados entre raw ↔ bronze ↔
   silver ↔ gold.
-- Se añadieron configuraciones declarativas (`cfg/<layer>/example.yml`, `cfg/pipelines/example.yml`) y documentación de humo
+- Se añadieron configuraciones declarativas (`cfg/<layer>/example.yml`) y documentación de humo
   multi-nube actualizada (Databricks, Glue/EMR, Dataproc, Synapse/ADF), incluyendo artefactos JSON/YAML listos para importar.
+- Se eliminó definitivamente el monolito pipelines legacy y los artefactos Docker; CI ahora falla si reaparecen rutas prohibidas o archivos de build compose.
 - Se endurecieron las garantías de seguridad: guardas de TLS siempre activo, escaneo de logging de secretos y documentación sobre
   GitGuardian.
 
@@ -31,10 +32,9 @@
 | Objetivo | Estado | Evidencia |
 | --- | --- | --- |
 | **Enforcement anti-regresiones**: bloquear `/legacy` y artefactos REMOVE | ✅ `tools/audit_cleanup.py` detecta referencias a
-  `legacy/` fuera de docs y el canario las reproduce bajo `LEGACY_CANARY=1`. | `tests/test_cleanup_canary.py`, `tools/audit_cleanup.py` |
+    `legacy` fuera de docs y el canario las reproduce bajo `LEGACY_CANARY=1`. | `tests/test_cleanup_canary.py`, `tools/audit_cleanup.py` |
 | **Cero cross-layer**: aislamiento de capas | ✅ Script AST y prueba `tests/test_no_cross_layer.py`; guardas añadidos a CI. |
-| **CLI por capa estable** | ✅ `prodi run-layer` y `prodi run-pipeline` se ejercen con `cfg/<layer>/example.yml` y
-  `cfg/pipelines/example.yml`; ver `tests/test_cli_layers.py`. |
+| **CLI por capa estable** | ✅ `prodi run-layer` se ejerce con `cfg/<layer>/example.yml`; ver `tests/test_cli_layers.py`. |
 | **Portabilidad I/O** | ✅ Configuraciones de ejemplo usan URIs `s3://`, `abfss://`, `gs://`; nuevos docs y jobs (Databricks,
   Glue/EMR, Dataproc, Synapse/ADF) los reutilizan; sin flags inseguros. | `cfg/*/example.yml`, `config/datasets/examples/toy_customers.yml`,
   `docs/run/*` |

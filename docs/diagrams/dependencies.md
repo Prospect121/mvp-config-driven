@@ -8,17 +8,10 @@ graph TD
         BRONZE[datacore.layers.bronze.main]
         SILVER[datacore.layers.silver.main]
         GOLD[datacore.layers.gold.main]
-        PIPEUTILS[datacore.pipeline.utils]
         IOFS[datacore.io.fs]
-    end
-
-    subgraph Legacy
-        SPJOB[pipelines.spark_job]
-        SPJOBDB[pipelines.spark_job_with_db]
-        PCOMMON[pipelines.common]
-        PSOURCES[pipelines.sources]
-        PQUALITY[pipelines.validation.quality]
-        PWRITER[pipelines.io.writer]
+        IOADP[datacore.io.adapters]
+        QUALITY[datacore.quality.rules]
+        RUNTIME[datacore.runtime.context]
     end
 
     CLI --> RAW
@@ -26,31 +19,24 @@ graph TD
     CLI --> SILVER
     CLI --> GOLD
 
-    BRONZE --> RAW
-    SILVER --> BRONZE
-    GOLD --> SILVER
+    RAW --> IOFS
+    RAW --> IOADP
+    BRONZE --> IOFS
+    BRONZE --> IOADP
+    SILVER --> IOFS
+    SILVER --> IOADP
+    GOLD --> IOFS
+    GOLD --> IOADP
 
-    RAW --> PIPEUTILS
-    BRONZE --> PIPEUTILS
-    SILVER --> PIPEUTILS
-    GOLD --> PIPEUTILS
-    PIPEUTILS --> PSOURCES
-    PIPEUTILS --> PQUALITY
-    PIPEUTILS --> PWRITER
-    PIPEUTILS --> IOFS
+    RAW --> QUALITY
+    BRONZE --> QUALITY
+    SILVER --> QUALITY
+    GOLD --> QUALITY
 
-    SPJOB --> PCOMMON
-    SPJOB --> PSOURCES
-    SPJOB --> PQUALITY
-    SPJOB --> PIPEUTILS
-
-    SPJOBDB --> RAW
-    SPJOBDB --> BRONZE
-    SPJOBDB --> SILVER
-    SPJOBDB --> GOLD
-
-    PCOMMON --> IOFS
-    PSOURCES --> IOFS
+    RAW --> RUNTIME
+    BRONZE --> RUNTIME
+    SILVER --> RUNTIME
+    GOLD --> RUNTIME
 ```
 
-> Nota: las flechas apuntan desde el módulo que importa hacia el módulo que es importado.
+> No existen nodos legacy; cualquier referencia nueva a `pipelines` es considerada regresión.
