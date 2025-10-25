@@ -142,9 +142,6 @@ def run_pipeline(
 
 
 def main() -> None:
-    args = sys.argv[1:]
-    if args and args[0] == "run-layer":
-        sys.argv = [sys.argv[0]] + args[1:]
     app()
 
 

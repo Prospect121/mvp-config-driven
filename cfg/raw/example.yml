@@ -1,0 +1,14 @@
+layer: raw
+dry_run: true
+environment: development
+paths:
+  dataset: config/datasets/examples/toy_customers.yml
+  environment: config/env.yml
+  database: config/database.yml
+storage:
+  s3:
+    default_uri: s3://example-raw/toy/
+  abfss:
+    default_uri: abfss://example@contoso.dfs.core.windows.net/raw/toy/
+  gs:
+    default_uri: gs://example-raw/toy/

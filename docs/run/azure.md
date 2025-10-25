@@ -9,13 +9,18 @@ notebooks o actividades de Spark que consumen el wheel de `prodi`.
    ```bash
    poetry build -f wheel
    ```
-2. Carga el artefacto al almacenamiento ligado al workspace (por ejemplo ADLS):
+2. Carga el artefacto y las configuraciones declarativas al almacenamiento
+   ligado al workspace (por ejemplo ADLS):
    ```bash
    az storage blob upload \
      --account-name datalake \
      --container-name artifacts \
-     --file dist/prodi-1.4.0-py3-none-any.whl \
-     --name libs/prodi-1.4.0-py3-none-any.whl
+     --file dist/mvp_config_driven-0.1.0-py3-none-any.whl \
+     --name libs/mvp_config_driven-0.1.0-py3-none-any.whl
+   az storage blob upload-batch \
+     --account-name datalake \
+     --destination cfg \
+     --source cfg
    ```
 
 ## 2. Configurar un Spark job definition
@@ -30,8 +35,8 @@ que invoque el entrypoint de `prodi`.
   "properties": {
     "file": "abfss://artifacts@datalake.dfs.core.windows.net/scripts/prodi_synapse_entry.py",
     "className": "",
-    "args": ["--layer", "raw", "--config", "abfss://artifacts@datalake.dfs.core.windows.net/cfg/run/raw.yml"],
-    "packages": ["abfss://artifacts@datalake.dfs.core.windows.net/libs/prodi-1.4.0-py3-none-any.whl"],
+    "args": ["--layer", "raw", "--config", "abfss://artifacts@datalake.dfs.core.windows.net/cfg/raw/example.yml"],
+    "packages": ["abfss://artifacts@datalake.dfs.core.windows.net/libs/mvp_config_driven-0.1.0-py3-none-any.whl"],
     "driverMemory": "8g",
     "executorMemory": "8g",
     "executorCores": 4
@@ -77,6 +82,15 @@ activities:
 ```
 
 Revisa configuraciones listas para importar en [`docs/run/jobs/`](jobs/).
+
+### Plantilla para Azure Data Factory / Synapse Pipelines
+
+El archivo [`docs/run/jobs/azure_adf_pipeline.json`](jobs/azure_adf_pipeline.json)
+modela la misma secuencia en Data Factory con actividades `ExecutePipeline` que
+invocan definiciones de Spark por capa y parametrizan `configUri` usando
+`cfg/<layer>/example.yml`. Importa la plantilla, actualiza los vínculos de
+servicio y ejecuta un disparador manual con `dryRun=true` para validar la
+configuración antes de mover cargas reales.
 
 ## 4. Script de entrada y parámetros
 

@@ -14,7 +14,8 @@ Este documento centraliza la arquitectura, módulos, configuraciones, ejecución
   - `pipelines/transforms`: `apply.py` (SQL/UDF con `safe_cast`, `create|replace`, `on_error`).
   - `pipelines/config`: `loader.py` (carga YAML/JSON).
   - `pipelines/io`: `reader.py`/`writer.py` (reintentos `tenacity`, particiones), `s3a.py` (config S3A).
-  - `pipelines/spark_job_with_db.py`: entrypoint principal con integración DB (metadata/versionado).
+- `pipelines/spark_job_with_db.py`: entrypoint histórico con integración DB. Se
+  mantiene para compatibilidad, pero la ruta recomendada es el CLI `prodi`.
   - `pipelines/sources.py`: ingesta multi-fuente (CSV/JSON/JSONL/Parquet/JDBC/API, union). 
 
 ## Configuraciones
@@ -34,22 +35,38 @@ Este documento centraliza la arquitectura, módulos, configuraciones, ejecución
 
 ## Ejecución
 
-- Local (Windows/macOS/Linux):
-  - `python -m venv .venv && .\.venv\Scripts\activate` (Windows) o `source .venv/bin/activate`.
-  - `pip install -r requirements.txt`.
-  - `python pipelines/spark_job_with_db.py <dataset_config> config/env.yml config/database.yml development`.
-- Docker Compose:
-  - `docker compose run --rm runner ./runner.sh --dataset <dataset_name> --env env.yml`.
-  - Servicios: `postgres`, `minio`, `spark-master`, `spark-worker-1`, `runner`.
-- Notebooks:
-  - `docs/01_pipeline_explicacion.ipynb`: flujo E2E con Quick Start (`USE_QS`), métricas por etapa y verificación.
-  - `docs/01_pipeline_explicacion_min.ipynb`: validación rápida de PySpark y Parquet.
-- Operación en plataformas cloud:
-  - `docs/run/databricks.md`: wheel tasks de Databricks Jobs con ejemplos `dry-run` y dependencia por capa.
-  - `docs/run/aws.md`: despliegue en AWS Glue + Step Functions.
-  - `docs/run/gcp.md`: workflows de Dataproc con templates parametrizados.
-  - `docs/run/azure.md`: ejecución en Synapse Spark job definitions.
-  - `legacy/infra/2025-10-25-gcp/`: conserva el workflow Dataproc retirado durante la cuarentena.
+### Preparación local
+
+- Crear entorno: `python -m venv .venv` y activar (`source .venv/bin/activate` en Linux/macOS o `.\.venv\Scripts\activate` en
+  Windows).
+- Instalar dependencias: `pip install -r requirements.txt`.
+
+### Cómo correr por capa (CLI)
+
+- `prodi run-layer <layer> -c cfg/<layer>/example.yml` ejecuta validaciones en modo `dry_run`. Los YAML usan el dataset sintético
+  `samples/toy_customers.csv` y rutas multi-nube (`s3://`, `abfss://`, `gs://`).
+- `prodi run-pipeline -p cfg/pipelines/example.yml` recorre la cadena completa (raw → bronze → silver → gold) reutilizando los
+  mismos YAML.
+- Los tests `tests/test_cli_layers.py` y `tests/test_cli_smoke.py` aseguran que cada capa se mantenga independiente y que el
+  pipeline declarativo no encadene ejecuciones implícitas.
+
+### Docker Compose (opcional)
+
+- `docker compose run --rm runner ./runner.sh --dataset <dataset_name> --env env.yml` mantiene el flujo heredado para entornos de
+  laboratorio. Los nuevos comandos Typer están disponibles dentro del contenedor (`prodi run-layer ...`).
+
+### Cómo orquestar fuera del código
+
+- `docs/run/databricks.md`: wheel tasks de Databricks Jobs + JSON [`docs/run/jobs/databricks_job.json`].
+- `docs/run/aws.md`: jobs de Glue/Step Functions y pasos EMR (`docs/run/jobs/aws_stepfunctions.json`, `docs/run/jobs/emr_steps.json`).
+- `docs/run/gcp.md`: workflows de Dataproc con manifiesto [`docs/run/jobs/dataproc_workflow_v2.yaml`].
+- `docs/run/azure.md`: Spark job definitions y plantilla de Data Factory (`docs/run/jobs/azure_adf_pipeline.json`).
+- Todos los ejemplos consumen `cfg/<layer>/example.yml` y respetan TLS habilitado por defecto.
+
+### Notebooks
+
+- `docs/01_pipeline_explicacion.ipynb`: flujo E2E con Quick Start (`USE_QS`), métricas por etapa y verificación.
+- `docs/01_pipeline_explicacion_min.ipynb`: validación rápida de PySpark y Parquet.
 
 ## Ingesta Multi-Fuente
 
@@ -89,6 +106,11 @@ Este documento centraliza la arquitectura, módulos, configuraciones, ejecución
 
 - Pruebas mínimas: `pipelines/transforms/tests/test_apply.py` (PyTest).
 - Estilo: `black`, `ruff`, `mypy`, `pre-commit`. Config en `pyproject.toml` y `.pre-commit-config.yaml`.
+- Guardas automáticas:
+  - `tests/test_security_invariants.py` falla si se detectan `fs.s3a.connection.ssl.enabled=false` o patrones de logging de
+    secretos (`AWS_SECRET_ACCESS_KEY`, `fs.s3a.secret.key`).
+  - `tests/test_no_cross_layer.py` y `tools/check_cross_layer.py` aseguran el aislamiento raw ↔ bronze ↔ silver ↔ gold.
+  - GitGuardian se ejecuta en GitHub y alerta sobre secretos accidentales.
 
 ## Troubleshooting
 

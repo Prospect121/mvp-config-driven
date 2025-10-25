@@ -11,10 +11,12 @@ preparación del artefacto, la configuración del job y comandos de verificació
    ```bash
    poetry build -f wheel
    ```
-2. Publica el wheel (`dist/prodi-<version>-py3-none-any.whl`) en DBFS o en un
-   repositorio de artefactos accesible desde Databricks:
+2. Publica el wheel (`dist/mvp_config_driven-0.1.0-py3-none-any.whl`) y las
+   configuraciones de ejemplo (`cfg/*/example.yml`, `cfg/pipelines/example.yml`)
+   en DBFS o en un repositorio de artefactos accesible desde Databricks:
    ```bash
-   databricks fs cp dist/prodi-1.4.0-py3-none-any.whl dbfs:/libs/prodi-1.4.0.whl
+   databricks fs cp dist/mvp_config_driven-0.1.0-py3-none-any.whl dbfs:/libs/mvp-config-driven.whl
+   databricks fs cp -r cfg dbfs:/cfg
    ```
 
 ## 2. Definir la tarea tipo wheel
@@ -30,13 +32,13 @@ el mismo wheel y varía los parámetros del comando `prodi run-layer`.
   "wheel_task": {
     "package_name": "prodi",
     "entry_point": "run-layer",
-    "parameters": [
-      "--layer", "raw",
-      "--config", "dbfs:/cfg/run/raw.yml"
-    ]
+      "parameters": [
+        "--layer", "raw",
+        "--config", "dbfs:/cfg/raw/example.yml"
+      ]
   },
   "libraries": [
-    { "whl": "dbfs:/libs/prodi-1.4.0.whl" }
+    { "whl": "dbfs:/libs/mvp-config-driven.whl" }
   ]
 }
 ```
@@ -65,8 +67,9 @@ Antes de calendarizar el job, valida el pipeline ejecutando una corrida de
 prueba que sólo evalúa la configuración:
 
 ```bash
-prodi run-layer --layer raw --config cfg/run/raw.yml --dry-run
-prodi run-layer --layer bronze --config cfg/run/bronze.yml --dry-run
+prodi run-layer raw -c cfg/raw/example.yml
+prodi run-layer bronze -c cfg/bronze/example.yml
+prodi run-pipeline -p cfg/pipelines/example.yml
 ```
 
 Para tareas en Databricks, agrega `"parameters": ["--dry-run", ...]` a la tarea

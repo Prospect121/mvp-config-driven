@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install deps
-        run: sudo apt-get update && sudo apt-get install -y yamllint jq
+        run: sudo apt-get update && sudo apt-get install -y yamllint jq ripgrep
       - name: Run config checks
         run: ./ci/check_config.sh
   cleanup-enforcement:
@@ -30,6 +30,18 @@ jobs:
           pip install -r requirements.txt
       - name: Verify cleanup manifest
         run: python tools/audit_cleanup.py --check
+      - name: Run legacy quarantine canary
+        env:
+          LEGACY_CANARY: "1"
+        run: pytest tests/test_cleanup_canary.py
+      - name: Enforce cross-layer isolation
+        run: python tools/check_cross_layer.py
+      - name: Ensure TLS flags stay enabled
+        run: |
+          if rg -n "fs\\.s3a\\.connection\\.ssl\\.enabled\\s*=\\s*false" src scripts; then
+            echo "Found insecure TLS override" >&2
+            exit 1
+          fi
       - name: Inspect IO inventory
         run: python tools/list_io.py --json
       - name: Publicar cleanup.json

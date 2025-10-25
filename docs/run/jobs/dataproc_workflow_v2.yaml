@@ -1,0 +1,35 @@
+jobs:
+  - step-id: raw
+    pyspark-job:
+      main-python-file-uri: gs://datalake-artifacts/scripts/prodi_dataproc_entry.py
+      python-file-uris:
+        - gs://datalake-artifacts/libs/mvp_config_driven-0.1.0-py3-none-any.whl
+      args: ["--layer", "raw", "--config", "gs://datalake-artifacts/cfg/raw/example.yml"]
+  - step-id: bronze
+    prerequisite-step-ids: [raw]
+    pyspark-job:
+      main-python-file-uri: gs://datalake-artifacts/scripts/prodi_dataproc_entry.py
+      python-file-uris:
+        - gs://datalake-artifacts/libs/mvp_config_driven-0.1.0-py3-none-any.whl
+      args: ["--layer", "bronze", "--config", "gs://datalake-artifacts/cfg/bronze/example.yml"]
+  - step-id: silver
+    prerequisite-step-ids: [bronze]
+    pyspark-job:
+      main-python-file-uri: gs://datalake-artifacts/scripts/prodi_dataproc_entry.py
+      python-file-uris:
+        - gs://datalake-artifacts/libs/mvp_config_driven-0.1.0-py3-none-any.whl
+      args: ["--layer", "silver", "--config", "gs://datalake-artifacts/cfg/silver/example.yml"]
+  - step-id: gold
+    prerequisite-step-ids: [silver]
+    pyspark-job:
+      main-python-file-uri: gs://datalake-artifacts/scripts/prodi_dataproc_entry.py
+      python-file-uris:
+        - gs://datalake-artifacts/libs/mvp_config_driven-0.1.0-py3-none-any.whl
+      args: ["--layer", "gold", "--config", "gs://datalake-artifacts/cfg/gold/example.yml"]
+cluster-selector:
+  zone: us-central1-a
+  cluster-labels:
+    env: prod
+parameters:
+  dryRun:
+    default: "false"

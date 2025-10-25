@@ -1,0 +1,6 @@
+CUSTOMER_ID,SEGMENT,STATUS,SIGNUP_TS
+C-0001,enterprise,active,2024-01-05T10:31:00Z
+C-0002,consumer,inactive,2024-01-12T16:05:00Z
+C-0003,startup,active,2024-01-20T08:12:00Z
+C-0004,consumer,active,2024-02-02T13:45:00Z
+C-0005,enterprise,inactive,2024-02-15T09:10:00Z
