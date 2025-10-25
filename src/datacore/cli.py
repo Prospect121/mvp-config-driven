@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, Iterable
+from typing import Any, Dict
 
 import sys
 import typer
 import yaml
 
-from datacore.context import build_context, ensure_spark, stop_spark
 from datacore.layers.raw import main as raw_main
 from datacore.layers.bronze import main as bronze_main
 from datacore.layers.silver import main as silver_main
@@ -16,21 +15,64 @@ from datacore.layers.gold import main as gold_main
 app = typer.Typer(help="DataCore orchestration commands")
 
 
-def _load_config(path: Path) -> Dict[str, object]:
+_LAYER_RUNNERS: Dict[str, Any] = {
+    "raw": raw_main.run,
+    "bronze": bronze_main.run,
+    "silver": silver_main.run,
+    "gold": gold_main.run,
+}
+
+
+def _load_config(path: Path) -> Any:
     if not path.exists():
         raise typer.BadParameter(f"Configuration file not found: {path}")
     with path.open("r", encoding="utf-8") as handle:
         return yaml.safe_load(handle) or {}
 
 
-def _stage_sequence(target: str) -> Iterable[str]:
-    stages = ["raw", "bronze", "silver", "gold"]
-    if target not in stages:
-        raise typer.BadParameter(f"Unsupported layer '{target}'. Expected one of {', '.join(stages)}")
-    for stage in stages:
-        yield stage
-        if stage == target:
-            break
+def _normalize_layer_name(layer: str) -> str:
+    normalized = (layer or "").strip().lower()
+    if normalized not in _LAYER_RUNNERS:
+        valid_layers = ", ".join(sorted(_LAYER_RUNNERS))
+        raise typer.BadParameter(
+            f"Unsupported layer '{layer}'. Expected one of {valid_layers}"
+        )
+    return normalized
+
+
+def _validate_normalized_cfg(cfg: Any, expected_layer: str) -> Dict[str, Any]:
+    if not isinstance(cfg, dict):
+        raise typer.BadParameter("Layer configuration must be a mapping")
+
+    normalized: Dict[str, Any] = dict(cfg)
+    declared_layer = normalized.get("layer")
+    if declared_layer is None:
+        normalized["layer"] = expected_layer
+    else:
+        normalized_layer = _normalize_layer_name(str(declared_layer))
+        if normalized_layer != expected_layer:
+            raise typer.BadParameter(
+                "Configuration layer '{declared}' does not match requested layer "
+                "'{expected}'".format(declared=normalized_layer, expected=expected_layer)
+            )
+        normalized["layer"] = normalized_layer
+
+    normalized["dry_run"] = bool(normalized.get("dry_run", False))
+
+    paths = normalized.get("paths")
+    if paths is not None and not isinstance(paths, dict):
+        raise typer.BadParameter("'paths' entry must be a mapping when provided")
+
+    return normalized
+
+
+def _execute_layer(layer: str, cfg: Dict[str, Any]) -> Any:
+    if cfg.get("dry_run"):
+        typer.echo(f"[{layer}] Dry run requested - skipping execution")
+        return None
+
+    runner = _LAYER_RUNNERS[layer]
+    return runner(cfg)
 
 
 @app.command()
@@ -38,28 +80,53 @@ def run_layer(
     layer: str = typer.Argument(..., help="Layer to execute"),
     config: Path = typer.Option(..., "-c", "--config", help="Path to layer configuration"),
 ) -> None:
+    layer_name = _normalize_layer_name(layer)
     raw_config = _load_config(config)
-    layer = layer.lower()
-    context = build_context(raw_config)
+    normalized_cfg = _validate_normalized_cfg(raw_config, layer_name)
+    _execute_layer(layer_name, normalized_cfg)
 
-    if context.dry_run:
-        typer.echo(f"[{layer}] Dry run requested - skipping execution")
+
+@app.command("run-pipeline")
+def run_pipeline(
+    pipeline: Path = typer.Option(..., "-p", "--pipeline", help="Pipeline declaration file"),
+) -> None:
+    raw_pipeline_cfg = _load_config(pipeline)
+
+    if isinstance(raw_pipeline_cfg, dict):
+        steps: Any = raw_pipeline_cfg.get("steps")
+    else:
+        steps = raw_pipeline_cfg
+
+    if not isinstance(steps, list):
+        raise typer.BadParameter("Pipeline configuration must be a list of steps")
+
+    if not steps:
+        typer.echo("No steps defined in pipeline. Nothing to execute.")
         return
 
-    df = None
-    try:
-        spark = ensure_spark(context)
-        for stage in _stage_sequence(layer):
-            if stage == "raw":
-                df = raw_main.execute(context, spark)
-            elif stage == "bronze":
-                df = bronze_main.execute(context, spark, df)
-            elif stage == "silver":
-                df = silver_main.execute(context, spark, df)
-            elif stage == "gold":
-                df = gold_main.execute(context, spark, df)
-    finally:
-        stop_spark(context)
+    for index, step in enumerate(steps, start=1):
+        if not isinstance(step, dict):
+            raise typer.BadParameter(f"Pipeline step #{index} must be a mapping")
+
+        layer_value = step.get("layer")
+        if not layer_value:
+            raise typer.BadParameter(f"Pipeline step #{index} is missing 'layer'")
+
+        layer_name = _normalize_layer_name(str(layer_value))
+
+        config_value = step.get("config")
+        if not config_value:
+            raise typer.BadParameter(
+                f"Pipeline step '{layer_name}' is missing 'config' entry"
+            )
+
+        config_path = Path(str(config_value))
+        if not config_path.is_absolute():
+            config_path = (pipeline.parent / config_path).resolve()
+
+        layer_cfg = _load_config(config_path)
+        normalized_cfg = _validate_normalized_cfg(layer_cfg, layer_name)
+        _execute_layer(layer_name, normalized_cfg)
 
 
 def main() -> None:
