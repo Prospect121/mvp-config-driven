@@ -67,21 +67,40 @@ fi
 PYMAJORMINOR="$($PYSPARK_PYTHON -c 'import sys;print(f"{sys.version_info.major}.{sys.version_info.minor}")')" 
 export PYTHONPATH="/tmp/pydeps/lib/python${PYMAJORMINOR}/site-packages:${PYTHONPATH:-}" 
 
-echo "Using CFG=${CFG}  ENVF=${ENVF}" 
-echo "PYSPARK_PYTHON=${PYSPARK_PYTHON}" 
-echo "PYTHONPATH=${PYTHONPATH}" 
+echo "Using CFG=${CFG}  ENVF=${ENVF}"
+echo "PYSPARK_PYTHON=${PYSPARK_PYTHON}"
+echo "PYTHONPATH=${PYTHONPATH}"
 
-# ------------- Ejecutar el job ------------- 
+# Credenciales y endpoint deben ser provistos externamente mediante un proveedor seguro
+: "${AWS_ACCESS_KEY_ID:?AWS_ACCESS_KEY_ID must be provided by a secure credential store}"
+: "${AWS_SECRET_ACCESS_KEY:?AWS_SECRET_ACCESS_KEY must be provided by a secure credential store}"
+S3A_ENDPOINT="${S3A_ENDPOINT_URL:-${AWS_ENDPOINT_URL:-}}"
+AWS_REGION=${AWS_REGION:-us-east-1}
+export AWS_REGION
+
+if [ -n "${S3A_ENDPOINT}" ] && [[ "${S3A_ENDPOINT}" == http://* ]]; then
+  echo "Insecure S3A endpoint detected. Configure a TLS-enabled endpoint." >&2
+  exit 1
+fi
+
+SPARK_SUBMIT_ARGS=(
+  --master spark://spark-master:7077
+  --jars /mvp/jars/postgresql-42.7.2.jar,/mvp/jars/hadoop-aws-3.3.4.jar,/mvp/jars/aws-java-sdk-bundle-1.12.262.jar
+  --conf spark.sql.execution.arrow.pyspark.enabled=true
+  --conf spark.pyspark.python=${PYSPARK_PYTHON}
+  --conf spark.pyspark.driver.python=${PYSPARK_DRIVER_PYTHON}
+  --conf spark.hadoop.fs.s3a.impl=org.apache.hadoop.fs.s3a.S3AFileSystem
+  --conf spark.hadoop.fs.s3a.path.style.access=true
+  --conf spark.hadoop.fs.s3a.access.key=${AWS_ACCESS_KEY_ID}
+  --conf spark.hadoop.fs.s3a.secret.key=${AWS_SECRET_ACCESS_KEY}
+  --conf spark.hadoop.fs.s3a.aws.credentials.provider=com.amazonaws.auth.EnvironmentVariableCredentialsProvider
+)
+
+if [ -n "${S3A_ENDPOINT}" ]; then
+  SPARK_SUBMIT_ARGS+=(--conf spark.hadoop.fs.s3a.endpoint=${S3A_ENDPOINT})
+fi
+
+# ------------- Ejecutar el job -------------
 /opt/bitnami/spark/bin/spark-submit \
-  --master spark://spark-master:7077 \
-  --jars /mvp/jars/postgresql-42.7.2.jar,/mvp/jars/hadoop-aws-3.3.4.jar,/mvp/jars/aws-java-sdk-bundle-1.12.262.jar \
-  --conf spark.sql.execution.arrow.pyspark.enabled=true \
-  --conf spark.pyspark.python=${PYSPARK_PYTHON} \
-  --conf spark.pyspark.driver.python=${PYSPARK_DRIVER_PYTHON} \
-  --conf spark.hadoop.fs.s3a.impl=org.apache.hadoop.fs.s3a.S3AFileSystem \
-  --conf spark.hadoop.fs.s3a.path.style.access=true \
-  --conf spark.hadoop.fs.s3a.connection.ssl.enabled=false \
-  --conf spark.hadoop.fs.s3a.access.key=${AWS_ACCESS_KEY_ID} \
-  --conf spark.hadoop.fs.s3a.secret.key=${AWS_SECRET_ACCESS_KEY} \
-  --conf spark.hadoop.fs.s3a.endpoint=http://minio:9000 \
+  "${SPARK_SUBMIT_ARGS[@]}" \
   /mvp/pipelines/spark_job_with_db.py "${CFG}" "${ENVF}" "${DBF}" "${ENV}"
