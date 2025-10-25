@@ -37,6 +37,7 @@ class LayerConfig:
     io: Dict[str, Any] = field(default_factory=dict)
     transform: Dict[str, Any] = field(default_factory=dict)
     dq: Dict[str, Any] = field(default_factory=dict)
+    storage: Dict[str, Any] = field(default_factory=dict)
     aliases: Dict[str, str] = field(default_factory=dict)
 
     @classmethod
@@ -67,6 +68,7 @@ class LayerConfig:
             io=runtime_model.io.model_dump(by_alias=True),
             transform=dict(runtime_model.transform),
             dq=dict(runtime_model.dq),
+            storage=dict(runtime_model.storage),
             aliases=dict(runtime_model.legacy_aliases),
         )
 

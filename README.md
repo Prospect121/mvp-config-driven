@@ -11,9 +11,10 @@ Plataforma modular de ingesta y transformación basada en configuración. Expone
    - Windows: `python -m venv .venv && .\.venv\Scripts\activate`
    - Linux/macOS: `python -m venv .venv && source .venv/bin/activate`
    - `pip install -r requirements.txt`
-3. **Ejecución en seco**
+3. **Prueba de humo local**
    - `prodi run-layer raw -c cfg/raw/example.yml`
    - Repetir con `bronze`, `silver` y `gold` para validar el flujo completo usando los datasets sintéticos de `samples/`.
+   - El ejemplo de Raw escribe `parquet` en `data/raw/toy_customers/`; las capas superiores permanecen en `dry_run` para evitar side-effects.
 
 ## Política de no-Docker
 
@@ -21,8 +22,9 @@ El repositorio ya no contiene archivos de build Docker ni manifests docker compo
 
 ## Ejecución por capa con CLI
 
-- Las configuraciones `cfg/<layer>/example.yml` habilitan `dry_run` y apuntan a `samples/toy_customers.csv`.
+- Las configuraciones `cfg/<layer>/example.yml` apuntan al dataset de humo `samples/toy_customers.csv`. Raw ya ejecuta la ingesta real (puede cambiarse a Spark ajustando `compute.kind`), mientras que Bronze/Silver/Gold mantienen `dry_run` por defecto.
 - `prodi run-layer <layer>` valida esquema, reglas de calidad y escritura de cada capa de forma aislada.
+- El pipeline declarativo `cfg/pipelines/example.yml` encadena los mismos YAML y puede ejecutarse con `prodi run-pipeline -p cfg/pipelines/example.yml`.
 - Para orquestación externa, ver `docs/run/` (Databricks, AWS Glue/EMR, Dataproc, Azure Synapse/ADF). Los manifiestos en `docs/run/jobs/` muestran cómo invocar el wheel con argumentos `prodi run-layer`.
 
 ## Documentación clave
