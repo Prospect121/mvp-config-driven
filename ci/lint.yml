@@ -16,3 +16,24 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y yamllint jq
       - name: Run config checks
         run: ./ci/check_config.sh
+  cleanup-enforcement:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Verify cleanup manifest
+        run: python tools/audit_cleanup.py --check
+      - name: Inspect IO inventory
+        run: python tools/list_io.py --json
+      - name: Publicar cleanup.json
+        uses: actions/upload-artifact@v4
+        with:
+          name: cleanup-json
+          path: docs/cleanup.json

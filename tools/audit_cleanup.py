@@ -9,6 +9,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -36,6 +37,7 @@ MANUAL_RULES = {
         "risk": "medium",
         "proposed_action": "move_to_legacy",
         "notes": "Conservar en /legacy/docs hasta validar que no sea referencia externa.",
+        "legacy_path": "legacy/docs/2025-10-25-reports/REPORT.md",
     },
     "docs/report.json": {
         "classification": "QUARANTINE",
@@ -43,6 +45,7 @@ MANUAL_RULES = {
         "risk": "medium",
         "proposed_action": "move_to_legacy",
         "notes": "Generado por tooling previo; no usado en pipelines.",
+        "legacy_path": "legacy/docs/2025-10-25-reports/report.json",
     },
     "scripts/generate_big_payments.py": {
         "classification": "QUARANTINE",
@@ -50,6 +53,7 @@ MANUAL_RULES = {
         "risk": "medium",
         "proposed_action": "move_to_legacy",
         "notes": "No referenciado desde CLI actuales.",
+        "legacy_path": "legacy/scripts/2025-10-25-generation/generate_big_payments.py",
     },
     "docs/run/jobs/dataproc_workflow.yaml": {
         "classification": "QUARANTINE",
@@ -57,7 +61,51 @@ MANUAL_RULES = {
         "risk": "medium",
         "proposed_action": "move_to_legacy",
         "notes": "Considerar mover a legacy/infra antes de eliminar.",
+        "legacy_path": "legacy/infra/2025-10-25-gcp/dataproc_workflow.yaml",
     },
+    "legacy/docs/2025-10-25-reports/REPORT.md": {
+        "classification": "QUARANTINE",
+        "reason": "Reporte legacy reubicado en cuarentena (2025-10-25).",
+        "risk": "medium",
+        "proposed_action": "hold_in_legacy",
+        "notes": "Restaurar solo si gobernanza lo aprueba.",
+    },
+    "legacy/docs/2025-10-25-reports/report.json": {
+        "classification": "QUARANTINE",
+        "reason": "Export JSON legacy en cuarentena (2025-10-25).",
+        "risk": "medium",
+        "proposed_action": "hold_in_legacy",
+        "notes": "Mantener disponible durante la ventana de 30 días.",
+    },
+    "legacy/infra/2025-10-25-gcp/dataproc_workflow.yaml": {
+        "classification": "QUARANTINE",
+        "reason": "Workflow Dataproc legacy en cuarentena (2025-10-25).",
+        "risk": "medium",
+        "proposed_action": "hold_in_legacy",
+        "notes": "Coordinar con Cloud Data Engineering antes de restaurar.",
+    },
+    "legacy/scripts/2025-10-25-generation/generate_big_payments.py": {
+        "classification": "QUARANTINE",
+        "reason": "Script de pagos legacy retenido en cuarentena (2025-10-25).",
+        "risk": "medium",
+        "proposed_action": "hold_in_legacy",
+        "notes": "Reactivar solo con aprobación del owner registrado en README.",
+    },
+}
+
+QUARANTINE_EXPECTATIONS = {
+    "docs/REPORT.md": "legacy/docs/2025-10-25-reports/REPORT.md",
+    "docs/report.json": "legacy/docs/2025-10-25-reports/report.json",
+    "scripts/generate_big_payments.py": "legacy/scripts/2025-10-25-generation/generate_big_payments.py",
+    "docs/run/jobs/dataproc_workflow.yaml": "legacy/infra/2025-10-25-gcp/dataproc_workflow.yaml",
+}
+
+REFERENCE_ALLOWLIST = {
+    Path("docs/diagrams/deps_cleanup.md"),
+    Path("legacy/docs/2025-10-25-reports/README.md"),
+    Path("legacy/infra/2025-10-25-gcp/README.md"),
+    Path("legacy/scripts/2025-10-25-generation/README.md"),
+    Path("tools/audit_cleanup.py"),
 }
 
 
@@ -509,6 +557,8 @@ def compute_summary(items: List[CleanupItem]) -> Dict[str, object]:
         totals[item.classification.lower()] += 1
         if item.classification in {"REMOVE", "QUARANTINE"}:
             savings_kb += item.size_kb
+    for key in ("keep", "quarantine", "remove"):
+        totals.setdefault(key, 0)
     return {
         "totals": totals,
         "savings_mb_estimate": round(savings_kb / 1024, 2),
@@ -521,11 +571,57 @@ def ensure_relative_paths(items: List[CleanupItem], repo_root: Path) -> None:
             item.path = item.path  # already relative
 
 
+def find_string_references(repo_root: Path, target: str) -> List[Path]:
+    matches: List[Path] = []
+    for path in collect_files(repo_root):
+        rel = path.relative_to(repo_root)
+        if rel in REFERENCE_ALLOWLIST:
+            continue
+        if rel.parts and rel.parts[0] == "legacy":
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            continue
+        if target in text:
+            matches.append(rel)
+    return matches
+
+
+def validate_cleanup_state(repo_root: Path) -> List[str]:
+    issues: List[str] = []
+    for path, rule in MANUAL_RULES.items():
+        if rule["classification"] != "REMOVE":
+            continue
+        if (repo_root / path).exists():
+            issues.append(f"REMOVE target still present: {path}")
+
+    for source, legacy in QUARANTINE_EXPECTATIONS.items():
+        source_path = repo_root / source
+        legacy_path = repo_root / legacy
+        if source_path.exists():
+            issues.append(f"Source path still present: {source}")
+        if not legacy_path.exists():
+            issues.append(f"Legacy path missing: {legacy}")
+        references = find_string_references(repo_root, source)
+        if references:
+            excerpt = ", ".join(str(ref) for ref in references[:REFERENCE_LIMIT])
+            if len(references) > REFERENCE_LIMIT:
+                excerpt += ", ..."
+            issues.append(f"Active references to {source}: {excerpt}")
+    return issues
+
+
 def parse_args(argv: Optional[Iterable[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-json", default="docs/cleanup.json")
     parser.add_argument("--output-md", default="docs/CLEANUP_REPORT.md")
     parser.add_argument("--skip-markdown", action="store_true", help="Only produce JSON output.")
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="Solo valida el estado de limpieza sin generar artefactos.",
+    )
     return parser.parse_args(list(argv) if argv is not None else None)
 
 
@@ -533,14 +629,23 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
     args = parse_args(argv)
     repo_root = Path(__file__).resolve().parents[1]
 
+    if args.check:
+        issues = validate_cleanup_state(repo_root)
+        if issues:
+            for issue in issues:
+                print(f"cleanup audit failed: {issue}", file=sys.stderr)
+            return 1
+        return 0
+
     items = build_items(repo_root)
     ensure_relative_paths(items, repo_root)
     apply_manual_overrides(items)
     summary = compute_summary(items)
 
     head_sha = run_cmd(["git", "rev-parse", "HEAD"], cwd=repo_root).stdout.strip()
+    branch_name = run_cmd(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=repo_root).stdout.strip()
     meta = {
-        "branch": "feature/main-codex",
+        "branch": branch_name,
         "commit": head_sha,
         "generated_at": dt.datetime.utcnow().isoformat() + "Z",
     }

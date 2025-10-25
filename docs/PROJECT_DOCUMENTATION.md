@@ -49,7 +49,7 @@ Este documento centraliza la arquitectura, módulos, configuraciones, ejecución
   - `docs/run/aws.md`: despliegue en AWS Glue + Step Functions.
   - `docs/run/gcp.md`: workflows de Dataproc con templates parametrizados.
   - `docs/run/azure.md`: ejecución en Synapse Spark job definitions.
-  - `docs/run/jobs/`: artefactos JSON/YAML listos para importar (Jobs, Workflows, Step Functions).
+  - `legacy/infra/2025-10-25-gcp/`: conserva el workflow Dataproc retirado durante la cuarentena.
 
 ## Ingesta Multi-Fuente
 
@@ -103,5 +103,16 @@ Este documento centraliza la arquitectura, módulos, configuraciones, ejecución
 - Modularización para mantenibilidad y pruebas.
 
 ---
+
+## Limpieza & Legacy
+
+- La política **DEP-001 Legacy Asset Retirement Policy** exige cuarentena de 30 días con trazabilidad y reversibilidad. Todos los
+  activos retirados se almacenan bajo `legacy/` con un `README.md` local que documenta owner, motivo y fecha.
+- `legacy/docs/2025-10-25-reports/` mantiene los artefactos de reportes (`REPORT.md`, `report.json`) con instrucciones de
+  restauración.
+- `legacy/infra/2025-10-25-gcp/` conserva el workflow `dataproc_workflow.yaml` retirado de GCP.
+- `legacy/scripts/2025-10-25-generation/` almacena el generador histórico `generate_big_payments.py`.
+- Utiliza `tools/audit_cleanup.py` para regenerar `docs/cleanup.json` y `tools/list_io.py --json` para garantizar que el core no
+  apunte a estos recursos. Cualquier reversión temporal debe notificarse al owner indicado y quedar registrada.
 
 Para documentación básica y guía rápida, ver `README.md` en la raíz del proyecto.
