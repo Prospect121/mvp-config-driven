@@ -211,6 +211,15 @@ def run_pipeline(
 
     if isinstance(raw_pipeline_cfg, dict):
         steps: Any = raw_pipeline_cfg.get("steps")
+        if steps is None:
+            steps = raw_pipeline_cfg.get("pipeline")
+        if steps is None and len(raw_pipeline_cfg) == 1:
+            # Allow top-level alias: {"pipeline": [...]} or {"steps": [...]}
+            # was handled above. If both keys absent but the only value is a list,
+            # treat it as the pipeline steps for backwards compatibility.
+            only_value = next(iter(raw_pipeline_cfg.values()))
+            if isinstance(only_value, list):
+                steps = only_value
     else:
         steps = raw_pipeline_cfg
 

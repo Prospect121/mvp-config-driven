@@ -1,5 +1,5 @@
 layer: gold
-extends: "../../finance/gold/transactions.yml"
+extends: "../../finance/gold/kpis.yml"
 transform:
   sql: |
     SELECT

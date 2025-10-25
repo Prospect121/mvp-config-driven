@@ -1,9 +1,11 @@
-steps:
+pipeline:
   - layer: raw
-    config: ../finance/raw/transactions_http.yml
+    config: "cfg/finance/raw/transactions_{{ RAW_SOURCE | default('http') }}.yml"
+    vars:
+      RAW_WM_TS: "{{ ds_iso | default('1970-01-01T00:00:00Z') }}"
   - layer: bronze
-    config: ../finance/bronze/transactions.yml
+    config: "cfg/finance/bronze/transactions.yml"
   - layer: silver
-    config: ../finance/silver/transactions.yml
+    config: "cfg/finance/silver/transactions.yml"
   - layer: gold
-    config: ../finance/gold/transactions.yml
+    config: "cfg/finance/gold/kpis.yml"
