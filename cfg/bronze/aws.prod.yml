@@ -1,0 +1,25 @@
+layer: bronze
+environment: production
+dry_run: false
+paths:
+  dataset: config/datasets/examples/toy_customers.yml
+  environment: config/env.aws.prod.yml
+compute:
+  engine: spark
+  options:
+    spark.sql.session.timeZone: UTC
+io:
+  source:
+    format: parquet
+    path: s3://datalake-mvp-raw-prod/toy_customers/landing/
+  sink:
+    kind: spark
+    format: delta
+    mode: overwrite
+    path: s3://datalake-mvp-bronze-prod/tables/toy_customers/
+    options:
+      checkpointLocation: s3://datalake-mvp-bronze-prod/checkpoints/toy_customers/
+transform:
+  functions: []
+dq:
+  checks: []

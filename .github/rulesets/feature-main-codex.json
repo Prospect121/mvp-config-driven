@@ -1,0 +1,24 @@
+{
+  "name": "feature/main-codex protections",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": {
+    "ref_name": {
+      "include": ["feature/main-codex"]
+    }
+  },
+  "rules": [
+    {
+      "type": "required_status_checks",
+      "parameters": {
+        "strict": true,
+        "required_checks": [
+          "Build & Test / build-and-test",
+          "Build & Test / smoke",
+          "Build & Test / smoke-prod",
+          "Lint & Validate / cleanup-enforcement"
+        ]
+      }
+    }
+  ]
+}

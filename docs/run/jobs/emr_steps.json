@@ -9,10 +9,10 @@
         "Args": [
           "spark-submit",
           "--deploy-mode", "cluster",
-          "--py-files", "s3://datalake-artifacts/prodi/mvp_config_driven-0.1.0-py3-none-any.whl",
+          "--py-files", "s3://datalake-artifacts/prodi/mvp_config_driven-0.2.0-py3-none-any.whl",
           "s3://datalake-artifacts/scripts/prodi_emr_entry.py",
           "--layer", "raw",
-          "--config", "s3://datalake-artifacts/cfg/raw/example.yml"
+          "--config", "s3://datalake-artifacts/cfg/raw/aws.prod.yml"
         ]
       }
     },
@@ -24,10 +24,10 @@
         "Args": [
           "spark-submit",
           "--deploy-mode", "cluster",
-          "--py-files", "s3://datalake-artifacts/prodi/mvp_config_driven-0.1.0-py3-none-any.whl",
+          "--py-files", "s3://datalake-artifacts/prodi/mvp_config_driven-0.2.0-py3-none-any.whl",
           "s3://datalake-artifacts/scripts/prodi_emr_entry.py",
           "--layer", "bronze",
-          "--config", "s3://datalake-artifacts/cfg/bronze/example.yml"
+          "--config", "s3://datalake-artifacts/cfg/bronze/aws.prod.yml"
         ]
       }
     },
@@ -39,10 +39,10 @@
         "Args": [
           "spark-submit",
           "--deploy-mode", "cluster",
-          "--py-files", "s3://datalake-artifacts/prodi/mvp_config_driven-0.1.0-py3-none-any.whl",
+          "--py-files", "s3://datalake-artifacts/prodi/mvp_config_driven-0.2.0-py3-none-any.whl",
           "s3://datalake-artifacts/scripts/prodi_emr_entry.py",
           "--layer", "silver",
-          "--config", "s3://datalake-artifacts/cfg/silver/example.yml"
+          "--config", "s3://datalake-artifacts/cfg/silver/aws.prod.yml"
         ]
       }
     },
@@ -54,10 +54,10 @@
         "Args": [
           "spark-submit",
           "--deploy-mode", "cluster",
-          "--py-files", "s3://datalake-artifacts/prodi/mvp_config_driven-0.1.0-py3-none-any.whl",
+          "--py-files", "s3://datalake-artifacts/prodi/mvp_config_driven-0.2.0-py3-none-any.whl",
           "s3://datalake-artifacts/scripts/prodi_emr_entry.py",
           "--layer", "gold",
-          "--config", "s3://datalake-artifacts/cfg/gold/example.yml"
+          "--config", "s3://datalake-artifacts/cfg/gold/aws.prod.yml"
         ]
       }
     }

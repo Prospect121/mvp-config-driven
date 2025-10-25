@@ -48,7 +48,7 @@
 
 ## Riesgos y mitigaciones
 
-- **Dependencia de wheel name**: los ejemplos asumen `mvp_config_driven-0.1.0`. Mitigación: documentar que se debe ajustar al
+- **Dependencia de wheel name**: los ejemplos asumen `mvp_config_driven-0.2.0`. Mitigación: documentar que se debe ajustar al
   número de versión publicado.
 - **Ambientes sin `ripgrep`**: CI instala la dependencia explícitamente; en entornos locales puede replicarse ejecutando
   `sudo apt-get install ripgrep` o usando el script `tests/test_security_invariants.py` como guardia.

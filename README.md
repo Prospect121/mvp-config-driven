@@ -20,12 +20,19 @@ Plataforma modular de ingesta y transformación basada en configuración. Expone
 
 El repositorio ya no contiene archivos de build Docker ni manifests docker compose. CI falla si reaparecen artefactos bajo `docker/`, `.docker/` o manifests de build/compose. Las ejecuciones deben empaquetarse como wheel (`python -m build`) y desplegarse en la plataforma de elección.
 
+## Credenciales por identidad
+
+- **AWS**: los YAML `cfg/*/aws.prod.yml` asumen que los jobs corren con un rol IAM asociado a la instancia/servicio. El archivo `config/env.aws.prod.yml` habilita TLS (`use_ssl: true`) y firma SigV4 sin exponer llaves.
+- **Azure**: las variantes `cfg/*/azure.prod.yml` se autentican mediante Managed Identity; `config/env.azure.prod.yml` sólo declara `auth: managed_identity` y opciones TLS.
+- **GCP**: las configuraciones `cfg/*/gcp.prod.yml` dependen de cuentas de servicio sin llaves gracias a Workload Identity (`config/env.gcp.prod.yml`).
+
 ## Ejecución por capa con CLI
 
 - Las configuraciones `cfg/<layer>/example.yml` apuntan al dataset de humo `samples/toy_customers.csv`. Raw ya ejecuta la ingesta real (puede cambiarse a Spark ajustando `compute.kind`), mientras que Bronze/Silver/Gold mantienen `dry_run` por defecto.
 - `prodi run-layer <layer>` valida esquema, reglas de calidad y escritura de cada capa de forma aislada.
 - El pipeline declarativo `cfg/pipelines/example.yml` encadena los mismos YAML y puede ejecutarse con `prodi run-pipeline -p cfg/pipelines/example.yml`.
 - Para orquestación externa, ver `docs/run/` (Databricks, AWS Glue/EMR, Dataproc, Azure Synapse/ADF). Los manifiestos en `docs/run/jobs/` muestran cómo invocar el wheel con argumentos `prodi run-layer`.
+- Forzar `PRODI_FORCE_DRY_RUN=1` permite validar configuraciones productivas (`cfg/*/*.prod.yml`) sin ejecutar escrituras reales; este mismo override se usa en CI (`smoke-prod`).
 
 ## Documentación clave
 

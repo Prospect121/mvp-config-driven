@@ -91,3 +91,19 @@ def test_run_pipeline_uses_yaml_declaration(monkeypatch, tmp_path) -> None:
 
     assert result.exit_code == 0
     assert executed == ["raw", "bronze"]
+
+
+def test_force_dry_run_env_overrides(monkeypatch, tmp_path) -> None:
+    runner = CliRunner()
+    config_path = tmp_path / "raw.yml"
+    config_path.write_text(
+        yaml.safe_dump({"layer": "raw", "dry_run": False}), encoding="utf-8"
+    )
+
+    monkeypatch.setenv("PRODI_FORCE_DRY_RUN", "1")
+
+    result = runner.invoke(app, ["run-layer", "raw", "-c", str(config_path)])
+
+    assert result.exit_code == 0
+    assert "PRODI_FORCE_DRY_RUN=1 - forcing dry_run execution" in result.stdout
+    assert "[raw] Dry run requested" in result.stdout
