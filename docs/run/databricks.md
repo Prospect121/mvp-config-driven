@@ -31,8 +31,8 @@ el mismo wheel y varía los parámetros del comando `prodi run-layer`.
     "package_name": "prodi",
     "entry_point": "run-layer",
     "parameters": [
-      "--layer", "raw",
-      "--config", "dbfs:/cfg/run/raw.yml"
+      "raw",
+      "-c", "dbfs:/cfg/run/raw.yml"
     ]
   },
   "libraries": [
@@ -43,8 +43,9 @@ el mismo wheel y varía los parámetros del comando `prodi run-layer`.
 
 ### Secuencia completa raw → bronze → silver → gold
 
-Replica la definición anterior ajustando `task_key`, `--layer` y la ruta del
-YAML para cada capa. Encadena las tareas estableciendo dependencias:
+Replica la definición anterior ajustando `task_key`, el primer parámetro (la
+capa) y la ruta del YAML para cada etapa. Encadena las tareas estableciendo
+dependencias:
 
 ```json
 {
@@ -65,17 +66,26 @@ Antes de calendarizar el job, valida el pipeline ejecutando una corrida de
 prueba que sólo evalúa la configuración:
 
 ```bash
-prodi run-layer --layer raw --config cfg/run/raw.yml --dry-run
-prodi run-layer --layer bronze --config cfg/run/bronze.yml --dry-run
+prodi run-layer raw -c cfg/run/raw.yml
+prodi run-layer bronze -c cfg/run/bronze.yml
 ```
 
-Para tareas en Databricks, agrega `"parameters": ["--dry-run", ...]` a la tarea
-`wheel_task`. El job se detendrá al primer error de validación sin tocar datos.
+Para ejecutar una validación sin procesar datos define `dry_run: true` dentro
+del archivo de configuración correspondiente (por ejemplo en un overlay
+`cfg/run/raw.dry-run.yml`) y lanza:
+
+```bash
+prodi run-layer raw -c cfg/run/raw.dry-run.yml
+```
+
+En Databricks puedes apuntar la tarea al YAML de validación o activar el
+atributo mediante `overrides`. El job se detendrá al primer error de validación
+sin tocar datos.
 
 ## 4. Variables y secretos operativos
 
 * Usa `job_parameters` o [task parameters](https://docs.databricks.com/jobs/jobs-parameterization.html)
-  para inyectar rutas de configuración o flags como `--env prod`.
+  para inyectar rutas de configuración específicas por ambiente.
 * Gestiona credenciales mediante [Databricks Secrets](https://docs.databricks.com/security/secrets/index.html)
   y refiérelas dentro de los YAML con `{{secrets/<scope>/<key>}}`.
 * Registra el build del wheel junto con la versión de configuración aplicada

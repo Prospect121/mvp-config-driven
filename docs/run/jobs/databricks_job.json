@@ -22,9 +22,8 @@
         "package_name": "prodi",
         "entry_point": "run-layer",
         "parameters": [
-          "--layer", "raw",
-          "--config", "dbfs:/cfg/run/raw.yml",
-          "--env", "prod"
+          "raw",
+          "-c", "dbfs:/cfg/run/raw.yml"
         ]
       }
     },
@@ -39,9 +38,8 @@
         "package_name": "prodi",
         "entry_point": "run-layer",
         "parameters": [
-          "--layer", "bronze",
-          "--config", "dbfs:/cfg/run/bronze.yml",
-          "--env", "prod"
+          "bronze",
+          "-c", "dbfs:/cfg/run/bronze.yml"
         ]
       }
     },
@@ -56,9 +54,8 @@
         "package_name": "prodi",
         "entry_point": "run-layer",
         "parameters": [
-          "--layer", "silver",
-          "--config", "dbfs:/cfg/run/silver.yml",
-          "--env", "prod"
+          "silver",
+          "-c", "dbfs:/cfg/run/silver.yml"
         ]
       }
     },
@@ -73,9 +70,8 @@
         "package_name": "prodi",
         "entry_point": "run-layer",
         "parameters": [
-          "--layer", "gold",
-          "--config", "dbfs:/cfg/run/gold.yml",
-          "--env", "prod"
+          "gold",
+          "-c", "dbfs:/cfg/run/gold.yml"
         ]
       }
     }
