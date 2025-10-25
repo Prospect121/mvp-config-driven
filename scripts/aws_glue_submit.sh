@@ -23,8 +23,20 @@ job_name="${job_prefix}-${layer}"
 arguments=$(python - <<PY
 import json
 import os
+
+
+def _is_truthy(value):
+    if value is None:
+        return False
+    return value.strip().lower() not in {"", "0", "false", "no"}
+
+
+force_dry_run = os.getenv("PRODI_FORCE_DRY_RUN")
+if force_dry_run is None:
+    force_dry_run = os.getenv("FORCE_DRY_RUN")
+
 payload = {"--layer": "${layer}", "--config": "${config_uri}"}
-if os.getenv("FORCE_DRY_RUN", "0").lower() not in {"0", "false", ""}:
+if _is_truthy(force_dry_run):
     payload["--env.PRODI_FORCE_DRY_RUN"] = "true"
 print(json.dumps(payload))
 PY
