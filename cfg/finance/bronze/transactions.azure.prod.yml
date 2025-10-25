@@ -1,0 +1,8 @@
+layer: bronze
+extends: "./transactions.yml"
+environment: production
+io:
+  source:
+    path: "abfss://finance@prodstorage.dfs.core.windows.net/raw/transactions/"
+  sink:
+    path: "abfss://finance@prodstorage.dfs.core.windows.net/bronze/transactions/"

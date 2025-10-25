@@ -1,0 +1,9 @@
+layer: raw
+extends: "./transactions_jdbc.yml"
+environment: production
+io:
+  source:
+    auth:
+      mode: managed_identity
+  sink:
+    path: "abfss://finance@prodstorage.dfs.core.windows.net/raw/transactions/date={{ds}}/"

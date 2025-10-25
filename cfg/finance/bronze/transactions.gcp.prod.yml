@@ -1,0 +1,8 @@
+layer: bronze
+extends: "./transactions.yml"
+environment: production
+io:
+  source:
+    path: "gs://finance-prod/raw/transactions/"
+  sink:
+    path: "gs://finance-prod/bronze/transactions/"
