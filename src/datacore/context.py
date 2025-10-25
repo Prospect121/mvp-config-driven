@@ -14,6 +14,13 @@ except ModuleNotFoundError:  # pragma: no cover - allow dry-run environments
 
 from pipelines.database.db_manager import create_database_manager_from_file
 
+from datacore.config.schema import (
+    DatasetConfigModel,
+    LayerRuntimeConfigModel,
+    migrate_dataset_config,
+    migrate_layer_config,
+)
+
 
 @dataclass
 class LayerConfig:
@@ -22,23 +29,42 @@ class LayerConfig:
     database_config: Optional[str] = None
     environment: str = "default"
     dry_run: bool = False
+    layer: str = "raw"
+    compute: Dict[str, Any] = field(default_factory=dict)
+    io: Dict[str, Any] = field(default_factory=dict)
+    transform: Dict[str, Any] = field(default_factory=dict)
+    dq: Dict[str, Any] = field(default_factory=dict)
+    aliases: Dict[str, str] = field(default_factory=dict)
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "LayerConfig":
-        cfg = dict(data or {})
-        # Support nested "paths" block or flat keys
-        paths = cfg.pop("paths", {}) or {}
-        dataset = cfg.pop("dataset_config", None) or paths.get("dataset")
-        env = cfg.pop("environment_config", None) or cfg.pop("env_config", None) or paths.get("environment")
-        database = cfg.pop("database_config", None) or paths.get("database")
-        environment = cfg.pop("environment", "default")
-        dry_run = bool(cfg.pop("dry_run", False))
+        normalized = migrate_layer_config(data or {})
+        runtime_model = LayerRuntimeConfigModel.model_validate(normalized)
+
+        source_cfg = runtime_model.io.source or {}
+        sink_cfg = runtime_model.io.sink or {}
+
+        dataset = source_cfg.get("dataset_config") or source_cfg.get("dataset")
+        env = (
+            source_cfg.get("environment_config")
+            or source_cfg.get("environment")
+            or normalized.get("environment_config")
+            or normalized.get("env_config")
+        )
+        database = sink_cfg.get("database_config") or sink_cfg.get("database")
+
         return cls(
             dataset_config=str(dataset) if dataset else None,
             env_config=str(env) if env else None,
             database_config=str(database) if database else None,
-            environment=str(environment),
-            dry_run=dry_run,
+            environment=str(runtime_model.environment),
+            dry_run=bool(runtime_model.dry_run),
+            layer=str(runtime_model.layer or "raw"),
+            compute=runtime_model.compute.model_dump(by_alias=True),
+            io=runtime_model.io.model_dump(by_alias=True),
+            transform=dict(runtime_model.transform),
+            dq=dict(runtime_model.dq),
+            aliases=dict(runtime_model.legacy_aliases),
         )
 
 
@@ -77,7 +103,10 @@ def build_context(raw_config: Dict[str, Any]) -> PipelineContext:
         if not layer_config.env_config:
             raise ValueError("'environment_config' is required when dry_run is False")
 
-        dataset_cfg = _load_yaml(layer_config.dataset_config)
+        raw_dataset_cfg = _load_yaml(layer_config.dataset_config)
+        migrated_dataset_cfg = migrate_dataset_config(raw_dataset_cfg)
+        dataset_model = DatasetConfigModel.model_validate(migrated_dataset_cfg)
+        dataset_cfg = dataset_model.model_dump(by_alias=True)
         env_cfg = _load_yaml(layer_config.env_config)
 
         db_cfg_path = layer_config.database_config

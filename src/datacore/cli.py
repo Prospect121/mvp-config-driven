@@ -12,6 +12,8 @@ from datacore.layers.bronze import main as bronze_main
 from datacore.layers.silver import main as silver_main
 from datacore.layers.gold import main as gold_main
 
+from datacore.config.schema import LayerRuntimeConfigModel, migrate_layer_config
+
 app = typer.Typer(help="DataCore orchestration commands")
 
 
@@ -59,11 +61,21 @@ def _validate_normalized_cfg(cfg: Any, expected_layer: str) -> Dict[str, Any]:
 
     normalized["dry_run"] = bool(normalized.get("dry_run", False))
 
-    paths = normalized.get("paths")
-    if paths is not None and not isinstance(paths, dict):
-        raise typer.BadParameter("'paths' entry must be a mapping when provided")
+    migrated = migrate_layer_config(normalized)
+    runtime_model = LayerRuntimeConfigModel.model_validate(migrated)
 
-    return normalized
+    runtime_layer = runtime_model.layer or expected_layer
+    normalized_layer = _normalize_layer_name(str(runtime_layer))
+    if normalized_layer != expected_layer:
+        raise typer.BadParameter(
+            "Configuration layer '{declared}' does not match requested layer "
+            "'{expected}'".format(declared=normalized_layer, expected=expected_layer)
+        )
+
+    runtime_dict = runtime_model.model_dump(by_alias=True)
+    runtime_dict["layer"] = normalized_layer
+    runtime_dict["dry_run"] = bool(runtime_dict.get("dry_run", False))
+    return runtime_dict
 
 
 def _execute_layer(layer: str, cfg: Dict[str, Any]) -> Any:
