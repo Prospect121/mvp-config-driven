@@ -37,7 +37,23 @@ Un pipeline de datos modular y dirigido por configuración. Procesa fuentes CSV/
 - URIs estándar (`s3://`, `abfss://`, `gs://`): declara la ruta en los YAML y
   define credenciales/opciones en `config/env.yml` o en los `cfg/*.yml` usando
   las claves `storage_options`, `reader_options` y `writer_options`.
-- Auditoría: `docs/tools/list_io.py` lista URIs de configuración y marca
-  protocolos no soportados.
+- Auditoría: `tools/list_io.py --json` verifica que no haya referencias a
+  artefactos en cuarentena ni protocolos no permitidos; el script original
+  sigue disponible en `docs/tools/list_io.py` para análisis detallado.
 - Calidad: usa `quarantine` para aislar inválidos sin perderlos.
 - Performance: ajustar `spark.sql.shuffle.partitions` y `coalesce/repartition` según volumen.
+
+## Limpieza & Legacy
+
+- Activos cuarentenados se reubican bajo `legacy/` siguiendo la política
+  **DEP-001 Legacy Asset Retirement Policy**. Los reportes retirados ahora
+  viven en `legacy/docs/2025-10-25-reports/`, los flujos GCP en
+  `legacy/infra/2025-10-25-gcp/` y los generadores históricos en
+  `legacy/scripts/2025-10-25-generation/`.
+- `tools/audit_cleanup.py` genera `docs/cleanup.json` y con `--check`
+  impide que reaparezcan archivos marcados como REMOVE o que el core haga
+  referencia a rutas cuarentenadas.
+- Para revertir temporalmente un activo, muévelo de vuelta a su ruta
+  original, notifica al owner indicado en el README local dentro de la
+  carpeta `legacy/` correspondiente y vuelve a ejecutar `tools/audit_cleanup.py`
+  para actualizar el registro.

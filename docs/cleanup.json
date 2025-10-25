@@ -1,14 +1,14 @@
 {
   "meta": {
-    "branch": "feature/main-codex",
-    "commit": "e270820641ad3006c6653668bf930aba18b4da54",
-    "generated_at": "2025-10-25T02:12:40.659025Z"
+    "branch": "cleanup/apply-20251025",
+    "commit": "c9c0d69fdf606543a4c27fe80d87fa1f74e94d7b",
+    "generated_at": "2025-10-25T02:36:38.164864Z"
   },
   "summary": {
     "totals": {
-      "keep": 128,
-      "remove": 1,
-      "quarantine": 4
+      "keep": 131,
+      "quarantine": 4,
+      "remove": 0
     },
     "savings_mb_estimate": 0.02
   },
@@ -20,26 +20,31 @@
       "last_commit": "2025-09-28",
       "references": {
         "code": [
-          "scripts/run_high_volume_case.py:29",
-          "scripts/run_high_volume_case.py:30",
-          "scripts/run_high_volume_case.py:31",
-          "scripts/run_high_volume_case.py:39",
           "scripts/run_multiformat_case.py:38",
           "scripts/run_multiformat_case.py:39",
           "scripts/run_multiformat_case.py:40",
-          "scripts/run_multiformat_case.py:44"
+          "scripts/run_multiformat_case.py:44",
+          "scripts/run_multiformat_case.py:48",
+          "scripts/run_multiformat_case.py:55",
+          "scripts/run_multiformat_case.py:57",
+          "scripts/run_multiformat_case.py:63"
         ],
-        "configs": [],
+        "configs": [
+          "legacy/docs/2025-10-25-reports/report.json:174",
+          "legacy/docs/2025-10-25-reports/report.json:175",
+          "legacy/docs/2025-10-25-reports/report.json:176",
+          "legacy/docs/2025-10-25-reports/report.json:177"
+        ],
         "ci": [],
         "docs": [
-          "docs/report.json:174",
-          "docs/report.json:175",
-          "docs/report.json:176",
-          "docs/report.json:177",
+          "docs/cleanup.json:16",
+          "docs/cleanup.json:57",
           "docs/run/jobs/aws_stepfunctions.json:12",
           "docs/run/jobs/aws_stepfunctions.json:24",
           "docs/run/jobs/aws_stepfunctions.json:36",
-          "docs/run/jobs/aws_stepfunctions.json:48"
+          "docs/run/jobs/aws_stepfunctions.json:48",
+          "docs/CLEANUP_REPORT.md:19",
+          "docs/CLEANUP_REPORT.md:20"
         ],
         "jobs": []
       },
@@ -59,9 +64,9 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:53",
+          "docs/cleanup.json:57",
           "docs/CLEANUP_REPORT.md:20",
-          "docs/CLEANUP_REPORT.md:163"
+          "docs/CLEANUP_REPORT.md:166"
         ],
         "jobs": []
       },
@@ -78,16 +83,16 @@
       "last_commit": "2025-10-24",
       "references": {
         "code": [
-          "data/output/.gitkeep:2",
           "data/processed/.gitkeep:2",
-          "data/raw/.gitkeep:2"
+          "data/raw/.gitkeep:2",
+          "data/output/.gitkeep:2"
         ],
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:75",
+          "docs/cleanup.json:79",
           "docs/CLEANUP_REPORT.md:21",
-          "docs/CLEANUP_REPORT.md:170"
+          "docs/CLEANUP_REPORT.md:173"
         ],
         "jobs": []
       },
@@ -104,20 +109,17 @@
       "last_commit": "2025-09-29",
       "references": {
         "code": [
-          "tools/audit_cleanup.py:26",
-          "tools/audit_cleanup.py:28"
+          "tools/audit_cleanup.py:27",
+          "tools/audit_cleanup.py:29"
         ],
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/diagrams/deps_cleanup.md:11",
-          "docs/cleanup.json:101",
-          "docs/cleanup.json:131",
-          "docs/cleanup.json:150",
+          "docs/diagrams/deps_cleanup.md:9",
+          "docs/diagrams/deps_cleanup.md:20",
+          "docs/cleanup.json:105",
           "docs/CLEANUP_REPORT.md:22",
-          "docs/CLEANUP_REPORT.md:23",
-          "docs/CLEANUP_REPORT.md:178",
-          "docs/CLEANUP_REPORT.md:186"
+          "docs/CLEANUP_REPORT.md:181"
         ],
         "jobs": []
       },
@@ -126,31 +128,6 @@
       "risk": "medium",
       "proposed_action": "keep",
       "notes": ""
-    },
-    {
-      "path": ".mc/config.json.old",
-      "type": "other",
-      "size_kb": 0.69,
-      "last_commit": "2025-09-29",
-      "references": {
-        "code": [
-          "tools/audit_cleanup.py:26"
-        ],
-        "configs": [],
-        "ci": [],
-        "docs": [
-          "docs/diagrams/deps_cleanup.md:11",
-          "docs/cleanup.json:131",
-          "docs/CLEANUP_REPORT.md:23",
-          "docs/CLEANUP_REPORT.md:186"
-        ],
-        "jobs": []
-      },
-      "classification": "REMOVE",
-      "reason": "Archivo de respaldo antiguo de MinIO; reemplazado por config.json",
-      "risk": "low",
-      "proposed_action": "delete",
-      "notes": "No se usa en CI ni en scripts actuales."
     },
     {
       "path": ".mc/share/downloads.json",
@@ -162,9 +139,9 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:156",
-          "docs/CLEANUP_REPORT.md:24",
-          "docs/CLEANUP_REPORT.md:195"
+          "docs/cleanup.json:132",
+          "docs/CLEANUP_REPORT.md:23",
+          "docs/CLEANUP_REPORT.md:189"
         ],
         "jobs": []
       },
@@ -184,9 +161,9 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/CLEANUP_REPORT.md:25",
-          "docs/CLEANUP_REPORT.md:202",
-          "docs/cleanup.json:178"
+          "docs/cleanup.json:154",
+          "docs/CLEANUP_REPORT.md:24",
+          "docs/CLEANUP_REPORT.md:196"
         ],
         "jobs": []
       },
@@ -206,10 +183,10 @@
         "configs": [],
         "ci": [],
         "docs": [
+          "docs/cleanup.json:176",
           "docs/PROJECT_DOCUMENTATION.md:91",
-          "docs/cleanup.json:200",
-          "docs/CLEANUP_REPORT.md:26",
-          "docs/CLEANUP_REPORT.md:209"
+          "docs/CLEANUP_REPORT.md:25",
+          "docs/CLEANUP_REPORT.md:203"
         ],
         "jobs": []
       },
@@ -222,23 +199,26 @@
     {
       "path": "README.md",
       "type": "doc",
-      "size_kb": 1.93,
+      "size_kb": 2.81,
       "last_commit": "2025-10-24",
       "references": {
         "code": [
-          "tools/audit_cleanup.py:210"
+          "tools/audit_cleanup.py:105",
+          "tools/audit_cleanup.py:106",
+          "tools/audit_cleanup.py:107",
+          "tools/audit_cleanup.py:258"
         ],
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/PROJECT_DOCUMENTATION.md:107",
-          "docs/cleanup.json:223",
-          "docs/cleanup.json:525",
-          "docs/cleanup.json:1376",
-          "docs/cleanup.json:1377",
-          "docs/cleanup.json:1378",
-          "docs/cleanup.json:1751",
-          "docs/cleanup.json:2169"
+          "docs/cleanup.json:199",
+          "docs/cleanup.json:1764",
+          "docs/cleanup.json:2080",
+          "docs/cleanup.json:2091",
+          "docs/cleanup.json:2139",
+          "docs/cleanup.json:2171",
+          "docs/cleanup.json:2189",
+          "docs/cleanup.json:2235"
         ],
         "jobs": []
       },
@@ -261,14 +241,14 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:252",
-          "docs/cleanup.json:282",
-          "docs/cleanup.json:312",
-          "docs/cleanup.json:342",
-          "docs/cleanup.json:1369",
-          "docs/cleanup.json:1370",
-          "docs/cleanup.json:1371",
-          "docs/cleanup.json:1372"
+          "legacy/docs/2025-10-25-reports/REPORT.md:105",
+          "legacy/docs/2025-10-25-reports/REPORT.md:166",
+          "docs/cleanup.json:231",
+          "docs/cleanup.json:261",
+          "docs/cleanup.json:291",
+          "docs/cleanup.json:321",
+          "docs/cleanup.json:1349",
+          "docs/cleanup.json:1350"
         ],
         "jobs": []
       },
@@ -291,14 +271,14 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:252",
-          "docs/cleanup.json:282",
-          "docs/cleanup.json:312",
-          "docs/cleanup.json:342",
-          "docs/cleanup.json:1369",
-          "docs/cleanup.json:1370",
-          "docs/cleanup.json:1371",
-          "docs/cleanup.json:1372"
+          "legacy/docs/2025-10-25-reports/REPORT.md:105",
+          "legacy/docs/2025-10-25-reports/REPORT.md:166",
+          "docs/cleanup.json:231",
+          "docs/cleanup.json:261",
+          "docs/cleanup.json:291",
+          "docs/cleanup.json:321",
+          "docs/cleanup.json:1349",
+          "docs/cleanup.json:1350"
         ],
         "jobs": []
       },
@@ -321,14 +301,14 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:252",
-          "docs/cleanup.json:282",
-          "docs/cleanup.json:312",
-          "docs/cleanup.json:342",
-          "docs/cleanup.json:1369",
-          "docs/cleanup.json:1370",
-          "docs/cleanup.json:1371",
-          "docs/cleanup.json:1372"
+          "legacy/docs/2025-10-25-reports/REPORT.md:105",
+          "legacy/docs/2025-10-25-reports/REPORT.md:166",
+          "docs/cleanup.json:231",
+          "docs/cleanup.json:261",
+          "docs/cleanup.json:291",
+          "docs/cleanup.json:321",
+          "docs/cleanup.json:1349",
+          "docs/cleanup.json:1350"
         ],
         "jobs": []
       },
@@ -351,14 +331,14 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:252",
-          "docs/cleanup.json:282",
-          "docs/cleanup.json:312",
-          "docs/cleanup.json:342",
-          "docs/cleanup.json:1369",
-          "docs/cleanup.json:1370",
-          "docs/cleanup.json:1371",
-          "docs/cleanup.json:1372"
+          "legacy/docs/2025-10-25-reports/REPORT.md:105",
+          "legacy/docs/2025-10-25-reports/REPORT.md:166",
+          "docs/cleanup.json:231",
+          "docs/cleanup.json:261",
+          "docs/cleanup.json:291",
+          "docs/cleanup.json:321",
+          "docs/cleanup.json:1349",
+          "docs/cleanup.json:1350"
         ],
         "jobs": []
       },
@@ -378,11 +358,11 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:372",
-          "docs/cleanup.json:2862",
-          "docs/CLEANUP_REPORT.md:32",
-          "docs/CLEANUP_REPORT.md:256",
-          "docs/CLEANUP_REPORT.md:933"
+          "docs/cleanup.json:351",
+          "docs/cleanup.json:2985",
+          "docs/CLEANUP_REPORT.md:31",
+          "docs/CLEANUP_REPORT.md:250",
+          "docs/CLEANUP_REPORT.md:966"
         ],
         "jobs": []
       },
@@ -404,14 +384,14 @@
         ],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:396",
-          "docs/cleanup.json:1004",
-          "docs/cleanup.json:1157",
-          "docs/CLEANUP_REPORT.md:33",
-          "docs/CLEANUP_REPORT.md:263",
-          "docs/CLEANUP_REPORT.md:429",
-          "docs/CLEANUP_REPORT.md:466",
-          "docs/REPORT.md:114"
+          "docs/cleanup.json:375",
+          "docs/cleanup.json:984",
+          "docs/cleanup.json:1137",
+          "docs/CLEANUP_REPORT.md:32",
+          "docs/CLEANUP_REPORT.md:257",
+          "docs/CLEANUP_REPORT.md:423",
+          "docs/CLEANUP_REPORT.md:460",
+          "legacy/docs/2025-10-25-reports/REPORT.md:114"
         ],
         "jobs": []
       },
@@ -431,9 +411,9 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:425",
-          "docs/CLEANUP_REPORT.md:34",
-          "docs/CLEANUP_REPORT.md:271"
+          "docs/cleanup.json:404",
+          "docs/CLEANUP_REPORT.md:33",
+          "docs/CLEANUP_REPORT.md:265"
         ],
         "jobs": []
       },
@@ -446,20 +426,21 @@
     {
       "path": "ci/lint.yml",
       "type": "config",
-      "size_kb": 0.34,
+      "size_kb": 1.0,
       "last_commit": "2025-10-24",
       "references": {
         "code": [],
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:403",
-          "docs/cleanup.json:447",
-          "docs/CLEANUP_REPORT.md:35",
-          "docs/CLEANUP_REPORT.md:267",
-          "docs/CLEANUP_REPORT.md:278",
-          "docs/REPORT.md:114",
-          "docs/REPORT.md:128"
+          "legacy/docs/2025-10-25-reports/REPORT.md:114",
+          "legacy/docs/2025-10-25-reports/REPORT.md:128",
+          "docs/cleanup.json:382",
+          "docs/cleanup.json:426",
+          "docs/cleanup.json:1759",
+          "docs/cleanup.json:1760",
+          "docs/cleanup.json:2069",
+          "docs/cleanup.json:2986"
         ],
         "jobs": []
       },
@@ -479,14 +460,14 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:473",
-          "docs/cleanup.json:1001",
-          "docs/cleanup.json:1154",
-          "docs/cleanup.json:1537",
-          "docs/cleanup.json:1637",
-          "docs/CLEANUP_REPORT.md:36",
-          "docs/CLEANUP_REPORT.md:285",
-          "docs/CLEANUP_REPORT.md:428"
+          "docs/cleanup.json:453",
+          "docs/cleanup.json:981",
+          "docs/cleanup.json:1134",
+          "docs/cleanup.json:1517",
+          "docs/cleanup.json:1617",
+          "docs/CLEANUP_REPORT.md:35",
+          "docs/CLEANUP_REPORT.md:279",
+          "docs/CLEANUP_REPORT.md:422"
         ],
         "jobs": []
       },
@@ -503,33 +484,33 @@
       "last_commit": "2025-10-09",
       "references": {
         "code": [
-          "scripts/run_high_volume_case.py:79",
-          "scripts/runner.sh:7",
-          "scripts/runner_with_db.sh:7",
           "scripts/generate_synthetic_data.py:580",
           "scripts/generate_synthetic_data.py:639",
-          "scripts/run_multiformat_case.py:104"
+          "scripts/run_multiformat_case.py:104",
+          "scripts/runner.sh:7",
+          "scripts/runner_with_db.sh:7",
+          "scripts/run_high_volume_case.py:79"
         ],
         "configs": [
+          "config/datasets/finanzas/payments_v1/dataset.yml:49",
           "config/datasets/finanzas/payments_v2/dataset.yml:44",
           "config/datasets/finanzas/payments_v3/dataset.yml:6",
           "config/datasets/finanzas/payments_v3/dataset.yml:78",
           "config/datasets/finanzas/payments_v3/dataset_api.yml:5",
           "config/datasets/finanzas/payments_v3/dataset_api.yml:83",
-          "config/datasets/finanzas/payments_v1/dataset.yml:49",
           "config/datasets/casos_uso/payments_high_volume.yml:69",
           "config/datasets/casos_uso/events_multiformat.yml:71"
         ],
         "ci": [],
         "docs": [
-          "README.md:13",
-          "docs/PROJECT_DOCUMENTATION.md:10",
-          "docs/PROJECT_DOCUMENTATION.md:31",
-          "docs/PROJECT_DOCUMENTATION.md:40",
+          "legacy/docs/2025-10-25-reports/REPORT.md:102",
+          "legacy/docs/2025-10-25-reports/REPORT.md:146",
+          "docs/cleanup.json:480",
           "docs/run/configs.md:22",
           "docs/run/configs.md:57",
-          "docs/cleanup.json:500",
-          "docs/CLEANUP_REPORT.md:37"
+          "docs/PROJECT_DOCUMENTATION.md:10",
+          "docs/PROJECT_DOCUMENTATION.md:31",
+          "docs/PROJECT_DOCUMENTATION.md:40"
         ],
         "jobs": []
       },
@@ -551,14 +532,14 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:521",
-          "docs/cleanup.json:543",
-          "docs/cleanup.json:581",
-          "docs/cleanup.json:607",
-          "docs/cleanup.json:631",
-          "docs/cleanup.json:854",
-          "docs/cleanup.json:1000",
-          "docs/cleanup.json:1041"
+          "legacy/docs/2025-10-25-reports/REPORT.md:171",
+          "docs/cleanup.json:501",
+          "docs/cleanup.json:523",
+          "docs/cleanup.json:561",
+          "docs/cleanup.json:587",
+          "docs/cleanup.json:611",
+          "docs/cleanup.json:834",
+          "docs/cleanup.json:980"
         ],
         "jobs": []
       },
@@ -582,9 +563,9 @@
         ],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:572",
-          "docs/CLEANUP_REPORT.md:39",
-          "docs/CLEANUP_REPORT.md:309"
+          "docs/cleanup.json:552",
+          "docs/CLEANUP_REPORT.md:38",
+          "docs/CLEANUP_REPORT.md:303"
         ],
         "jobs": []
       },
@@ -608,9 +589,9 @@
         ],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:598",
-          "docs/CLEANUP_REPORT.md:40",
-          "docs/CLEANUP_REPORT.md:318"
+          "docs/cleanup.json:578",
+          "docs/CLEANUP_REPORT.md:39",
+          "docs/CLEANUP_REPORT.md:312"
         ],
         "jobs": []
       },
@@ -632,9 +613,9 @@
         ],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:624",
-          "docs/CLEANUP_REPORT.md:41",
-          "docs/CLEANUP_REPORT.md:327"
+          "docs/cleanup.json:604",
+          "docs/CLEANUP_REPORT.md:40",
+          "docs/CLEANUP_REPORT.md:321"
         ],
         "jobs": []
       },
@@ -651,22 +632,22 @@
       "last_commit": "2025-10-24",
       "references": {
         "code": [
-          "scripts/run_high_volume_case.py:77",
           "scripts/generate_synthetic_data.py:599",
           "scripts/generate_synthetic_data.py:603",
-          "scripts/generate_synthetic_data.py:782"
+          "scripts/generate_synthetic_data.py:782",
+          "scripts/run_high_volume_case.py:77"
         ],
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:520",
-          "docs/cleanup.json:648",
-          "docs/cleanup.json:689",
-          "docs/cleanup.json:715",
-          "docs/cleanup.json:784",
-          "docs/cleanup.json:962",
-          "docs/cleanup.json:999",
-          "docs/cleanup.json:1115"
+          "legacy/docs/2025-10-25-reports/REPORT.md:172",
+          "docs/cleanup.json:500",
+          "docs/cleanup.json:628",
+          "docs/cleanup.json:669",
+          "docs/cleanup.json:695",
+          "docs/cleanup.json:764",
+          "docs/cleanup.json:942",
+          "docs/cleanup.json:979"
         ],
         "jobs": []
       },
@@ -690,9 +671,9 @@
         ],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:680",
-          "docs/CLEANUP_REPORT.md:43",
-          "docs/CLEANUP_REPORT.md:343"
+          "docs/cleanup.json:660",
+          "docs/CLEANUP_REPORT.md:42",
+          "docs/CLEANUP_REPORT.md:337"
         ],
         "jobs": []
       },
@@ -716,9 +697,9 @@
         ],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:706",
-          "docs/CLEANUP_REPORT.md:44",
-          "docs/CLEANUP_REPORT.md:352"
+          "docs/cleanup.json:686",
+          "docs/CLEANUP_REPORT.md:43",
+          "docs/CLEANUP_REPORT.md:346"
         ],
         "jobs": []
       },
@@ -745,14 +726,14 @@
         ],
         "ci": [],
         "docs": [
-          "docs/PROJECT_DOCUMENTATION.md:10",
-          "docs/PROJECT_DOCUMENTATION.md:24",
-          "docs/cleanup.json:473",
-          "docs/cleanup.json:514",
-          "docs/cleanup.json:515",
-          "docs/cleanup.json:516",
-          "docs/cleanup.json:519",
-          "docs/cleanup.json:732"
+          "legacy/docs/2025-10-25-reports/REPORT.md:127",
+          "legacy/docs/2025-10-25-reports/REPORT.md:168",
+          "legacy/docs/2025-10-25-reports/REPORT.md:169",
+          "legacy/docs/2025-10-25-reports/REPORT.md:170",
+          "docs/cleanup.json:453",
+          "docs/cleanup.json:494",
+          "docs/cleanup.json:495",
+          "docs/cleanup.json:496"
         ],
         "jobs": []
       },
@@ -769,30 +750,30 @@
       "last_commit": "2025-10-20",
       "references": {
         "code": [
+          "tests/test_config_schema.py:30",
           "scripts/generate_synthetic_data.py:562",
-          "scripts/generate_synthetic_data.py:624",
-          "tests/test_config_schema.py:30"
+          "scripts/generate_synthetic_data.py:624"
         ],
         "configs": [
-          "config/datasets/finanzas/payments_multi/dataset.yml:74",
-          "config/datasets/finanzas/payments_v2/dataset.yml:29",
           "config/datasets/finanzas/payments_db_only/dataset.yml:54",
+          "config/datasets/finanzas/payments_v1/dataset.yml:30",
+          "config/datasets/finanzas/payments_v2/dataset.yml:29",
           "config/datasets/finanzas/payments_v3/dataset.yml:63",
           "config/datasets/finanzas/payments_v3/dataset_api.yml:69",
           "config/datasets/finanzas/payments_v3/dataset_api.yml:150",
-          "config/datasets/finanzas/payments_v1/dataset.yml:30",
+          "config/datasets/finanzas/payments_multi/dataset.yml:74",
           "config/datasets/casos_uso/payments_high_volume.yml:45"
         ],
         "ci": [],
         "docs": [
+          "docs/cleanup.json:552",
+          "docs/cleanup.json:660",
+          "docs/cleanup.json:746",
+          "docs/cleanup.json:924",
+          "docs/cleanup.json:1077",
+          "docs/cleanup.json:1222",
           "docs/run/configs.md:52",
-          "docs/cleanup.json:572",
-          "docs/cleanup.json:680",
-          "docs/cleanup.json:766",
-          "docs/cleanup.json:944",
-          "docs/cleanup.json:1097",
-          "docs/cleanup.json:1242",
-          "docs/CLEANUP_REPORT.md:39"
+          "docs/CLEANUP_REPORT.md:38"
         ],
         "jobs": []
       },
@@ -810,21 +791,21 @@
       "references": {
         "code": [],
         "configs": [
-          "config/datasets/finanzas/payments_multi/dataset.yml:34",
           "config/datasets/finanzas/payments_db_only/dataset.yml:47",
           "config/datasets/finanzas/payments_v3/dataset.yml:2",
           "config/datasets/finanzas/payments_v3/dataset.yml:56",
           "config/datasets/finanzas/payments_v3/dataset_api.yml:2",
-          "config/datasets/finanzas/payments_v3/dataset_api.yml:63"
+          "config/datasets/finanzas/payments_v3/dataset_api.yml:63",
+          "config/datasets/finanzas/payments_multi/dataset.yml:34"
         ],
         "ci": [],
         "docs": [
-          "docs/CLEANUP_REPORT.md:47",
-          "docs/CLEANUP_REPORT.md:60",
-          "docs/CLEANUP_REPORT.md:379",
-          "docs/CLEANUP_REPORT.md:496",
-          "docs/cleanup.json:806",
-          "docs/cleanup.json:1282"
+          "docs/cleanup.json:786",
+          "docs/cleanup.json:1262",
+          "docs/CLEANUP_REPORT.md:46",
+          "docs/CLEANUP_REPORT.md:59",
+          "docs/CLEANUP_REPORT.md:373",
+          "docs/CLEANUP_REPORT.md:490"
         ],
         "jobs": []
       },
@@ -844,25 +825,25 @@
           "pipelines/transforms/apply.py:10"
         ],
         "configs": [
-          "config/datasets/finanzas/payments_multi/dataset.yml:77",
           "config/datasets/finanzas/payments_db_only/dataset.yml:51",
+          "config/datasets/finanzas/payments_v1/dataset.yml:11",
           "config/datasets/finanzas/payments_v3/dataset.yml:2",
           "config/datasets/finanzas/payments_v3/dataset.yml:60",
           "config/datasets/finanzas/payments_v3/dataset_api.yml:2",
           "config/datasets/finanzas/payments_v3/dataset_api.yml:66",
-          "config/datasets/finanzas/payments_v1/dataset.yml:11",
+          "config/datasets/finanzas/payments_multi/dataset.yml:77",
           "config/datasets/casos_uso/events_multiformat.yml:50"
         ],
         "ci": [],
         "docs": [
+          "docs/cleanup.json:604",
+          "docs/cleanup.json:818",
+          "docs/cleanup.json:1005",
+          "docs/cleanup.json:1294",
           "docs/PROJECT_DOCUMENTATION.md:28",
-          "docs/cleanup.json:624",
-          "docs/cleanup.json:838",
-          "docs/cleanup.json:1025",
-          "docs/cleanup.json:1314",
-          "docs/CLEANUP_REPORT.md:41",
-          "docs/CLEANUP_REPORT.md:48",
-          "docs/CLEANUP_REPORT.md:53"
+          "docs/CLEANUP_REPORT.md:40",
+          "docs/CLEANUP_REPORT.md:47",
+          "docs/CLEANUP_REPORT.md:52"
         ],
         "jobs": []
       },
@@ -889,14 +870,14 @@
         ],
         "ci": [],
         "docs": [
-          "docs/PROJECT_DOCUMENTATION.md:10",
-          "docs/PROJECT_DOCUMENTATION.md:24",
-          "docs/cleanup.json:473",
-          "docs/cleanup.json:514",
-          "docs/cleanup.json:515",
-          "docs/cleanup.json:516",
-          "docs/cleanup.json:519",
-          "docs/cleanup.json:732"
+          "legacy/docs/2025-10-25-reports/REPORT.md:127",
+          "legacy/docs/2025-10-25-reports/REPORT.md:168",
+          "legacy/docs/2025-10-25-reports/REPORT.md:169",
+          "legacy/docs/2025-10-25-reports/REPORT.md:170",
+          "docs/cleanup.json:453",
+          "docs/cleanup.json:494",
+          "docs/cleanup.json:495",
+          "docs/cleanup.json:496"
         ],
         "jobs": []
       },
@@ -923,14 +904,14 @@
         ],
         "ci": [],
         "docs": [
-          "docs/PROJECT_DOCUMENTATION.md:10",
-          "docs/PROJECT_DOCUMENTATION.md:24",
-          "docs/cleanup.json:473",
-          "docs/cleanup.json:514",
-          "docs/cleanup.json:515",
-          "docs/cleanup.json:516",
-          "docs/cleanup.json:519",
-          "docs/cleanup.json:732"
+          "legacy/docs/2025-10-25-reports/REPORT.md:127",
+          "legacy/docs/2025-10-25-reports/REPORT.md:168",
+          "legacy/docs/2025-10-25-reports/REPORT.md:169",
+          "legacy/docs/2025-10-25-reports/REPORT.md:170",
+          "docs/cleanup.json:453",
+          "docs/cleanup.json:494",
+          "docs/cleanup.json:495",
+          "docs/cleanup.json:496"
         ],
         "jobs": []
       },
@@ -947,30 +928,30 @@
       "last_commit": "2025-10-08",
       "references": {
         "code": [
+          "tests/test_config_schema.py:30",
           "scripts/generate_synthetic_data.py:562",
-          "scripts/generate_synthetic_data.py:624",
-          "tests/test_config_schema.py:30"
+          "scripts/generate_synthetic_data.py:624"
         ],
         "configs": [
-          "config/datasets/finanzas/payments_multi/dataset.yml:74",
-          "config/datasets/finanzas/payments_v2/dataset.yml:29",
           "config/datasets/finanzas/payments_db_only/dataset.yml:54",
+          "config/datasets/finanzas/payments_v1/dataset.yml:30",
+          "config/datasets/finanzas/payments_v2/dataset.yml:29",
           "config/datasets/finanzas/payments_v3/dataset.yml:63",
           "config/datasets/finanzas/payments_v3/dataset_api.yml:69",
           "config/datasets/finanzas/payments_v3/dataset_api.yml:150",
-          "config/datasets/finanzas/payments_v1/dataset.yml:30",
+          "config/datasets/finanzas/payments_multi/dataset.yml:74",
           "config/datasets/casos_uso/payments_high_volume.yml:45"
         ],
         "ci": [],
         "docs": [
+          "docs/cleanup.json:552",
+          "docs/cleanup.json:660",
+          "docs/cleanup.json:746",
+          "docs/cleanup.json:924",
+          "docs/cleanup.json:1077",
+          "docs/cleanup.json:1222",
           "docs/run/configs.md:52",
-          "docs/cleanup.json:572",
-          "docs/cleanup.json:680",
-          "docs/cleanup.json:766",
-          "docs/cleanup.json:944",
-          "docs/cleanup.json:1097",
-          "docs/cleanup.json:1242",
-          "docs/CLEANUP_REPORT.md:39"
+          "docs/CLEANUP_REPORT.md:38"
         ],
         "jobs": []
       },
@@ -989,13 +970,13 @@
         "code": [
           "scripts/generate_synthetic_data.py:566",
           "scripts/generate_synthetic_data.py:621",
+          "pipelines/database/schema_mapper.py:428",
           "pipelines/database/db_manager.py:706",
-          "pipelines/database/__init__.py:1",
-          "pipelines/database/schema_mapper.py:428"
+          "pipelines/database/__init__.py:1"
         ],
         "configs": [
-          "config/datasets/finanzas/payments_v2/dataset.yml:25",
           "config/datasets/finanzas/payments_v1/dataset.yml:34",
+          "config/datasets/finanzas/payments_v2/dataset.yml:25",
           "config/datasets/casos_uso/payments_high_volume.yml:49",
           "config/datasets/casos_uso/events_multiformat.yml:46",
           "ci/test_dataset.yml:9"
@@ -1004,14 +985,14 @@
           "ci/check_config.sh:6"
         ],
         "docs": [
-          "docs/cleanup.json:598",
-          "docs/cleanup.json:706",
-          "docs/cleanup.json:984",
-          "docs/cleanup.json:1137",
-          "docs/CLEANUP_REPORT.md:40",
-          "docs/CLEANUP_REPORT.md:44",
-          "docs/CLEANUP_REPORT.md:52",
-          "docs/CLEANUP_REPORT.md:56"
+          "docs/cleanup.json:578",
+          "docs/cleanup.json:686",
+          "docs/cleanup.json:964",
+          "docs/cleanup.json:1117",
+          "docs/CLEANUP_REPORT.md:39",
+          "docs/CLEANUP_REPORT.md:43",
+          "docs/CLEANUP_REPORT.md:51",
+          "docs/CLEANUP_REPORT.md:55"
         ],
         "jobs": []
       },
@@ -1031,25 +1012,25 @@
           "pipelines/transforms/apply.py:10"
         ],
         "configs": [
-          "config/datasets/finanzas/payments_multi/dataset.yml:77",
           "config/datasets/finanzas/payments_db_only/dataset.yml:51",
+          "config/datasets/finanzas/payments_v1/dataset.yml:11",
           "config/datasets/finanzas/payments_v3/dataset.yml:2",
           "config/datasets/finanzas/payments_v3/dataset.yml:60",
           "config/datasets/finanzas/payments_v3/dataset_api.yml:2",
           "config/datasets/finanzas/payments_v3/dataset_api.yml:66",
-          "config/datasets/finanzas/payments_v1/dataset.yml:11",
+          "config/datasets/finanzas/payments_multi/dataset.yml:77",
           "config/datasets/casos_uso/events_multiformat.yml:50"
         ],
         "ci": [],
         "docs": [
-          "docs/PROJECT_DOCUMENTATION.md:28",
-          "docs/cleanup.json:624",
-          "docs/cleanup.json:838",
-          "docs/cleanup.json:1025",
-          "docs/cleanup.json:1314",
-          "docs/CLEANUP_REPORT.md:41",
-          "docs/CLEANUP_REPORT.md:48",
-          "docs/CLEANUP_REPORT.md:53"
+          "docs/cleanup.json:604",
+          "docs/cleanup.json:818",
+          "docs/cleanup.json:1005",
+          "docs/cleanup.json:1294",
+          "docs/CLEANUP_REPORT.md:40",
+          "docs/CLEANUP_REPORT.md:47",
+          "docs/CLEANUP_REPORT.md:52",
+          "docs/CLEANUP_REPORT.md:60"
         ],
         "jobs": []
       },
@@ -1076,14 +1057,14 @@
         ],
         "ci": [],
         "docs": [
-          "docs/PROJECT_DOCUMENTATION.md:10",
-          "docs/PROJECT_DOCUMENTATION.md:24",
-          "docs/CLEANUP_REPORT.md:36",
-          "docs/CLEANUP_REPORT.md:45",
-          "docs/CLEANUP_REPORT.md:49",
-          "docs/CLEANUP_REPORT.md:50",
-          "docs/CLEANUP_REPORT.md:54",
-          "docs/CLEANUP_REPORT.md:57"
+          "legacy/docs/2025-10-25-reports/REPORT.md:127",
+          "legacy/docs/2025-10-25-reports/REPORT.md:168",
+          "legacy/docs/2025-10-25-reports/REPORT.md:169",
+          "legacy/docs/2025-10-25-reports/REPORT.md:170",
+          "docs/cleanup.json:453",
+          "docs/cleanup.json:494",
+          "docs/cleanup.json:495",
+          "docs/cleanup.json:496"
         ],
         "jobs": []
       },
@@ -1100,30 +1081,30 @@
       "last_commit": "2025-10-06",
       "references": {
         "code": [
+          "tests/test_config_schema.py:30",
           "scripts/generate_synthetic_data.py:562",
-          "scripts/generate_synthetic_data.py:624",
-          "tests/test_config_schema.py:30"
+          "scripts/generate_synthetic_data.py:624"
         ],
         "configs": [
-          "config/datasets/finanzas/payments_multi/dataset.yml:74",
-          "config/datasets/finanzas/payments_v2/dataset.yml:29",
           "config/datasets/finanzas/payments_db_only/dataset.yml:54",
+          "config/datasets/finanzas/payments_v1/dataset.yml:30",
+          "config/datasets/finanzas/payments_v2/dataset.yml:29",
           "config/datasets/finanzas/payments_v3/dataset.yml:63",
           "config/datasets/finanzas/payments_v3/dataset_api.yml:69",
           "config/datasets/finanzas/payments_v3/dataset_api.yml:150",
-          "config/datasets/finanzas/payments_v1/dataset.yml:30",
+          "config/datasets/finanzas/payments_multi/dataset.yml:74",
           "config/datasets/casos_uso/payments_high_volume.yml:45"
         ],
         "ci": [],
         "docs": [
+          "docs/cleanup.json:552",
+          "docs/cleanup.json:660",
+          "docs/cleanup.json:746",
+          "docs/cleanup.json:924",
+          "docs/cleanup.json:1077",
+          "docs/cleanup.json:1222",
           "docs/run/configs.md:52",
-          "docs/cleanup.json:572",
-          "docs/cleanup.json:680",
-          "docs/cleanup.json:766",
-          "docs/cleanup.json:944",
-          "docs/cleanup.json:1097",
-          "docs/cleanup.json:1242",
-          "docs/CLEANUP_REPORT.md:39"
+          "docs/CLEANUP_REPORT.md:38"
         ],
         "jobs": []
       },
@@ -1142,13 +1123,13 @@
         "code": [
           "scripts/generate_synthetic_data.py:566",
           "scripts/generate_synthetic_data.py:621",
+          "pipelines/database/schema_mapper.py:428",
           "pipelines/database/db_manager.py:706",
-          "pipelines/database/__init__.py:1",
-          "pipelines/database/schema_mapper.py:428"
+          "pipelines/database/__init__.py:1"
         ],
         "configs": [
-          "config/datasets/finanzas/payments_v2/dataset.yml:25",
           "config/datasets/finanzas/payments_v1/dataset.yml:34",
+          "config/datasets/finanzas/payments_v2/dataset.yml:25",
           "config/datasets/casos_uso/payments_high_volume.yml:49",
           "config/datasets/casos_uso/events_multiformat.yml:46",
           "ci/test_dataset.yml:9"
@@ -1157,14 +1138,14 @@
           "ci/check_config.sh:6"
         ],
         "docs": [
-          "docs/cleanup.json:598",
-          "docs/cleanup.json:706",
-          "docs/cleanup.json:984",
-          "docs/cleanup.json:1137",
-          "docs/CLEANUP_REPORT.md:40",
-          "docs/CLEANUP_REPORT.md:44",
-          "docs/CLEANUP_REPORT.md:52",
-          "docs/CLEANUP_REPORT.md:56"
+          "docs/cleanup.json:578",
+          "docs/cleanup.json:686",
+          "docs/cleanup.json:964",
+          "docs/cleanup.json:1117",
+          "docs/CLEANUP_REPORT.md:39",
+          "docs/CLEANUP_REPORT.md:43",
+          "docs/CLEANUP_REPORT.md:51",
+          "docs/CLEANUP_REPORT.md:55"
         ],
         "jobs": []
       },
@@ -1191,14 +1172,14 @@
         ],
         "ci": [],
         "docs": [
-          "docs/PROJECT_DOCUMENTATION.md:10",
-          "docs/PROJECT_DOCUMENTATION.md:24",
-          "docs/cleanup.json:473",
-          "docs/cleanup.json:514",
-          "docs/cleanup.json:515",
-          "docs/cleanup.json:516",
-          "docs/cleanup.json:519",
-          "docs/cleanup.json:732"
+          "legacy/docs/2025-10-25-reports/REPORT.md:127",
+          "legacy/docs/2025-10-25-reports/REPORT.md:168",
+          "legacy/docs/2025-10-25-reports/REPORT.md:169",
+          "legacy/docs/2025-10-25-reports/REPORT.md:170",
+          "docs/cleanup.json:453",
+          "docs/cleanup.json:494",
+          "docs/cleanup.json:495",
+          "docs/cleanup.json:496"
         ],
         "jobs": []
       },
@@ -1221,14 +1202,14 @@
         ],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:517",
-          "docs/cleanup.json:518",
-          "docs/cleanup.json:781",
-          "docs/cleanup.json:782",
-          "docs/cleanup.json:817",
-          "docs/cleanup.json:818",
-          "docs/cleanup.json:851",
-          "docs/cleanup.json:852"
+          "docs/cleanup.json:498",
+          "docs/cleanup.json:499",
+          "docs/cleanup.json:761",
+          "docs/cleanup.json:762",
+          "docs/cleanup.json:796",
+          "docs/cleanup.json:797",
+          "docs/cleanup.json:831",
+          "docs/cleanup.json:832"
         ],
         "jobs": []
       },
@@ -1245,30 +1226,30 @@
       "last_commit": "2025-10-16",
       "references": {
         "code": [
+          "tests/test_config_schema.py:30",
           "scripts/generate_synthetic_data.py:562",
-          "scripts/generate_synthetic_data.py:624",
-          "tests/test_config_schema.py:30"
+          "scripts/generate_synthetic_data.py:624"
         ],
         "configs": [
-          "config/datasets/finanzas/payments_multi/dataset.yml:74",
-          "config/datasets/finanzas/payments_v2/dataset.yml:29",
           "config/datasets/finanzas/payments_db_only/dataset.yml:54",
+          "config/datasets/finanzas/payments_v1/dataset.yml:30",
+          "config/datasets/finanzas/payments_v2/dataset.yml:29",
           "config/datasets/finanzas/payments_v3/dataset.yml:63",
           "config/datasets/finanzas/payments_v3/dataset_api.yml:69",
           "config/datasets/finanzas/payments_v3/dataset_api.yml:150",
-          "config/datasets/finanzas/payments_v1/dataset.yml:30",
+          "config/datasets/finanzas/payments_multi/dataset.yml:74",
           "config/datasets/casos_uso/payments_high_volume.yml:45"
         ],
         "ci": [],
         "docs": [
+          "docs/cleanup.json:552",
+          "docs/cleanup.json:660",
+          "docs/cleanup.json:746",
+          "docs/cleanup.json:924",
+          "docs/cleanup.json:1077",
+          "docs/cleanup.json:1222",
           "docs/run/configs.md:52",
-          "docs/cleanup.json:572",
-          "docs/cleanup.json:680",
-          "docs/cleanup.json:766",
-          "docs/cleanup.json:944",
-          "docs/cleanup.json:1097",
-          "docs/cleanup.json:1242",
-          "docs/CLEANUP_REPORT.md:39"
+          "docs/CLEANUP_REPORT.md:38"
         ],
         "jobs": []
       },
@@ -1286,21 +1267,21 @@
       "references": {
         "code": [],
         "configs": [
-          "config/datasets/finanzas/payments_multi/dataset.yml:34",
           "config/datasets/finanzas/payments_db_only/dataset.yml:47",
           "config/datasets/finanzas/payments_v3/dataset.yml:2",
           "config/datasets/finanzas/payments_v3/dataset.yml:56",
           "config/datasets/finanzas/payments_v3/dataset_api.yml:2",
-          "config/datasets/finanzas/payments_v3/dataset_api.yml:63"
+          "config/datasets/finanzas/payments_v3/dataset_api.yml:63",
+          "config/datasets/finanzas/payments_multi/dataset.yml:34"
         ],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:806",
-          "docs/cleanup.json:1282",
-          "docs/CLEANUP_REPORT.md:47",
-          "docs/CLEANUP_REPORT.md:60",
-          "docs/CLEANUP_REPORT.md:379",
-          "docs/CLEANUP_REPORT.md:496"
+          "docs/cleanup.json:786",
+          "docs/cleanup.json:1262",
+          "docs/CLEANUP_REPORT.md:46",
+          "docs/CLEANUP_REPORT.md:59",
+          "docs/CLEANUP_REPORT.md:373",
+          "docs/CLEANUP_REPORT.md:490"
         ],
         "jobs": []
       },
@@ -1320,25 +1301,25 @@
           "pipelines/transforms/apply.py:10"
         ],
         "configs": [
-          "config/datasets/finanzas/payments_multi/dataset.yml:77",
           "config/datasets/finanzas/payments_db_only/dataset.yml:51",
+          "config/datasets/finanzas/payments_v1/dataset.yml:11",
           "config/datasets/finanzas/payments_v3/dataset.yml:2",
           "config/datasets/finanzas/payments_v3/dataset.yml:60",
           "config/datasets/finanzas/payments_v3/dataset_api.yml:2",
           "config/datasets/finanzas/payments_v3/dataset_api.yml:66",
-          "config/datasets/finanzas/payments_v1/dataset.yml:11",
+          "config/datasets/finanzas/payments_multi/dataset.yml:77",
           "config/datasets/casos_uso/events_multiformat.yml:50"
         ],
         "ci": [],
         "docs": [
+          "docs/cleanup.json:604",
+          "docs/cleanup.json:818",
+          "docs/cleanup.json:1005",
+          "docs/cleanup.json:1294",
           "docs/PROJECT_DOCUMENTATION.md:28",
-          "docs/cleanup.json:624",
-          "docs/cleanup.json:838",
-          "docs/cleanup.json:1025",
-          "docs/cleanup.json:1314",
-          "docs/CLEANUP_REPORT.md:41",
-          "docs/CLEANUP_REPORT.md:48",
-          "docs/CLEANUP_REPORT.md:53"
+          "docs/CLEANUP_REPORT.md:40",
+          "docs/CLEANUP_REPORT.md:47",
+          "docs/CLEANUP_REPORT.md:52"
         ],
         "jobs": []
       },
@@ -1357,9 +1338,9 @@
         "code": [
           "scripts/runner.sh:6",
           "scripts/runner_with_db.sh:6",
+          "src/datacore/io/adapters.py:63",
           "pipelines/sources.py:113",
-          "pipelines/sources.py:117",
-          "src/datacore/io/adapters.py:63"
+          "pipelines/sources.py:117"
         ],
         "configs": [
           "config/datasets/finanzas/payments_v3/dataset.yml:6",
@@ -1373,14 +1354,14 @@
         ],
         "ci": [],
         "docs": [
-          "README.md:13",
-          "README.md:15",
-          "README.md:38",
+          "docs/cleanup.json:1332",
+          "docs/run/configs.md:20",
           "docs/PROJECT_DOCUMENTATION.md:10",
           "docs/PROJECT_DOCUMENTATION.md:22",
           "docs/PROJECT_DOCUMENTATION.md:40",
           "docs/PROJECT_DOCUMENTATION.md:42",
-          "docs/run/configs.md:20"
+          "docs/CLEANUP_REPORT.md:61",
+          "docs/CLEANUP_REPORT.md:507"
         ],
         "jobs": []
       },
@@ -1402,11 +1383,11 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/CLEANUP_REPORT.md:63",
-          "docs/CLEANUP_REPORT.md:522",
-          "docs/CLEANUP_REPORT.md:795",
-          "docs/cleanup.json:1394",
-          "docs/cleanup.json:2354"
+          "docs/cleanup.json:1374",
+          "docs/cleanup.json:2480",
+          "docs/CLEANUP_REPORT.md:62",
+          "docs/CLEANUP_REPORT.md:516",
+          "docs/CLEANUP_REPORT.md:825"
         ],
         "jobs": []
       },
@@ -1426,9 +1407,9 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/CLEANUP_REPORT.md:64",
-          "docs/CLEANUP_REPORT.md:530",
-          "docs/cleanup.json:1420"
+          "docs/cleanup.json:1400",
+          "docs/CLEANUP_REPORT.md:63",
+          "docs/CLEANUP_REPORT.md:524"
         ],
         "jobs": []
       },
@@ -1448,14 +1429,14 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:81",
-          "docs/cleanup.json:82",
-          "docs/cleanup.json:83",
-          "docs/cleanup.json:1442",
-          "docs/cleanup.json:1469",
-          "docs/cleanup.json:1496",
-          "docs/CLEANUP_REPORT.md:65",
-          "docs/CLEANUP_REPORT.md:66"
+          "docs/cleanup.json:85",
+          "docs/cleanup.json:86",
+          "docs/cleanup.json:87",
+          "docs/cleanup.json:1422",
+          "docs/cleanup.json:1449",
+          "docs/cleanup.json:1476",
+          "docs/CLEANUP_REPORT.md:64",
+          "docs/CLEANUP_REPORT.md:65"
         ],
         "jobs": []
       },
@@ -1475,14 +1456,14 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:81",
-          "docs/cleanup.json:82",
-          "docs/cleanup.json:83",
-          "docs/cleanup.json:1442",
-          "docs/cleanup.json:1469",
-          "docs/cleanup.json:1496",
-          "docs/CLEANUP_REPORT.md:65",
-          "docs/CLEANUP_REPORT.md:66"
+          "docs/cleanup.json:85",
+          "docs/cleanup.json:86",
+          "docs/cleanup.json:87",
+          "docs/cleanup.json:1422",
+          "docs/cleanup.json:1449",
+          "docs/cleanup.json:1476",
+          "docs/CLEANUP_REPORT.md:64",
+          "docs/CLEANUP_REPORT.md:65"
         ],
         "jobs": []
       },
@@ -1502,14 +1483,14 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:81",
-          "docs/cleanup.json:82",
-          "docs/cleanup.json:83",
-          "docs/cleanup.json:1442",
-          "docs/cleanup.json:1469",
-          "docs/cleanup.json:1496",
-          "docs/CLEANUP_REPORT.md:65",
-          "docs/CLEANUP_REPORT.md:66"
+          "docs/cleanup.json:85",
+          "docs/cleanup.json:86",
+          "docs/cleanup.json:87",
+          "docs/cleanup.json:1422",
+          "docs/cleanup.json:1449",
+          "docs/cleanup.json:1476",
+          "docs/CLEANUP_REPORT.md:64",
+          "docs/CLEANUP_REPORT.md:65"
         ],
         "jobs": []
       },
@@ -1526,11 +1507,11 @@
       "last_commit": "2025-10-15",
       "references": {
         "code": [
-          "scripts/generate_big_payments.py:6",
           "tests/test_io_fs.py:185",
           "tests/test_io_fs.py:186",
           "tests/test_io_fs.py:187",
-          "tests/test_io_fs.py:211"
+          "tests/test_io_fs.py:211",
+          "legacy/scripts/2025-10-25-generation/generate_big_payments.py:6"
         ],
         "configs": [
           "config/datasets/finanzas/payments_v2/dataset.yml:5",
@@ -1538,12 +1519,12 @@
         ],
         "ci": [],
         "docs": [
-          "docs/CLEANUP_REPORT.md:68",
-          "docs/CLEANUP_REPORT.md:72",
-          "docs/CLEANUP_REPORT.md:558",
-          "docs/CLEANUP_REPORT.md:588",
-          "docs/cleanup.json:1523",
-          "docs/cleanup.json:1623"
+          "docs/cleanup.json:1503",
+          "docs/cleanup.json:1603",
+          "docs/CLEANUP_REPORT.md:67",
+          "docs/CLEANUP_REPORT.md:71",
+          "docs/CLEANUP_REPORT.md:552",
+          "docs/CLEANUP_REPORT.md:582"
         ],
         "jobs": []
       },
@@ -1563,9 +1544,9 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:1557",
-          "docs/CLEANUP_REPORT.md:69",
-          "docs/CLEANUP_REPORT.md:567"
+          "docs/cleanup.json:1537",
+          "docs/CLEANUP_REPORT.md:68",
+          "docs/CLEANUP_REPORT.md:561"
         ],
         "jobs": []
       },
@@ -1585,9 +1566,9 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:1579",
-          "docs/CLEANUP_REPORT.md:70",
-          "docs/CLEANUP_REPORT.md:574"
+          "docs/cleanup.json:1559",
+          "docs/CLEANUP_REPORT.md:69",
+          "docs/CLEANUP_REPORT.md:568"
         ],
         "jobs": []
       },
@@ -1607,9 +1588,9 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:1601",
-          "docs/CLEANUP_REPORT.md:71",
-          "docs/CLEANUP_REPORT.md:581"
+          "docs/cleanup.json:1581",
+          "docs/CLEANUP_REPORT.md:70",
+          "docs/CLEANUP_REPORT.md:575"
         ],
         "jobs": []
       },
@@ -1626,11 +1607,11 @@
       "last_commit": "2025-10-24",
       "references": {
         "code": [
-          "scripts/generate_big_payments.py:6",
           "tests/test_io_fs.py:185",
           "tests/test_io_fs.py:186",
           "tests/test_io_fs.py:187",
-          "tests/test_io_fs.py:211"
+          "tests/test_io_fs.py:211",
+          "legacy/scripts/2025-10-25-generation/generate_big_payments.py:6"
         ],
         "configs": [
           "config/datasets/finanzas/payments_v2/dataset.yml:5",
@@ -1638,12 +1619,12 @@
         ],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:1523",
-          "docs/cleanup.json:1623",
-          "docs/CLEANUP_REPORT.md:68",
-          "docs/CLEANUP_REPORT.md:72",
-          "docs/CLEANUP_REPORT.md:558",
-          "docs/CLEANUP_REPORT.md:588"
+          "docs/cleanup.json:1503",
+          "docs/cleanup.json:1603",
+          "docs/CLEANUP_REPORT.md:67",
+          "docs/CLEANUP_REPORT.md:71",
+          "docs/CLEANUP_REPORT.md:552",
+          "docs/CLEANUP_REPORT.md:582"
         ],
         "jobs": []
       },
@@ -1660,7 +1641,7 @@
       "last_commit": "2025-10-13",
       "references": {
         "code": [
-          "tools/audit_cleanup.py:131"
+          "tools/audit_cleanup.py:179"
         ],
         "configs": [
           "docker-compose.yml:49",
@@ -1669,9 +1650,9 @@
         ],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:1657",
-          "docs/CLEANUP_REPORT.md:73",
-          "docs/CLEANUP_REPORT.md:597"
+          "docs/cleanup.json:1637",
+          "docs/CLEANUP_REPORT.md:72",
+          "docs/CLEANUP_REPORT.md:591"
         ],
         "jobs": []
       },
@@ -1691,14 +1672,14 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:1666",
-          "docs/cleanup.json:1667",
-          "docs/cleanup.json:1668",
-          "docs/cleanup.json:1685",
-          "docs/cleanup.json:2889",
-          "docs/cleanup.json:3032",
-          "docs/cleanup.json:3033",
-          "docs/CLEANUP_REPORT.md:74"
+          "docs/cleanup.json:1646",
+          "docs/cleanup.json:1647",
+          "docs/cleanup.json:1648",
+          "docs/cleanup.json:1665",
+          "docs/cleanup.json:3013",
+          "docs/cleanup.json:3131",
+          "docs/cleanup.json:3132",
+          "docs/CLEANUP_REPORT.md:73"
         ],
         "jobs": []
       },
@@ -1711,24 +1692,24 @@
     {
       "path": "docs/CLEANUP_REPORT.md",
       "type": "doc",
-      "size_kb": 110.83,
-      "last_commit": "",
+      "size_kb": 69.73,
+      "last_commit": "2025-10-24",
       "references": {
         "code": [
-          "tools/audit_cleanup.py:211",
-          "tools/audit_cleanup.py:527"
+          "tools/audit_cleanup.py:259",
+          "tools/audit_cleanup.py:618"
         ],
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/diagrams/deps_cleanup.md:15",
-          "docs/cleanup.json:63",
-          "docs/cleanup.json:64",
-          "docs/cleanup.json:89",
-          "docs/cleanup.json:90",
-          "docs/cleanup.json:117",
-          "docs/cleanup.json:118",
-          "docs/cleanup.json:119"
+          "docs/cleanup.json:45",
+          "docs/cleanup.json:46",
+          "docs/cleanup.json:67",
+          "docs/cleanup.json:68",
+          "docs/cleanup.json:93",
+          "docs/cleanup.json:94",
+          "docs/cleanup.json:120",
+          "docs/cleanup.json:121"
         ],
         "jobs": []
       },
@@ -1741,7 +1722,7 @@
     {
       "path": "docs/PROJECT_DOCUMENTATION.md",
       "type": "doc",
-      "size_kb": 5.29,
+      "size_kb": 6.12,
       "last_commit": "2025-10-24",
       "references": {
         "code": [],
@@ -1749,13 +1730,13 @@
         "ci": [],
         "docs": [
           "README.md:33",
-          "docs/cleanup.json:209",
-          "docs/cleanup.json:234",
-          "docs/cleanup.json:526",
-          "docs/cleanup.json:527",
-          "docs/cleanup.json:528",
-          "docs/cleanup.json:748",
-          "docs/cleanup.json:749"
+          "docs/cleanup.json:186",
+          "docs/cleanup.json:510",
+          "docs/cleanup.json:511",
+          "docs/cleanup.json:512",
+          "docs/cleanup.json:842",
+          "docs/cleanup.json:1029",
+          "docs/cleanup.json:1318"
         ],
         "jobs": []
       },
@@ -1766,57 +1747,29 @@
       "notes": ""
     },
     {
-      "path": "docs/REPORT.md",
+      "path": "docs/cleanup.json",
       "type": "doc",
-      "size_kb": 12.38,
+      "size_kb": 109.96,
       "last_commit": "2025-10-24",
       "references": {
         "code": [
-          "tools/audit_cleanup.py:33",
-          "tools/audit_cleanup.py:211",
-          "tools/audit_cleanup.py:527"
+          "tools/audit_cleanup.py:260",
+          "tools/audit_cleanup.py:617"
         ],
-        "configs": [],
+        "configs": [
+          "ci/lint.yml:35",
+          "ci/lint.yml:39"
+        ],
         "ci": [],
         "docs": [
-          "docs/diagrams/deps_cleanup.md:9",
-          "docs/diagrams/deps_cleanup.md:15",
-          "docs/cleanup.json:63",
-          "docs/cleanup.json:64",
-          "docs/cleanup.json:89",
-          "docs/cleanup.json:90",
-          "docs/cleanup.json:117",
-          "docs/cleanup.json:118"
-        ],
-        "jobs": []
-      },
-      "classification": "QUARANTINE",
-      "reason": "Reporte legacy previo a la documentación modular.",
-      "risk": "medium",
-      "proposed_action": "move_to_legacy",
-      "notes": "Conservar en /legacy/docs hasta validar que no sea referencia externa."
-    },
-    {
-      "path": "docs/cleanup.json",
-      "type": "doc",
-      "size_kb": 135.98,
-      "last_commit": "",
-      "references": {
-        "code": [
-          "tools/audit_cleanup.py:212",
-          "tools/audit_cleanup.py:526"
-        ],
-        "configs": [],
-        "ci": [],
-        "docs": [
-          "docs/cleanup.json:62",
-          "docs/cleanup.json:88",
-          "docs/cleanup.json:114",
-          "docs/cleanup.json:115",
-          "docs/cleanup.json:116",
-          "docs/cleanup.json:143",
-          "docs/cleanup.json:165",
-          "docs/cleanup.json:187"
+          "docs/policies/DEP-001-legacy-removal.md:17",
+          "docs/cleanup.json:39",
+          "docs/cleanup.json:40",
+          "docs/cleanup.json:66",
+          "docs/cleanup.json:92",
+          "docs/cleanup.json:119",
+          "docs/cleanup.json:141",
+          "docs/cleanup.json:165"
         ],
         "jobs": []
       },
@@ -1836,10 +1789,11 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/REPORT.md:45",
-          "docs/cleanup.json:1830",
-          "docs/CLEANUP_REPORT.md:79",
-          "docs/CLEANUP_REPORT.md:645"
+          "legacy/docs/2025-10-25-reports/REPORT.md:45",
+          "docs/cleanup.json:1782",
+          "docs/CLEANUP_REPORT.md:77",
+          "docs/CLEANUP_REPORT.md:631",
+          "docs/CLEANUP_REPORT.md:1246"
         ],
         "jobs": []
       },
@@ -1852,23 +1806,24 @@
     {
       "path": "docs/diagrams/deps_cleanup.md",
       "type": "doc",
-      "size_kb": 0.64,
-      "last_commit": "",
+      "size_kb": 1.36,
+      "last_commit": "2025-10-24",
       "references": {
         "code": [
-          "tools/audit_cleanup.py:213"
+          "tools/audit_cleanup.py:104",
+          "tools/audit_cleanup.py:261"
         ],
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:113",
-          "docs/cleanup.json:142",
-          "docs/cleanup.json:1724",
-          "docs/cleanup.json:1782",
-          "docs/cleanup.json:1783",
-          "docs/cleanup.json:1853",
-          "docs/cleanup.json:1945",
-          "docs/cleanup.json:2917"
+          "docs/cleanup.json:117",
+          "docs/cleanup.json:118",
+          "docs/cleanup.json:1806",
+          "docs/cleanup.json:2140",
+          "docs/cleanup.json:2141",
+          "docs/cleanup.json:2172",
+          "docs/cleanup.json:2173",
+          "docs/cleanup.json:2236"
         ],
         "jobs": []
       },
@@ -1888,14 +1843,14 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:1881",
-          "docs/cleanup.json:2511",
-          "docs/cleanup.json:2550",
-          "docs/CLEANUP_REPORT.md:81",
-          "docs/CLEANUP_REPORT.md:660",
-          "docs/CLEANUP_REPORT.md:838",
-          "docs/CLEANUP_REPORT.md:847",
-          "docs/REPORT.md:46"
+          "legacy/docs/2025-10-25-reports/REPORT.md:46",
+          "docs/cleanup.json:1836",
+          "docs/cleanup.json:2645",
+          "docs/cleanup.json:2681",
+          "docs/CLEANUP_REPORT.md:79",
+          "docs/CLEANUP_REPORT.md:646",
+          "docs/CLEANUP_REPORT.md:870",
+          "docs/CLEANUP_REPORT.md:879"
         ],
         "jobs": []
       },
@@ -1909,17 +1864,19 @@
       "path": "docs/policies/DEP-001-legacy-removal.md",
       "type": "doc",
       "size_kb": 2.08,
-      "last_commit": "",
+      "last_commit": "2025-10-24",
       "references": {
         "code": [
-          "tools/audit_cleanup.py:214"
+          "tools/audit_cleanup.py:262"
         ],
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:1908",
-          "docs/CLEANUP_REPORT.md:82",
-          "docs/CLEANUP_REPORT.md:667"
+          "docs/cleanup.json:1765",
+          "docs/cleanup.json:1863",
+          "docs/CLEANUP_REPORT.md:80",
+          "docs/CLEANUP_REPORT.md:628",
+          "docs/CLEANUP_REPORT.md:653"
         ],
         "jobs": []
       },
@@ -1928,35 +1885,6 @@
       "risk": "low",
       "proposed_action": "keep",
       "notes": ""
-    },
-    {
-      "path": "docs/report.json",
-      "type": "doc",
-      "size_kb": 5.92,
-      "last_commit": "2025-10-24",
-      "references": {
-        "code": [
-          "tools/audit_cleanup.py:40"
-        ],
-        "configs": [],
-        "ci": [],
-        "docs": [
-          "docs/diagrams/deps_cleanup.md:10",
-          "docs/cleanup.json:35",
-          "docs/cleanup.json:36",
-          "docs/cleanup.json:37",
-          "docs/cleanup.json:38",
-          "docs/cleanup.json:1934",
-          "docs/cleanup.json:2222",
-          "docs/cleanup.json:2223"
-        ],
-        "jobs": []
-      },
-      "classification": "QUARANTINE",
-      "reason": "Export JSON antiguo duplicando reportes actuales.",
-      "risk": "medium",
-      "proposed_action": "move_to_legacy",
-      "notes": "Generado por tooling previo; no usado en pipelines."
     },
     {
       "path": "docs/run/aws.md",
@@ -1968,10 +1896,10 @@
         "configs": [],
         "ci": [],
         "docs": [
+          "docs/cleanup.json:1889",
           "docs/PROJECT_DOCUMENTATION.md:49",
-          "docs/cleanup.json:1963",
-          "docs/CLEANUP_REPORT.md:84",
-          "docs/CLEANUP_REPORT.md:684"
+          "docs/CLEANUP_REPORT.md:81",
+          "docs/CLEANUP_REPORT.md:661"
         ],
         "jobs": []
       },
@@ -1991,12 +1919,12 @@
         "configs": [],
         "ci": [],
         "docs": [
+          "docs/cleanup.json:1912",
           "docs/PROJECT_DOCUMENTATION.md:51",
-          "docs/cleanup.json:1986",
-          "docs/CLEANUP_REPORT.md:85",
-          "docs/CLEANUP_REPORT.md:691",
-          "docs/CLEANUP_REPORT.md:1336",
-          "docs/CLEANUP_REPORT.md:1337"
+          "docs/CLEANUP_REPORT.md:82",
+          "docs/CLEANUP_REPORT.md:668",
+          "docs/CLEANUP_REPORT.md:1244",
+          "docs/CLEANUP_REPORT.md:1245"
         ],
         "jobs": []
       },
@@ -2016,14 +1944,14 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:529",
-          "docs/cleanup.json:530",
-          "docs/cleanup.json:788",
-          "docs/cleanup.json:966",
-          "docs/cleanup.json:1119",
-          "docs/cleanup.json:1264",
-          "docs/cleanup.json:1383",
-          "docs/cleanup.json:2011"
+          "docs/cleanup.json:508",
+          "docs/cleanup.json:509",
+          "docs/cleanup.json:774",
+          "docs/cleanup.json:952",
+          "docs/cleanup.json:1105",
+          "docs/cleanup.json:1250",
+          "docs/cleanup.json:1357",
+          "docs/cleanup.json:1937"
         ],
         "jobs": []
       },
@@ -2043,13 +1971,13 @@
         "configs": [],
         "ci": [],
         "docs": [
+          "docs/cleanup.json:1964",
           "docs/PROJECT_DOCUMENTATION.md:48",
-          "docs/cleanup.json:2038",
-          "docs/CLEANUP_REPORT.md:87",
-          "docs/CLEANUP_REPORT.md:705",
-          "docs/CLEANUP_REPORT.md:1338",
-          "docs/CLEANUP_REPORT.md:1339",
-          "docs/CLEANUP_REPORT.md:1340"
+          "docs/CLEANUP_REPORT.md:84",
+          "docs/CLEANUP_REPORT.md:682",
+          "docs/CLEANUP_REPORT.md:1241",
+          "docs/CLEANUP_REPORT.md:1242",
+          "docs/CLEANUP_REPORT.md:1243"
         ],
         "jobs": []
       },
@@ -2069,10 +1997,10 @@
         "configs": [],
         "ci": [],
         "docs": [
+          "docs/cleanup.json:1990",
           "docs/PROJECT_DOCUMENTATION.md:50",
-          "docs/cleanup.json:2064",
-          "docs/CLEANUP_REPORT.md:88",
-          "docs/CLEANUP_REPORT.md:712"
+          "docs/CLEANUP_REPORT.md:85",
+          "docs/CLEANUP_REPORT.md:689"
         ],
         "jobs": []
       },
@@ -2092,14 +2020,14 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:39",
-          "docs/cleanup.json:40",
           "docs/cleanup.json:41",
           "docs/cleanup.json:42",
-          "docs/cleanup.json:2087",
-          "docs/CLEANUP_REPORT.md:89",
-          "docs/CLEANUP_REPORT.md:160",
-          "docs/CLEANUP_REPORT.md:719"
+          "docs/cleanup.json:43",
+          "docs/cleanup.json:44",
+          "docs/cleanup.json:2013",
+          "docs/CLEANUP_REPORT.md:86",
+          "docs/CLEANUP_REPORT.md:163",
+          "docs/CLEANUP_REPORT.md:696"
         ],
         "jobs": []
       },
@@ -2119,9 +2047,9 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:2114",
-          "docs/CLEANUP_REPORT.md:90",
-          "docs/CLEANUP_REPORT.md:726"
+          "docs/cleanup.json:2040",
+          "docs/CLEANUP_REPORT.md:87",
+          "docs/CLEANUP_REPORT.md:703"
         ],
         "jobs": []
       },
@@ -2130,30 +2058,6 @@
       "risk": "medium",
       "proposed_action": "keep",
       "notes": ""
-    },
-    {
-      "path": "docs/run/jobs/dataproc_workflow.yaml",
-      "type": "config",
-      "size_kb": 1.68,
-      "last_commit": "2025-10-24",
-      "references": {
-        "code": [
-          "tools/audit_cleanup.py:54"
-        ],
-        "configs": [],
-        "ci": [],
-        "docs": [
-          "docs/cleanup.json:2136",
-          "docs/CLEANUP_REPORT.md:91",
-          "docs/CLEANUP_REPORT.md:733"
-        ],
-        "jobs": []
-      },
-      "classification": "QUARANTINE",
-      "reason": "Plantilla Dataproc sin referencias en CI/CD.",
-      "risk": "medium",
-      "proposed_action": "move_to_legacy",
-      "notes": "Considerar mover a legacy/infra antes de eliminar."
     },
     {
       "path": "docs/tools/list_io.py",
@@ -2162,17 +2066,19 @@
       "last_commit": "2025-10-24",
       "references": {
         "code": [],
-        "configs": [],
+        "configs": [
+          "ci/lint.yml:34"
+        ],
         "ci": [],
         "docs": [
-          "README.md:40",
-          "docs/cleanup.json:2160",
-          "docs/cleanup.json:3737",
-          "docs/CLEANUP_REPORT.md:92",
-          "docs/CLEANUP_REPORT.md:151",
-          "docs/CLEANUP_REPORT.md:742",
-          "docs/CLEANUP_REPORT.md:1166",
-          "docs/CLEANUP_REPORT.md:1259"
+          "docs/cleanup.json:2062",
+          "docs/cleanup.json:3860",
+          "docs/PROJECT_DOCUMENTATION.md:115",
+          "docs/CLEANUP_REPORT.md:88",
+          "docs/CLEANUP_REPORT.md:153",
+          "docs/CLEANUP_REPORT.md:710",
+          "docs/CLEANUP_REPORT.md:1199",
+          "README.md:40"
         ],
         "jobs": []
       },
@@ -2181,6 +2087,231 @@
       "risk": "medium",
       "proposed_action": "keep",
       "notes": ""
+    },
+    {
+      "path": "legacy/docs/2025-10-25-reports/README.md",
+      "type": "doc",
+      "size_kb": 0.56,
+      "last_commit": "",
+      "references": {
+        "code": [
+          "tools/audit_cleanup.py:105",
+          "tools/audit_cleanup.py:106",
+          "tools/audit_cleanup.py:107",
+          "tools/audit_cleanup.py:258"
+        ],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:199",
+          "docs/cleanup.json:1764",
+          "docs/cleanup.json:2080",
+          "docs/cleanup.json:2091",
+          "docs/cleanup.json:2139",
+          "docs/cleanup.json:2171",
+          "docs/cleanup.json:2189",
+          "docs/cleanup.json:2235"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Punto de entrada documental",
+      "risk": "low",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "legacy/docs/2025-10-25-reports/REPORT.md",
+      "type": "doc",
+      "size_kb": 12.38,
+      "last_commit": "",
+      "references": {
+        "code": [
+          "tools/audit_cleanup.py:34",
+          "tools/audit_cleanup.py:40",
+          "tools/audit_cleanup.py:66",
+          "tools/audit_cleanup.py:97",
+          "tools/audit_cleanup.py:259",
+          "tools/audit_cleanup.py:618"
+        ],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "legacy/docs/2025-10-25-reports/README.md:6",
+          "docs/diagrams/deps_cleanup.md:5",
+          "docs/diagrams/deps_cleanup.md:16",
+          "docs/cleanup.json:45",
+          "docs/cleanup.json:46",
+          "docs/cleanup.json:67",
+          "docs/cleanup.json:68",
+          "docs/cleanup.json:93"
+        ],
+        "jobs": []
+      },
+      "classification": "QUARANTINE",
+      "reason": "Reporte legacy reubicado en cuarentena (2025-10-25).",
+      "risk": "medium",
+      "proposed_action": "hold_in_legacy",
+      "notes": "Restaurar solo si gobernanza lo aprueba."
+    },
+    {
+      "path": "legacy/docs/2025-10-25-reports/report.json",
+      "type": "config",
+      "size_kb": 5.92,
+      "last_commit": "",
+      "references": {
+        "code": [
+          "tools/audit_cleanup.py:42",
+          "tools/audit_cleanup.py:48",
+          "tools/audit_cleanup.py:73",
+          "tools/audit_cleanup.py:98"
+        ],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "legacy/docs/2025-10-25-reports/README.md:6",
+          "docs/diagrams/deps_cleanup.md:6",
+          "docs/diagrams/deps_cleanup.md:17",
+          "docs/cleanup.json:32",
+          "docs/cleanup.json:33",
+          "docs/cleanup.json:34",
+          "docs/cleanup.json:35",
+          "docs/cleanup.json:2157"
+        ],
+        "jobs": []
+      },
+      "classification": "QUARANTINE",
+      "reason": "Export JSON legacy en cuarentena (2025-10-25).",
+      "risk": "medium",
+      "proposed_action": "hold_in_legacy",
+      "notes": "Mantener disponible durante la ventana de 30 días."
+    },
+    {
+      "path": "legacy/infra/2025-10-25-gcp/README.md",
+      "type": "doc",
+      "size_kb": 0.5,
+      "last_commit": "",
+      "references": {
+        "code": [
+          "tools/audit_cleanup.py:105",
+          "tools/audit_cleanup.py:106",
+          "tools/audit_cleanup.py:107",
+          "tools/audit_cleanup.py:258"
+        ],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:199",
+          "docs/cleanup.json:1764",
+          "docs/cleanup.json:2080",
+          "docs/cleanup.json:2091",
+          "docs/cleanup.json:2139",
+          "docs/cleanup.json:2171",
+          "docs/cleanup.json:2189",
+          "docs/cleanup.json:2235"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Punto de entrada documental",
+      "risk": "low",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "legacy/infra/2025-10-25-gcp/dataproc_workflow.yaml",
+      "type": "config",
+      "size_kb": 1.68,
+      "last_commit": "",
+      "references": {
+        "code": [
+          "tools/audit_cleanup.py:58",
+          "tools/audit_cleanup.py:64",
+          "tools/audit_cleanup.py:80",
+          "tools/audit_cleanup.py:100"
+        ],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "legacy/infra/2025-10-25-gcp/README.md:6",
+          "docs/diagrams/deps_cleanup.md:7",
+          "docs/diagrams/deps_cleanup.md:18",
+          "docs/cleanup.json:2221",
+          "docs/PROJECT_DOCUMENTATION.md:113",
+          "docs/CLEANUP_REPORT.md:93",
+          "docs/CLEANUP_REPORT.md:752"
+        ],
+        "jobs": []
+      },
+      "classification": "QUARANTINE",
+      "reason": "Workflow Dataproc legacy en cuarentena (2025-10-25).",
+      "risk": "medium",
+      "proposed_action": "hold_in_legacy",
+      "notes": "Coordinar con Cloud Data Engineering antes de restaurar."
+    },
+    {
+      "path": "legacy/scripts/2025-10-25-generation/README.md",
+      "type": "doc",
+      "size_kb": 0.48,
+      "last_commit": "",
+      "references": {
+        "code": [
+          "tools/audit_cleanup.py:105",
+          "tools/audit_cleanup.py:106",
+          "tools/audit_cleanup.py:107",
+          "tools/audit_cleanup.py:258"
+        ],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "docs/cleanup.json:199",
+          "docs/cleanup.json:1764",
+          "docs/cleanup.json:2080",
+          "docs/cleanup.json:2091",
+          "docs/cleanup.json:2139",
+          "docs/cleanup.json:2171",
+          "docs/cleanup.json:2189",
+          "docs/cleanup.json:2235"
+        ],
+        "jobs": []
+      },
+      "classification": "KEEP",
+      "reason": "Punto de entrada documental",
+      "risk": "low",
+      "proposed_action": "keep",
+      "notes": ""
+    },
+    {
+      "path": "legacy/scripts/2025-10-25-generation/generate_big_payments.py",
+      "type": "code",
+      "size_kb": 1.27,
+      "last_commit": "",
+      "references": {
+        "code": [
+          "tools/audit_cleanup.py:50",
+          "tools/audit_cleanup.py:56",
+          "tools/audit_cleanup.py:87",
+          "tools/audit_cleanup.py:99"
+        ],
+        "configs": [],
+        "ci": [],
+        "docs": [
+          "legacy/scripts/2025-10-25-generation/README.md:6",
+          "docs/diagrams/deps_cleanup.md:8",
+          "docs/diagrams/deps_cleanup.md:19",
+          "docs/cleanup.json:1513",
+          "docs/cleanup.json:1613",
+          "docs/cleanup.json:2284",
+          "docs/PROJECT_DOCUMENTATION.md:114",
+          "docs/CLEANUP_REPORT.md:95"
+        ],
+        "jobs": []
+      },
+      "classification": "QUARANTINE",
+      "reason": "Script de pagos legacy retenido en cuarentena (2025-10-25).",
+      "risk": "medium",
+      "proposed_action": "hold_in_legacy",
+      "notes": "Reactivar solo con aprobación del owner registrado en README."
     },
     {
       "path": "pipelines/__init__.py",
@@ -2192,14 +2323,14 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:993",
-          "docs/cleanup.json:1146",
-          "docs/cleanup.json:2186",
-          "docs/cleanup.json:2240",
-          "docs/cleanup.json:2293",
-          "docs/cleanup.json:2376",
-          "docs/cleanup.json:2566",
-          "docs/cleanup.json:2620"
+          "docs/cleanup.json:974",
+          "docs/cleanup.json:1127",
+          "docs/cleanup.json:2316",
+          "docs/cleanup.json:2370",
+          "docs/cleanup.json:2420",
+          "docs/cleanup.json:2502",
+          "docs/cleanup.json:2695",
+          "docs/cleanup.json:2749"
         ],
         "jobs": []
       },
@@ -2216,17 +2347,17 @@
       "last_commit": "2025-10-24",
       "references": {
         "code": [],
-        "configs": [],
+        "configs": [
+          "legacy/docs/2025-10-25-reports/report.json:128",
+          "legacy/docs/2025-10-25-reports/report.json:144"
+        ],
         "ci": [],
         "docs": [
-          "docs/report.json:128",
-          "docs/report.json:144",
-          "docs/cleanup.json:2213",
-          "docs/CLEANUP_REPORT.md:94",
-          "docs/CLEANUP_REPORT.md:756",
-          "docs/CLEANUP_REPORT.md:1196",
-          "docs/CLEANUP_REPORT.md:1260",
-          "docs/CLEANUP_REPORT.md:1261"
+          "legacy/docs/2025-10-25-reports/REPORT.md:115",
+          "legacy/docs/2025-10-25-reports/REPORT.md:121",
+          "docs/cleanup.json:2343",
+          "docs/CLEANUP_REPORT.md:97",
+          "docs/CLEANUP_REPORT.md:785"
         ],
         "jobs": []
       },
@@ -2246,14 +2377,14 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:993",
-          "docs/cleanup.json:1146",
-          "docs/cleanup.json:2186",
-          "docs/cleanup.json:2240",
-          "docs/cleanup.json:2293",
-          "docs/cleanup.json:2376",
-          "docs/cleanup.json:2566",
-          "docs/cleanup.json:2620"
+          "docs/cleanup.json:974",
+          "docs/cleanup.json:1127",
+          "docs/cleanup.json:2316",
+          "docs/cleanup.json:2370",
+          "docs/cleanup.json:2420",
+          "docs/cleanup.json:2502",
+          "docs/cleanup.json:2695",
+          "docs/cleanup.json:2749"
         ],
         "jobs": []
       },
@@ -2273,14 +2404,10 @@
         "configs": [],
         "ci": [],
         "docs": [
+          "docs/cleanup.json:2397",
           "docs/PROJECT_DOCUMENTATION.md:15",
-          "docs/cleanup.json:2267",
-          "docs/CLEANUP_REPORT.md:96",
-          "docs/CLEANUP_REPORT.md:770",
-          "docs/CLEANUP_REPORT.md:1197",
-          "docs/CLEANUP_REPORT.md:1198",
-          "docs/CLEANUP_REPORT.md:1199",
-          "docs/CLEANUP_REPORT.md:1265"
+          "docs/CLEANUP_REPORT.md:99",
+          "docs/CLEANUP_REPORT.md:800"
         ],
         "jobs": []
       },
@@ -2300,14 +2427,14 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:993",
-          "docs/cleanup.json:1146",
-          "docs/cleanup.json:2186",
-          "docs/cleanup.json:2240",
-          "docs/cleanup.json:2293",
-          "docs/cleanup.json:2376",
-          "docs/cleanup.json:2566",
-          "docs/cleanup.json:2620"
+          "docs/cleanup.json:974",
+          "docs/cleanup.json:1127",
+          "docs/cleanup.json:2316",
+          "docs/cleanup.json:2370",
+          "docs/cleanup.json:2420",
+          "docs/cleanup.json:2502",
+          "docs/cleanup.json:2695",
+          "docs/cleanup.json:2749"
         ],
         "jobs": []
       },
@@ -2327,14 +2454,13 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:992",
-          "docs/cleanup.json:1145",
-          "docs/cleanup.json:2320",
-          "docs/CLEANUP_REPORT.md:98",
-          "docs/CLEANUP_REPORT.md:427",
-          "docs/CLEANUP_REPORT.md:464",
-          "docs/CLEANUP_REPORT.md:784",
-          "docs/CLEANUP_REPORT.md:1200"
+          "docs/cleanup.json:973",
+          "docs/cleanup.json:1126",
+          "docs/cleanup.json:2447",
+          "docs/CLEANUP_REPORT.md:101",
+          "docs/CLEANUP_REPORT.md:421",
+          "docs/CLEANUP_REPORT.md:458",
+          "docs/CLEANUP_REPORT.md:814"
         ],
         "jobs": []
       },
@@ -2356,14 +2482,14 @@
         ],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:994",
-          "docs/cleanup.json:1147",
-          "docs/cleanup.json:1400",
-          "docs/cleanup.json:2347",
-          "docs/CLEANUP_REPORT.md:99",
-          "docs/CLEANUP_REPORT.md:427",
-          "docs/CLEANUP_REPORT.md:464",
-          "docs/CLEANUP_REPORT.md:526"
+          "docs/cleanup.json:972",
+          "docs/cleanup.json:1125",
+          "docs/cleanup.json:1380",
+          "docs/cleanup.json:2473",
+          "docs/CLEANUP_REPORT.md:102",
+          "docs/CLEANUP_REPORT.md:421",
+          "docs/CLEANUP_REPORT.md:458",
+          "docs/CLEANUP_REPORT.md:520"
         ],
         "jobs": []
       },
@@ -2383,14 +2509,14 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:993",
-          "docs/cleanup.json:1146",
-          "docs/cleanup.json:2186",
-          "docs/cleanup.json:2240",
-          "docs/cleanup.json:2293",
-          "docs/cleanup.json:2376",
-          "docs/cleanup.json:2566",
-          "docs/cleanup.json:2620"
+          "docs/cleanup.json:974",
+          "docs/cleanup.json:1127",
+          "docs/cleanup.json:2316",
+          "docs/cleanup.json:2370",
+          "docs/cleanup.json:2420",
+          "docs/cleanup.json:2502",
+          "docs/cleanup.json:2695",
+          "docs/cleanup.json:2749"
         ],
         "jobs": []
       },
@@ -2410,14 +2536,10 @@
         "configs": [],
         "ci": [],
         "docs": [
+          "docs/cleanup.json:2529",
           "docs/PROJECT_DOCUMENTATION.md:16",
-          "docs/cleanup.json:2403",
-          "docs/CLEANUP_REPORT.md:101",
-          "docs/CLEANUP_REPORT.md:806",
-          "docs/CLEANUP_REPORT.md:1219",
-          "docs/CLEANUP_REPORT.md:1273",
-          "docs/CLEANUP_REPORT.md:1274",
-          "docs/CLEANUP_REPORT.md:1275"
+          "docs/CLEANUP_REPORT.md:104",
+          "docs/CLEANUP_REPORT.md:836"
         ],
         "jobs": []
       },
@@ -2437,12 +2559,10 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/PROJECT_DOCUMENTATION.md:16",
-          "docs/cleanup.json:2427",
-          "docs/CLEANUP_REPORT.md:102",
-          "docs/CLEANUP_REPORT.md:813",
-          "docs/CLEANUP_REPORT.md:1220",
-          "docs/CLEANUP_REPORT.md:1276"
+          "docs/cleanup.json:2552",
+          "docs/CLEANUP_REPORT.md:105",
+          "docs/CLEANUP_REPORT.md:843",
+          "docs/PROJECT_DOCUMENTATION.md:16"
         ],
         "jobs": []
       },
@@ -2462,13 +2582,11 @@
         "configs": [],
         "ci": [],
         "docs": [
+          "docs/cleanup.json:2575",
           "docs/PROJECT_DOCUMENTATION.md:16",
           "docs/PROJECT_DOCUMENTATION.md:79",
-          "docs/cleanup.json:2451",
-          "docs/CLEANUP_REPORT.md:103",
-          "docs/CLEANUP_REPORT.md:820",
-          "docs/CLEANUP_REPORT.md:1277",
-          "docs/CLEANUP_REPORT.md:1278"
+          "docs/CLEANUP_REPORT.md:106",
+          "docs/CLEANUP_REPORT.md:850"
         ],
         "jobs": []
       },
@@ -2485,17 +2603,20 @@
       "last_commit": "2025-10-24",
       "references": {
         "code": [],
-        "configs": [],
+        "configs": [
+          "legacy/docs/2025-10-25-reports/report.json:61",
+          "legacy/docs/2025-10-25-reports/report.json:68"
+        ],
         "ci": [],
         "docs": [
-          "docs/report.json:61",
-          "docs/report.json:68",
+          "docs/cleanup.json:1340",
+          "docs/cleanup.json:1341",
+          "docs/cleanup.json:2599",
           "docs/PROJECT_DOCUMENTATION.md:18",
           "docs/PROJECT_DOCUMENTATION.md:56",
-          "docs/REPORT.md:155",
-          "docs/REPORT.md:156",
-          "docs/cleanup.json:1360",
-          "docs/cleanup.json:1361"
+          "docs/CLEANUP_REPORT.md:107",
+          "docs/CLEANUP_REPORT.md:511",
+          "docs/CLEANUP_REPORT.md:857"
         ],
         "jobs": []
       },
@@ -2512,17 +2633,19 @@
       "last_commit": "2025-10-24",
       "references": {
         "code": [],
-        "configs": [],
+        "configs": [
+          "legacy/docs/2025-10-25-reports/report.json:75"
+        ],
         "ci": [],
         "docs": [
+          "legacy/docs/2025-10-25-reports/REPORT.md:22",
+          "legacy/docs/2025-10-25-reports/REPORT.md:86",
+          "legacy/docs/2025-10-25-reports/REPORT.md:92",
+          "legacy/docs/2025-10-25-reports/REPORT.md:134",
+          "legacy/docs/2025-10-25-reports/REPORT.md:157",
           "docs/diagrams/pipeline_flow.md:7",
-          "docs/report.json:75",
-          "docs/cleanup.json:2502",
-          "docs/CLEANUP_REPORT.md:105",
-          "docs/CLEANUP_REPORT.md:834",
-          "docs/CLEANUP_REPORT.md:1221",
-          "docs/CLEANUP_REPORT.md:1282",
-          "docs/CLEANUP_REPORT.md:1283"
+          "docs/cleanup.json:2629",
+          "docs/CLEANUP_REPORT.md:108"
         ],
         "jobs": []
       },
@@ -2539,11 +2662,11 @@
       "last_commit": "2025-10-24",
       "references": {
         "code": [
-          "scripts/run_high_volume_case.py:85",
-          "scripts/runner.sh:106",
-          "scripts/runner_with_db.sh:61",
           "scripts/generate_synthetic_data.py:782",
           "scripts/run_multiformat_case.py:110",
+          "scripts/runner.sh:106",
+          "scripts/runner_with_db.sh:61",
+          "scripts/run_high_volume_case.py:85",
           "pipelines/spark_job_with_db.py:13"
         ],
         "configs": [
@@ -2552,14 +2675,14 @@
         ],
         "ci": [],
         "docs": [
-          "README.md:13",
-          "README.md:29",
+          "legacy/docs/2025-10-25-reports/REPORT.md:22",
+          "legacy/docs/2025-10-25-reports/REPORT.md:86",
+          "legacy/docs/2025-10-25-reports/REPORT.md:87",
+          "legacy/docs/2025-10-25-reports/REPORT.md:120",
           "docs/diagrams/pipeline_flow.md:8",
-          "docs/PROJECT_DOCUMENTATION.md:17",
-          "docs/PROJECT_DOCUMENTATION.md:40",
-          "docs/cleanup.json:2529",
-          "docs/cleanup.json:2540",
-          "docs/CLEANUP_REPORT.md:106"
+          "docs/cleanup.json:2658",
+          "docs/cleanup.json:2669",
+          "docs/PROJECT_DOCUMENTATION.md:17"
         ],
         "jobs": []
       },
@@ -2579,14 +2702,14 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:993",
-          "docs/cleanup.json:1146",
-          "docs/cleanup.json:2186",
-          "docs/cleanup.json:2240",
-          "docs/cleanup.json:2293",
-          "docs/cleanup.json:2376",
-          "docs/cleanup.json:2566",
-          "docs/cleanup.json:2620"
+          "docs/cleanup.json:974",
+          "docs/cleanup.json:1127",
+          "docs/cleanup.json:2316",
+          "docs/cleanup.json:2370",
+          "docs/cleanup.json:2420",
+          "docs/cleanup.json:2502",
+          "docs/cleanup.json:2695",
+          "docs/cleanup.json:2749"
         ],
         "jobs": []
       },
@@ -2606,14 +2729,14 @@
         "configs": [],
         "ci": [],
         "docs": [
+          "docs/cleanup.json:824",
+          "docs/cleanup.json:1011",
+          "docs/cleanup.json:1300",
+          "docs/cleanup.json:2722",
+          "docs/cleanup.json:2776",
           "docs/PROJECT_DOCUMENTATION.md:14",
           "docs/PROJECT_DOCUMENTATION.md:90",
-          "docs/cleanup.json:844",
-          "docs/cleanup.json:1031",
-          "docs/cleanup.json:1320",
-          "docs/cleanup.json:2593",
-          "docs/cleanup.json:2647",
-          "docs/CLEANUP_REPORT.md:108"
+          "docs/CLEANUP_REPORT.md:111"
         ],
         "jobs": []
       },
@@ -2633,14 +2756,14 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:993",
-          "docs/cleanup.json:1146",
-          "docs/cleanup.json:2186",
-          "docs/cleanup.json:2240",
-          "docs/cleanup.json:2293",
-          "docs/cleanup.json:2376",
-          "docs/cleanup.json:2566",
-          "docs/cleanup.json:2620"
+          "docs/cleanup.json:974",
+          "docs/cleanup.json:1127",
+          "docs/cleanup.json:2316",
+          "docs/cleanup.json:2370",
+          "docs/cleanup.json:2420",
+          "docs/cleanup.json:2502",
+          "docs/cleanup.json:2695",
+          "docs/cleanup.json:2749"
         ],
         "jobs": []
       },
@@ -2660,13 +2783,10 @@
         "configs": [],
         "ci": [],
         "docs": [
+          "docs/cleanup.json:2776",
           "docs/PROJECT_DOCUMENTATION.md:90",
-          "docs/cleanup.json:2647",
-          "docs/CLEANUP_REPORT.md:110",
-          "docs/CLEANUP_REPORT.md:871",
-          "docs/CLEANUP_REPORT.md:1293",
-          "docs/CLEANUP_REPORT.md:1294",
-          "docs/CLEANUP_REPORT.md:1295"
+          "docs/CLEANUP_REPORT.md:113",
+          "docs/CLEANUP_REPORT.md:903"
         ],
         "jobs": []
       },
@@ -2686,14 +2806,9 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:2670",
-          "docs/CLEANUP_REPORT.md:111",
-          "docs/CLEANUP_REPORT.md:878",
-          "docs/CLEANUP_REPORT.md:1222",
-          "docs/CLEANUP_REPORT.md:1223",
-          "docs/CLEANUP_REPORT.md:1224",
-          "docs/CLEANUP_REPORT.md:1225",
-          "docs/CLEANUP_REPORT.md:1226"
+          "docs/cleanup.json:2799",
+          "docs/CLEANUP_REPORT.md:114",
+          "docs/CLEANUP_REPORT.md:910"
         ],
         "jobs": []
       },
@@ -2713,14 +2828,14 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/CLEANUP_REPORT.md:93",
-          "docs/CLEANUP_REPORT.md:95",
-          "docs/CLEANUP_REPORT.md:97",
-          "docs/CLEANUP_REPORT.md:100",
-          "docs/CLEANUP_REPORT.md:107",
-          "docs/CLEANUP_REPORT.md:109",
-          "docs/CLEANUP_REPORT.md:112",
-          "docs/CLEANUP_REPORT.md:115"
+          "docs/cleanup.json:974",
+          "docs/cleanup.json:1127",
+          "docs/cleanup.json:2316",
+          "docs/cleanup.json:2370",
+          "docs/cleanup.json:2420",
+          "docs/cleanup.json:2502",
+          "docs/cleanup.json:2695",
+          "docs/cleanup.json:2749"
         ],
         "jobs": []
       },
@@ -2740,10 +2855,10 @@
         "configs": [],
         "ci": [],
         "docs": [
+          "docs/cleanup.json:2848",
           "docs/PROJECT_DOCUMENTATION.md:12",
-          "docs/cleanup.json:2724",
-          "docs/CLEANUP_REPORT.md:113",
-          "docs/CLEANUP_REPORT.md:892"
+          "docs/CLEANUP_REPORT.md:116",
+          "docs/CLEANUP_REPORT.md:924"
         ],
         "jobs": []
       },
@@ -2763,12 +2878,10 @@
         "configs": [],
         "ci": [],
         "docs": [
+          "docs/cleanup.json:2871",
           "docs/PROJECT_DOCUMENTATION.md:12",
-          "docs/cleanup.json:2747",
-          "docs/CLEANUP_REPORT.md:114",
-          "docs/CLEANUP_REPORT.md:899",
-          "docs/CLEANUP_REPORT.md:1230",
-          "docs/CLEANUP_REPORT.md:1231"
+          "docs/CLEANUP_REPORT.md:117",
+          "docs/CLEANUP_REPORT.md:931"
         ],
         "jobs": []
       },
@@ -2788,14 +2901,14 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:993",
-          "docs/cleanup.json:1146",
-          "docs/cleanup.json:2186",
-          "docs/cleanup.json:2240",
-          "docs/cleanup.json:2293",
-          "docs/cleanup.json:2376",
-          "docs/cleanup.json:2566",
-          "docs/cleanup.json:2620"
+          "docs/cleanup.json:974",
+          "docs/cleanup.json:1127",
+          "docs/cleanup.json:2316",
+          "docs/cleanup.json:2370",
+          "docs/cleanup.json:2420",
+          "docs/cleanup.json:2502",
+          "docs/cleanup.json:2695",
+          "docs/cleanup.json:2749"
         ],
         "jobs": []
       },
@@ -2812,17 +2925,16 @@
       "last_commit": "2025-10-24",
       "references": {
         "code": [],
-        "configs": [],
+        "configs": [
+          "legacy/docs/2025-10-25-reports/report.json:119"
+        ],
         "ci": [],
         "docs": [
-          "docs/report.json:119",
+          "legacy/docs/2025-10-25-reports/REPORT.md:124",
+          "docs/cleanup.json:2921",
           "docs/PROJECT_DOCUMENTATION.md:13",
-          "docs/cleanup.json:2799",
-          "docs/CLEANUP_REPORT.md:116",
-          "docs/CLEANUP_REPORT.md:913",
-          "docs/CLEANUP_REPORT.md:1300",
-          "docs/CLEANUP_REPORT.md:1301",
-          "docs/REPORT.md:124"
+          "docs/CLEANUP_REPORT.md:119",
+          "docs/CLEANUP_REPORT.md:945"
         ],
         "jobs": []
       },
@@ -2839,16 +2951,16 @@
       "last_commit": "2025-10-24",
       "references": {
         "code": [
-          "tools/audit_cleanup.py:208"
+          "tools/audit_cleanup.py:256"
         ],
         "configs": [],
         "ci": [],
         "docs": [
+          "legacy/docs/2025-10-25-reports/REPORT.md:84",
+          "docs/cleanup.json:2947",
           "docs/PROJECT_DOCUMENTATION.md:91",
-          "docs/cleanup.json:2824",
-          "docs/CLEANUP_REPORT.md:117",
-          "docs/CLEANUP_REPORT.md:920",
-          "docs/REPORT.md:84"
+          "docs/CLEANUP_REPORT.md:120",
+          "docs/CLEANUP_REPORT.md:953"
         ],
         "jobs": []
       },
@@ -2868,19 +2980,20 @@
           "scripts/runner.sh:29",
           "scripts/runner.sh:30",
           "scripts/runner_with_db.sh:31",
-          "tools/audit_cleanup.py:209"
+          "tools/audit_cleanup.py:257"
         ],
         "configs": [
-          "ci/build-test.yml:28"
+          "ci/build-test.yml:28",
+          "ci/lint.yml:30"
         ],
         "ci": [],
         "docs": [
-          "README.md:11",
+          "legacy/docs/2025-10-25-reports/REPORT.md:116",
+          "docs/cleanup.json:2973",
           "docs/PROJECT_DOCUMENTATION.md:39",
-          "docs/cleanup.json:2850",
-          "docs/CLEANUP_REPORT.md:118",
-          "docs/CLEANUP_REPORT.md:928",
-          "docs/REPORT.md:116"
+          "docs/CLEANUP_REPORT.md:121",
+          "docs/CLEANUP_REPORT.md:961",
+          "README.md:11"
         ],
         "jobs": []
       },
@@ -2902,9 +3015,9 @@
         ],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:2882",
-          "docs/CLEANUP_REPORT.md:119",
-          "docs/CLEANUP_REPORT.md:937"
+          "docs/cleanup.json:3006",
+          "docs/CLEANUP_REPORT.md:122",
+          "docs/CLEANUP_REPORT.md:970"
         ],
         "jobs": []
       },
@@ -2915,61 +3028,32 @@
       "notes": ""
     },
     {
-      "path": "scripts/generate_big_payments.py",
-      "type": "code",
-      "size_kb": 1.27,
-      "last_commit": "2025-09-29",
-      "references": {
-        "code": [
-          "tools/audit_cleanup.py:47"
-        ],
-        "configs": [],
-        "ci": [],
-        "docs": [
-          "docs/diagrams/deps_cleanup.md:8",
-          "docs/CLEANUP_REPORT.md:120",
-          "docs/CLEANUP_REPORT.md:562",
-          "docs/CLEANUP_REPORT.md:592",
-          "docs/CLEANUP_REPORT.md:945",
-          "docs/cleanup.json:1529",
-          "docs/cleanup.json:1629",
-          "docs/cleanup.json:2906"
-        ],
-        "jobs": []
-      },
-      "classification": "QUARANTINE",
-      "reason": "Script de generación legacy reemplazado por generate_synthetic_data.py.",
-      "risk": "medium",
-      "proposed_action": "move_to_legacy",
-      "notes": "No referenciado desde CLI actuales."
-    },
-    {
       "path": "scripts/generate_synthetic_data.py",
       "type": "code",
       "size_kb": 34.54,
       "last_commit": "2025-10-24",
       "references": {
         "code": [
-          "scripts/run_high_volume_case.py:49",
           "scripts/generate_synthetic_data.py:21",
           "scripts/generate_synthetic_data.py:22",
           "scripts/generate_synthetic_data.py:23",
           "scripts/generate_synthetic_data.py:670",
           "scripts/generate_synthetic_data.py:671",
           "scripts/generate_synthetic_data.py:672",
-          "scripts/generate_synthetic_data.py:673"
+          "scripts/generate_synthetic_data.py:673",
+          "scripts/run_multiformat_case.py:74"
         ],
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/diagrams/deps_cleanup.md:7",
-          "docs/cleanup.json:509",
-          "docs/cleanup.json:510",
-          "docs/cleanup.json:578",
-          "docs/cleanup.json:604",
-          "docs/cleanup.json:655",
-          "docs/cleanup.json:656",
-          "docs/cleanup.json:657"
+          "docs/diagrams/deps_cleanup.md:15",
+          "docs/cleanup.json:486",
+          "docs/cleanup.json:487",
+          "docs/cleanup.json:558",
+          "docs/cleanup.json:584",
+          "docs/cleanup.json:634",
+          "docs/cleanup.json:635",
+          "docs/cleanup.json:636"
         ],
         "jobs": []
       },
@@ -2986,17 +3070,19 @@
       "last_commit": "2025-10-24",
       "references": {
         "code": [],
-        "configs": [],
+        "configs": [
+          "legacy/docs/2025-10-25-reports/report.json:161"
+        ],
         "ci": [],
         "docs": [
-          "docs/report.json:161",
-          "docs/cleanup.json:23",
-          "docs/cleanup.json:24",
-          "docs/cleanup.json:25",
-          "docs/cleanup.json:26",
-          "docs/cleanup.json:506",
-          "docs/cleanup.json:654",
-          "docs/cleanup.json:2535"
+          "legacy/docs/2025-10-25-reports/REPORT.md:100",
+          "legacy/docs/2025-10-25-reports/REPORT.md:125",
+          "docs/cleanup.json:491",
+          "docs/cleanup.json:637",
+          "docs/cleanup.json:2668",
+          "docs/cleanup.json:3066",
+          "docs/CLEANUP_REPORT.md:124",
+          "docs/CLEANUP_REPORT.md:290"
         ],
         "jobs": []
       },
@@ -3016,14 +3102,14 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:27",
-          "docs/cleanup.json:28",
-          "docs/cleanup.json:29",
-          "docs/cleanup.json:30",
-          "docs/cleanup.json:511",
-          "docs/cleanup.json:549",
-          "docs/cleanup.json:2539",
-          "docs/cleanup.json:2998"
+          "docs/cleanup.json:488",
+          "docs/cleanup.json:529",
+          "docs/cleanup.json:2665",
+          "docs/cleanup.json:3043",
+          "docs/cleanup.json:3095",
+          "docs/CLEANUP_REPORT.md:125",
+          "docs/CLEANUP_REPORT.md:290",
+          "docs/CLEANUP_REPORT.md:299"
         ],
         "jobs": []
       },
@@ -3041,19 +3127,21 @@
       "references": {
         "code": [],
         "configs": [
+          "legacy/docs/2025-10-25-reports/report.json:136",
+          "legacy/docs/2025-10-25-reports/report.json:154",
           "docker-compose.yml:85",
           "docker-compose.yml:86"
         ],
         "ci": [],
         "docs": [
-          "README.md:15",
-          "docs/report.json:136",
-          "docs/report.json:154",
-          "docs/PROJECT_DOCUMENTATION.md:42",
-          "docs/cleanup.json:507",
-          "docs/cleanup.json:738",
-          "docs/cleanup.json:882",
-          "docs/cleanup.json:916"
+          "legacy/docs/2025-10-25-reports/REPORT.md:87",
+          "legacy/docs/2025-10-25-reports/REPORT.md:126",
+          "docs/cleanup.json:489",
+          "docs/cleanup.json:718",
+          "docs/cleanup.json:862",
+          "docs/cleanup.json:896",
+          "docs/cleanup.json:1049",
+          "docs/cleanup.json:1164"
         ],
         "jobs": []
       },
@@ -3070,17 +3158,21 @@
       "last_commit": "2025-10-24",
       "references": {
         "code": [],
-        "configs": [],
+        "configs": [
+          "legacy/docs/2025-10-25-reports/report.json:132",
+          "legacy/docs/2025-10-25-reports/report.json:149",
+          "legacy/docs/2025-10-25-reports/report.json:166"
+        ],
         "ci": [],
         "docs": [
-          "docs/report.json:132",
-          "docs/report.json:149",
-          "docs/report.json:166",
-          "docs/cleanup.json:508",
-          "docs/cleanup.json:739",
-          "docs/cleanup.json:883",
-          "docs/cleanup.json:917",
-          "docs/cleanup.json:1070"
+          "legacy/docs/2025-10-25-reports/REPORT.md:87",
+          "legacy/docs/2025-10-25-reports/REPORT.md:100",
+          "legacy/docs/2025-10-25-reports/REPORT.md:125",
+          "legacy/docs/2025-10-25-reports/REPORT.md:126",
+          "docs/cleanup.json:490",
+          "docs/cleanup.json:719",
+          "docs/cleanup.json:863",
+          "docs/cleanup.json:897"
         ],
         "jobs": []
       },
@@ -3100,14 +3192,14 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:993",
-          "docs/cleanup.json:1146",
-          "docs/cleanup.json:2186",
-          "docs/cleanup.json:2240",
-          "docs/cleanup.json:2293",
-          "docs/cleanup.json:2376",
-          "docs/cleanup.json:2566",
-          "docs/cleanup.json:2620"
+          "docs/cleanup.json:974",
+          "docs/cleanup.json:1127",
+          "docs/cleanup.json:2316",
+          "docs/cleanup.json:2370",
+          "docs/cleanup.json:2420",
+          "docs/cleanup.json:2502",
+          "docs/cleanup.json:2695",
+          "docs/cleanup.json:2749"
         ],
         "jobs": []
       },
@@ -3127,14 +3219,11 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:3109",
-          "docs/CLEANUP_REPORT.md:127",
-          "docs/CLEANUP_REPORT.md:998",
-          "docs/CLEANUP_REPORT.md:1234",
-          "docs/CLEANUP_REPORT.md:1307",
-          "docs/CLEANUP_REPORT.md:1308",
-          "docs/CLEANUP_REPORT.md:1309",
-          "docs/CLEANUP_REPORT.md:1310"
+          "legacy/docs/2025-10-25-reports/REPORT.md:85",
+          "legacy/docs/2025-10-25-reports/REPORT.md:119",
+          "docs/cleanup.json:3212",
+          "docs/CLEANUP_REPORT.md:129",
+          "docs/CLEANUP_REPORT.md:1024"
         ],
         "jobs": []
       },
@@ -3154,14 +3243,14 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/run/configs.md:5",
-          "docs/run/configs.md:77",
-          "docs/cleanup.json:774",
-          "docs/cleanup.json:952",
-          "docs/cleanup.json:1105",
-          "docs/cleanup.json:1250",
-          "docs/cleanup.json:3134",
-          "docs/cleanup.json:3589"
+          "docs/cleanup.json:22",
+          "docs/cleanup.json:752",
+          "docs/cleanup.json:930",
+          "docs/cleanup.json:1083",
+          "docs/cleanup.json:1228",
+          "docs/cleanup.json:3236",
+          "docs/cleanup.json:3709",
+          "docs/run/configs.md:5"
         ],
         "jobs": []
       },
@@ -3181,13 +3270,9 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:3161",
-          "docs/CLEANUP_REPORT.md:129",
-          "docs/CLEANUP_REPORT.md:1012",
-          "docs/CLEANUP_REPORT.md:1241",
-          "docs/CLEANUP_REPORT.md:1313",
-          "docs/CLEANUP_REPORT.md:1314",
-          "docs/CLEANUP_REPORT.md:1315"
+          "docs/cleanup.json:3263",
+          "docs/CLEANUP_REPORT.md:131",
+          "docs/CLEANUP_REPORT.md:1038"
         ],
         "jobs": []
       },
@@ -3207,14 +3292,14 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:993",
-          "docs/cleanup.json:1146",
-          "docs/cleanup.json:2186",
-          "docs/cleanup.json:2240",
-          "docs/cleanup.json:2293",
-          "docs/cleanup.json:2376",
-          "docs/cleanup.json:2566",
-          "docs/cleanup.json:2620"
+          "docs/cleanup.json:974",
+          "docs/cleanup.json:1127",
+          "docs/cleanup.json:2316",
+          "docs/cleanup.json:2370",
+          "docs/cleanup.json:2420",
+          "docs/cleanup.json:2502",
+          "docs/cleanup.json:2695",
+          "docs/cleanup.json:2749"
         ],
         "jobs": []
       },
@@ -3234,14 +3319,14 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:1362",
-          "docs/cleanup.json:3211",
-          "docs/cleanup.json:3616",
-          "docs/CLEANUP_REPORT.md:131",
-          "docs/CLEANUP_REPORT.md:146",
-          "docs/CLEANUP_REPORT.md:517",
-          "docs/CLEANUP_REPORT.md:1026",
-          "docs/CLEANUP_REPORT.md:1131"
+          "docs/cleanup.json:1342",
+          "docs/cleanup.json:3312",
+          "docs/cleanup.json:3736",
+          "docs/CLEANUP_REPORT.md:133",
+          "docs/CLEANUP_REPORT.md:148",
+          "docs/CLEANUP_REPORT.md:511",
+          "docs/CLEANUP_REPORT.md:1052",
+          "docs/CLEANUP_REPORT.md:1162"
         ],
         "jobs": []
       },
@@ -3261,14 +3346,14 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:1530",
-          "docs/cleanup.json:1531",
-          "docs/cleanup.json:1532",
-          "docs/cleanup.json:1533",
-          "docs/cleanup.json:1630",
-          "docs/cleanup.json:1631",
-          "docs/cleanup.json:1632",
-          "docs/cleanup.json:1633"
+          "legacy/docs/2025-10-25-reports/REPORT.md:115",
+          "docs/cleanup.json:23",
+          "docs/cleanup.json:24",
+          "docs/cleanup.json:25",
+          "docs/cleanup.json:26",
+          "docs/cleanup.json:27",
+          "docs/cleanup.json:28",
+          "docs/cleanup.json:29"
         ],
         "jobs": []
       },
@@ -3288,14 +3373,14 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:993",
-          "docs/cleanup.json:1146",
-          "docs/cleanup.json:2186",
-          "docs/cleanup.json:2240",
-          "docs/cleanup.json:2293",
-          "docs/cleanup.json:2376",
-          "docs/cleanup.json:2566",
-          "docs/cleanup.json:2620"
+          "docs/cleanup.json:974",
+          "docs/cleanup.json:1127",
+          "docs/cleanup.json:2316",
+          "docs/cleanup.json:2370",
+          "docs/cleanup.json:2420",
+          "docs/cleanup.json:2502",
+          "docs/cleanup.json:2695",
+          "docs/cleanup.json:2749"
         ],
         "jobs": []
       },
@@ -3315,14 +3400,14 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:993",
-          "docs/cleanup.json:1146",
-          "docs/cleanup.json:2186",
-          "docs/cleanup.json:2240",
-          "docs/cleanup.json:2293",
-          "docs/cleanup.json:2376",
-          "docs/cleanup.json:2566",
-          "docs/cleanup.json:2620"
+          "docs/cleanup.json:974",
+          "docs/cleanup.json:1127",
+          "docs/cleanup.json:2316",
+          "docs/cleanup.json:2370",
+          "docs/cleanup.json:2420",
+          "docs/cleanup.json:2502",
+          "docs/cleanup.json:2695",
+          "docs/cleanup.json:2749"
         ],
         "jobs": []
       },
@@ -3339,17 +3424,21 @@
       "last_commit": "2025-10-24",
       "references": {
         "code": [],
-        "configs": [],
+        "configs": [
+          "legacy/docs/2025-10-25-reports/report.json:17",
+          "legacy/docs/2025-10-25-reports/report.json:31",
+          "legacy/docs/2025-10-25-reports/report.json:46"
+        ],
         "ci": [],
         "docs": [
-          "docs/report.json:17",
-          "docs/report.json:31",
-          "docs/report.json:46",
-          "docs/cleanup.json:3319",
-          "docs/cleanup.json:3373",
-          "docs/cleanup.json:3427",
-          "docs/cleanup.json:3481",
-          "docs/CLEANUP_REPORT.md:135"
+          "legacy/docs/2025-10-25-reports/REPORT.md:51",
+          "legacy/docs/2025-10-25-reports/REPORT.md:59",
+          "legacy/docs/2025-10-25-reports/REPORT.md:67",
+          "docs/cleanup.json:3420",
+          "docs/cleanup.json:3478",
+          "docs/cleanup.json:3536",
+          "docs/cleanup.json:3594",
+          "docs/CLEANUP_REPORT.md:137"
         ],
         "jobs": []
       },
@@ -3369,14 +3458,14 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:993",
-          "docs/cleanup.json:1146",
-          "docs/cleanup.json:2186",
-          "docs/cleanup.json:2240",
-          "docs/cleanup.json:2293",
-          "docs/cleanup.json:2376",
-          "docs/cleanup.json:2566",
-          "docs/cleanup.json:2620"
+          "docs/cleanup.json:974",
+          "docs/cleanup.json:1127",
+          "docs/cleanup.json:2316",
+          "docs/cleanup.json:2370",
+          "docs/cleanup.json:2420",
+          "docs/cleanup.json:2502",
+          "docs/cleanup.json:2695",
+          "docs/cleanup.json:2749"
         ],
         "jobs": []
       },
@@ -3393,17 +3482,21 @@
       "last_commit": "2025-10-24",
       "references": {
         "code": [],
-        "configs": [],
+        "configs": [
+          "legacy/docs/2025-10-25-reports/report.json:17",
+          "legacy/docs/2025-10-25-reports/report.json:31",
+          "legacy/docs/2025-10-25-reports/report.json:46"
+        ],
         "ci": [],
         "docs": [
-          "docs/report.json:17",
-          "docs/report.json:31",
-          "docs/report.json:46",
-          "docs/CLEANUP_REPORT.md:135",
-          "docs/CLEANUP_REPORT.md:137",
-          "docs/CLEANUP_REPORT.md:139",
-          "docs/CLEANUP_REPORT.md:141",
-          "docs/CLEANUP_REPORT.md:1054"
+          "legacy/docs/2025-10-25-reports/REPORT.md:51",
+          "legacy/docs/2025-10-25-reports/REPORT.md:59",
+          "legacy/docs/2025-10-25-reports/REPORT.md:67",
+          "docs/cleanup.json:3420",
+          "docs/cleanup.json:3478",
+          "docs/cleanup.json:3536",
+          "docs/cleanup.json:3594",
+          "docs/CLEANUP_REPORT.md:137"
         ],
         "jobs": []
       },
@@ -3423,14 +3516,14 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:993",
-          "docs/cleanup.json:1146",
-          "docs/cleanup.json:2186",
-          "docs/cleanup.json:2240",
-          "docs/cleanup.json:2293",
-          "docs/cleanup.json:2376",
-          "docs/cleanup.json:2566",
-          "docs/cleanup.json:2620"
+          "docs/cleanup.json:974",
+          "docs/cleanup.json:1127",
+          "docs/cleanup.json:2316",
+          "docs/cleanup.json:2370",
+          "docs/cleanup.json:2420",
+          "docs/cleanup.json:2502",
+          "docs/cleanup.json:2695",
+          "docs/cleanup.json:2749"
         ],
         "jobs": []
       },
@@ -3447,17 +3540,21 @@
       "last_commit": "2025-10-24",
       "references": {
         "code": [],
-        "configs": [],
+        "configs": [
+          "legacy/docs/2025-10-25-reports/report.json:17",
+          "legacy/docs/2025-10-25-reports/report.json:31",
+          "legacy/docs/2025-10-25-reports/report.json:46"
+        ],
         "ci": [],
         "docs": [
-          "docs/report.json:17",
-          "docs/report.json:31",
-          "docs/report.json:46",
-          "docs/cleanup.json:3319",
-          "docs/cleanup.json:3373",
-          "docs/cleanup.json:3427",
-          "docs/cleanup.json:3481",
-          "docs/CLEANUP_REPORT.md:135"
+          "legacy/docs/2025-10-25-reports/REPORT.md:51",
+          "legacy/docs/2025-10-25-reports/REPORT.md:59",
+          "legacy/docs/2025-10-25-reports/REPORT.md:67",
+          "docs/cleanup.json:3420",
+          "docs/cleanup.json:3478",
+          "docs/cleanup.json:3536",
+          "docs/cleanup.json:3594",
+          "docs/CLEANUP_REPORT.md:137"
         ],
         "jobs": []
       },
@@ -3477,14 +3574,14 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:993",
-          "docs/cleanup.json:1146",
-          "docs/cleanup.json:2186",
-          "docs/cleanup.json:2240",
-          "docs/cleanup.json:2293",
-          "docs/cleanup.json:2376",
-          "docs/cleanup.json:2566",
-          "docs/cleanup.json:2620"
+          "docs/cleanup.json:974",
+          "docs/cleanup.json:1127",
+          "docs/cleanup.json:2316",
+          "docs/cleanup.json:2370",
+          "docs/cleanup.json:2420",
+          "docs/cleanup.json:2502",
+          "docs/cleanup.json:2695",
+          "docs/cleanup.json:2749"
         ],
         "jobs": []
       },
@@ -3501,17 +3598,21 @@
       "last_commit": "2025-10-24",
       "references": {
         "code": [],
-        "configs": [],
+        "configs": [
+          "legacy/docs/2025-10-25-reports/report.json:17",
+          "legacy/docs/2025-10-25-reports/report.json:31",
+          "legacy/docs/2025-10-25-reports/report.json:46"
+        ],
         "ci": [],
         "docs": [
-          "docs/report.json:17",
-          "docs/report.json:31",
-          "docs/report.json:46",
-          "docs/cleanup.json:3319",
-          "docs/cleanup.json:3373",
-          "docs/cleanup.json:3427",
-          "docs/cleanup.json:3481",
-          "docs/CLEANUP_REPORT.md:135"
+          "legacy/docs/2025-10-25-reports/REPORT.md:51",
+          "legacy/docs/2025-10-25-reports/REPORT.md:59",
+          "legacy/docs/2025-10-25-reports/REPORT.md:67",
+          "docs/cleanup.json:3420",
+          "docs/cleanup.json:3478",
+          "docs/cleanup.json:3536",
+          "docs/cleanup.json:3594",
+          "docs/CLEANUP_REPORT.md:137"
         ],
         "jobs": []
       },
@@ -3531,14 +3632,14 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:993",
-          "docs/cleanup.json:1146",
-          "docs/cleanup.json:2186",
-          "docs/cleanup.json:2240",
-          "docs/cleanup.json:2293",
-          "docs/cleanup.json:2376",
-          "docs/cleanup.json:2566",
-          "docs/cleanup.json:2620"
+          "docs/cleanup.json:974",
+          "docs/cleanup.json:1127",
+          "docs/cleanup.json:2316",
+          "docs/cleanup.json:2370",
+          "docs/cleanup.json:2420",
+          "docs/cleanup.json:2502",
+          "docs/cleanup.json:2695",
+          "docs/cleanup.json:2749"
         ],
         "jobs": []
       },
@@ -3555,17 +3656,20 @@
       "last_commit": "2025-10-24",
       "references": {
         "code": [],
-        "configs": [],
+        "configs": [
+          "legacy/docs/2025-10-25-reports/report.json:82",
+          "legacy/docs/2025-10-25-reports/report.json:91",
+          "legacy/docs/2025-10-25-reports/report.json:98",
+          "legacy/docs/2025-10-25-reports/report.json:105",
+          "legacy/docs/2025-10-25-reports/report.json:112"
+        ],
         "ci": [],
         "docs": [
-          "docs/report.json:82",
-          "docs/report.json:91",
-          "docs/report.json:98",
-          "docs/report.json:105",
-          "docs/report.json:112",
-          "docs/cleanup.json:3535",
-          "docs/CLEANUP_REPORT.md:143",
-          "docs/CLEANUP_REPORT.md:1110"
+          "legacy/docs/2025-10-25-reports/REPORT.md:122",
+          "legacy/docs/2025-10-25-reports/REPORT.md:123",
+          "docs/cleanup.json:3652",
+          "docs/CLEANUP_REPORT.md:145",
+          "docs/CLEANUP_REPORT.md:1140"
         ],
         "jobs": []
       },
@@ -3585,14 +3689,14 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:258",
-          "docs/cleanup.json:259",
-          "docs/cleanup.json:288",
-          "docs/cleanup.json:289",
-          "docs/cleanup.json:318",
-          "docs/cleanup.json:319",
-          "docs/cleanup.json:348",
-          "docs/cleanup.json:349"
+          "legacy/docs/2025-10-25-reports/REPORT.md:115",
+          "docs/cleanup.json:237",
+          "docs/cleanup.json:238",
+          "docs/cleanup.json:267",
+          "docs/cleanup.json:268",
+          "docs/cleanup.json:297",
+          "docs/cleanup.json:298",
+          "docs/cleanup.json:327"
         ],
         "jobs": []
       },
@@ -3612,14 +3716,14 @@
         "configs": [],
         "ci": [],
         "docs": [
+          "docs/cleanup.json:752",
+          "docs/cleanup.json:930",
+          "docs/cleanup.json:1083",
+          "docs/cleanup.json:1228",
+          "docs/cleanup.json:3709",
           "docs/run/configs.md:77",
-          "docs/cleanup.json:774",
-          "docs/cleanup.json:952",
-          "docs/cleanup.json:1105",
-          "docs/cleanup.json:1250",
-          "docs/cleanup.json:3589",
-          "docs/CLEANUP_REPORT.md:145",
-          "docs/CLEANUP_REPORT.md:374"
+          "docs/CLEANUP_REPORT.md:147",
+          "docs/CLEANUP_REPORT.md:368"
         ],
         "jobs": []
       },
@@ -3639,10 +3743,9 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:3616",
-          "docs/CLEANUP_REPORT.md:146",
-          "docs/CLEANUP_REPORT.md:1131",
-          "docs/CLEANUP_REPORT.md:1249"
+          "docs/cleanup.json:3736",
+          "docs/CLEANUP_REPORT.md:148",
+          "docs/CLEANUP_REPORT.md:1162"
         ],
         "jobs": []
       },
@@ -3662,14 +3765,14 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:1530",
-          "docs/cleanup.json:1531",
-          "docs/cleanup.json:1532",
-          "docs/cleanup.json:1533",
-          "docs/cleanup.json:1630",
-          "docs/cleanup.json:1631",
-          "docs/cleanup.json:1632",
-          "docs/cleanup.json:1633"
+          "legacy/docs/2025-10-25-reports/REPORT.md:115",
+          "docs/cleanup.json:1509",
+          "docs/cleanup.json:1510",
+          "docs/cleanup.json:1511",
+          "docs/cleanup.json:1512",
+          "docs/cleanup.json:1609",
+          "docs/cleanup.json:1610",
+          "docs/cleanup.json:1611"
         ],
         "jobs": []
       },
@@ -3689,9 +3792,9 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:3666",
-          "docs/CLEANUP_REPORT.md:148",
-          "docs/CLEANUP_REPORT.md:1145"
+          "docs/cleanup.json:3785",
+          "docs/CLEANUP_REPORT.md:150",
+          "docs/CLEANUP_REPORT.md:1176"
         ],
         "jobs": []
       },
@@ -3711,9 +3814,9 @@
         "configs": [],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:3688",
-          "docs/CLEANUP_REPORT.md:149",
-          "docs/CLEANUP_REPORT.md:1152"
+          "docs/cleanup.json:3807",
+          "docs/CLEANUP_REPORT.md:151",
+          "docs/CLEANUP_REPORT.md:1183"
         ],
         "jobs": []
       },
@@ -3726,21 +3829,25 @@
     {
       "path": "tools/audit_cleanup.py",
       "type": "code",
-      "size_kb": 20.54,
-      "last_commit": "",
+      "size_kb": 24.75,
+      "last_commit": "2025-10-24",
       "references": {
-        "code": [],
-        "configs": [],
+        "code": [
+          "tools/audit_cleanup.py:108"
+        ],
+        "configs": [
+          "ci/lint.yml:32"
+        ],
         "ci": [],
         "docs": [
-          "docs/cleanup.json:107",
-          "docs/cleanup.json:108",
-          "docs/cleanup.json:137",
-          "docs/cleanup.json:229",
-          "docs/cleanup.json:1663",
-          "docs/cleanup.json:1718",
-          "docs/cleanup.json:1719",
-          "docs/cleanup.json:1775"
+          "docs/cleanup.json:111",
+          "docs/cleanup.json:112",
+          "docs/cleanup.json:205",
+          "docs/cleanup.json:206",
+          "docs/cleanup.json:207",
+          "docs/cleanup.json:208",
+          "docs/cleanup.json:1643",
+          "docs/cleanup.json:1698"
         ],
         "jobs": []
       },
@@ -3754,20 +3861,22 @@
       "path": "tools/list_io.py",
       "type": "code",
       "size_kb": 3.18,
-      "last_commit": "",
+      "last_commit": "2025-10-24",
       "references": {
         "code": [],
-        "configs": [],
+        "configs": [
+          "ci/lint.yml:34"
+        ],
         "ci": [],
         "docs": [
-          "README.md:40",
-          "docs/cleanup.json:2160",
-          "docs/cleanup.json:3737",
-          "docs/CLEANUP_REPORT.md:92",
-          "docs/CLEANUP_REPORT.md:151",
-          "docs/CLEANUP_REPORT.md:742",
-          "docs/CLEANUP_REPORT.md:1166",
-          "docs/CLEANUP_REPORT.md:1259"
+          "docs/cleanup.json:2062",
+          "docs/cleanup.json:3860",
+          "docs/PROJECT_DOCUMENTATION.md:115",
+          "docs/CLEANUP_REPORT.md:88",
+          "docs/CLEANUP_REPORT.md:153",
+          "docs/CLEANUP_REPORT.md:710",
+          "docs/CLEANUP_REPORT.md:1199",
+          "README.md:40"
         ],
         "jobs": []
       },

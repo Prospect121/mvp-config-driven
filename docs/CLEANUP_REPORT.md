@@ -1,14 +1,14 @@
 # Cleanup Audit Report
 
-_Generated on 2025-10-25T02:12:43.911203Z_
+_Generated on 2025-10-25T02:36:42.052453Z_
 
 ## Resumen ejecutivo
 
 | Clasificación | Conteo |
 | --- | ---: |
-| REMOVE | 1 |
+| REMOVE | 0 |
 | QUARANTINE | 4 |
-| KEEP | 128 |
+| KEEP | 131 |
 
 **Ahorro estimado**: 0.02 MB si se aplica REMOVE + QUARANTINE.
 
@@ -16,15 +16,14 @@ _Generated on 2025-10-25T02:12:43.911203Z_
 
 | Path | Tipo | Tamaño (KB) | Último commit | # refs | Clasificación | Motivo | Riesgo | Acción |
 | --- | --- | ---: | --- | ---: | --- | --- | --- | --- |
-| .env | other | 0.48 | 2025-09-28 | 16 | KEEP | Referenced or recently modified. | medium | keep |
+| .env | other | 0.48 | 2025-09-28 | 20 | KEEP | Referenced or recently modified. | medium | keep |
 | .env.example | other | 0.55 | 2025-10-06 | 3 | KEEP | Referenced or recently modified. | medium | keep |
 | .gitignore | other | 6.04 | 2025-10-24 | 6 | KEEP | Referenced or recently modified. | medium | keep |
-| .mc/config.json | config | 0.69 | 2025-09-29 | 10 | KEEP | Referenced or recently modified. | medium | keep |
-| .mc/config.json.old | other | 0.69 | 2025-09-29 | 5 | REMOVE | Archivo de respaldo antiguo de MinIO; reemplazado por config.json | low | delete |
+| .mc/config.json | config | 0.69 | 2025-09-29 | 7 | KEEP | Referenced or recently modified. | medium | keep |
 | .mc/share/downloads.json | config | 0.03 | 2025-09-29 | 3 | KEEP | Referenced or recently modified. | medium | keep |
 | .mc/share/uploads.json | config | 0.03 | 2025-09-29 | 3 | KEEP | Referenced or recently modified. | medium | keep |
 | .pre-commit-config.yaml | config | 0.34 | 2025-10-21 | 4 | KEEP | Referenced or recently modified. | medium | keep |
-| README.md | doc | 1.93 | 2025-10-24 | 9 | KEEP | Governance or generated artifact | low | keep |
+| README.md | doc | 2.81 | 2025-10-24 | 12 | KEEP | Governance or generated artifact | low | keep |
 | cfg/bronze/template.yml | config | 0.52 | 2025-10-24 | 10 | KEEP | Referenced or recently modified. | medium | keep |
 | cfg/gold/template.yml | config | 0.51 | 2025-10-24 | 10 | KEEP | Referenced or recently modified. | medium | keep |
 | cfg/raw/template.yml | config | 0.51 | 2025-10-24 | 10 | KEEP | Referenced or recently modified. | medium | keep |
@@ -32,7 +31,7 @@ _Generated on 2025-10-25T02:12:43.911203Z_
 | ci/build-test.yml | config | 0.97 | 2025-10-24 | 5 | KEEP | Referenced or recently modified. | medium | keep |
 | ci/check_config.sh | ci | 0.25 | 2025-09-28 | 9 | KEEP | Referenced or recently modified. | medium | keep |
 | ci/docker-compose.override.yml | config | 0.10 | 2025-10-08 | 3 | KEEP | Referenced or recently modified. | medium | keep |
-| ci/lint.yml | config | 0.34 | 2025-10-24 | 7 | KEEP | Referenced or recently modified. | medium | keep |
+| ci/lint.yml | config | 1.00 | 2025-10-24 | 8 | KEEP | Referenced or recently modified. | medium | keep |
 | ci/test_dataset.yml | config | 0.34 | 2025-09-28 | 8 | KEEP | Referenced or recently modified. | medium | keep |
 | config/database.yml | config | 1.93 | 2025-10-09 | 22 | KEEP | Referenced or recently modified. | medium | keep |
 | config/datasets/casos_uso/events_multiformat.yml | config | 3.88 | 2025-10-24 | 9 | KEEP | Referenced or recently modified. | medium | keep |
@@ -72,15 +71,13 @@ _Generated on 2025-10-25T02:12:43.911203Z_
 | data/s3a-staging/raw/payments_v3/sample.csv | other | 0.34 | 2025-10-24 | 13 | KEEP | Referenced or recently modified. | medium | keep |
 | docker/spark-pandas-udf/Dockerfile | docker | 0.34 | 2025-10-13 | 7 | KEEP | Referenced or recently modified. | medium | keep |
 | docker-compose.yml | config | 3.98 | 2025-10-13 | 8 | KEEP | Referenced or recently modified. | medium | keep |
-| docs/CLEANUP_REPORT.md | doc | 110.83 | - | 10 | KEEP | Governance or generated artifact | low | keep |
-| docs/PROJECT_DOCUMENTATION.md | doc | 5.29 | 2025-10-24 | 8 | KEEP | Referenced or recently modified. | medium | keep |
-| docs/REPORT.md | doc | 12.38 | 2025-10-24 | 11 | QUARANTINE | Reporte legacy previo a la documentación modular. | medium | move_to_legacy |
-| docs/cleanup.json | doc | 135.98 | - | 10 | KEEP | Governance or generated artifact | low | keep |
-| docs/diagrams/dependencies.md | doc | 1.24 | 2025-10-24 | 4 | KEEP | Referenced or recently modified. | medium | keep |
-| docs/diagrams/deps_cleanup.md | doc | 0.64 | - | 9 | KEEP | Governance or generated artifact | low | keep |
+| docs/CLEANUP_REPORT.md | doc | 69.73 | 2025-10-24 | 10 | KEEP | Governance or generated artifact | low | keep |
+| docs/PROJECT_DOCUMENTATION.md | doc | 6.12 | 2025-10-24 | 8 | KEEP | Referenced or recently modified. | medium | keep |
+| docs/cleanup.json | doc | 109.96 | 2025-10-24 | 12 | KEEP | Governance or generated artifact | low | keep |
+| docs/diagrams/dependencies.md | doc | 1.24 | 2025-10-24 | 5 | KEEP | Referenced or recently modified. | medium | keep |
+| docs/diagrams/deps_cleanup.md | doc | 1.36 | 2025-10-24 | 10 | KEEP | Governance or generated artifact | low | keep |
 | docs/diagrams/pipeline_flow.md | doc | 1.17 | 2025-10-24 | 8 | KEEP | Referenced or recently modified. | medium | keep |
-| docs/policies/DEP-001-legacy-removal.md | doc | 2.08 | - | 4 | KEEP | Governance or generated artifact | low | keep |
-| docs/report.json | doc | 5.92 | 2025-10-24 | 9 | QUARANTINE | Export JSON antiguo duplicando reportes actuales. | medium | move_to_legacy |
+| docs/policies/DEP-001-legacy-removal.md | doc | 2.08 | 2025-10-24 | 6 | KEEP | Governance or generated artifact | low | keep |
 | docs/run/aws.md | doc | 3.11 | 2025-10-24 | 4 | KEEP | Referenced or recently modified. | medium | keep |
 | docs/run/azure.md | doc | 3.28 | 2025-10-24 | 6 | KEEP | Referenced or recently modified. | medium | keep |
 | docs/run/configs.md | doc | 2.69 | 2025-10-24 | 8 | KEEP | Referenced or recently modified. | medium | keep |
@@ -88,67 +85,72 @@ _Generated on 2025-10-25T02:12:43.911203Z_
 | docs/run/gcp.md | doc | 3.61 | 2025-10-24 | 4 | KEEP | Referenced or recently modified. | medium | keep |
 | docs/run/jobs/aws_stepfunctions.json | doc | 1.28 | 2025-10-24 | 8 | KEEP | Referenced or recently modified. | medium | keep |
 | docs/run/jobs/databricks_job.json | doc | 2.03 | 2025-10-24 | 3 | KEEP | Referenced or recently modified. | medium | keep |
-| docs/run/jobs/dataproc_workflow.yaml | config | 1.68 | 2025-10-24 | 4 | QUARANTINE | Plantilla Dataproc sin referencias en CI/CD. | medium | move_to_legacy |
-| docs/tools/list_io.py | code | 2.94 | 2025-10-24 | 8 | KEEP | Referenced or recently modified. | medium | keep |
+| docs/tools/list_io.py | code | 2.94 | 2025-10-24 | 9 | KEEP | Referenced or recently modified. | medium | keep |
+| legacy/docs/2025-10-25-reports/README.md | doc | 0.56 | - | 12 | KEEP | Punto de entrada documental | low | keep |
+| legacy/docs/2025-10-25-reports/REPORT.md | doc | 12.38 | - | 14 | QUARANTINE | Reporte legacy reubicado en cuarentena (2025-10-25). | medium | hold_in_legacy |
+| legacy/docs/2025-10-25-reports/report.json | config | 5.92 | - | 12 | QUARANTINE | Export JSON legacy en cuarentena (2025-10-25). | medium | hold_in_legacy |
+| legacy/infra/2025-10-25-gcp/README.md | doc | 0.50 | - | 12 | KEEP | Punto de entrada documental | low | keep |
+| legacy/infra/2025-10-25-gcp/dataproc_workflow.yaml | config | 1.68 | - | 11 | QUARANTINE | Workflow Dataproc legacy en cuarentena (2025-10-25). | medium | hold_in_legacy |
+| legacy/scripts/2025-10-25-generation/README.md | doc | 0.48 | - | 12 | KEEP | Punto de entrada documental | low | keep |
+| legacy/scripts/2025-10-25-generation/generate_big_payments.py | code | 1.27 | - | 12 | QUARANTINE | Script de pagos legacy retenido en cuarentena (2025-10-25). | medium | hold_in_legacy |
 | pipelines/__init__.py | code | 0.16 | 2025-10-21 | 8 | KEEP | Referenced or recently modified. | medium | keep |
-| pipelines/common.py | code | 4.32 | 2025-10-24 | 8 | KEEP | Referenced or recently modified. | medium | keep |
+| pipelines/common.py | code | 4.32 | 2025-10-24 | 7 | KEEP | Referenced or recently modified. | medium | keep |
 | pipelines/config/__init__.py | code | 0.05 | 2025-10-21 | 8 | KEEP | Referenced or recently modified. | medium | keep |
-| pipelines/config/loader.py | code | 0.75 | 2025-10-21 | 8 | KEEP | Referenced or recently modified. | medium | keep |
+| pipelines/config/loader.py | code | 0.75 | 2025-10-21 | 4 | KEEP | Referenced or recently modified. | medium | keep |
 | pipelines/database/__init__.py | code | 0.06 | 2025-10-08 | 8 | KEEP | Referenced or recently modified. | medium | keep |
-| pipelines/database/db_manager.py | code | 29.79 | 2025-10-15 | 8 | KEEP | Referenced or recently modified. | medium | keep |
+| pipelines/database/db_manager.py | code | 29.79 | 2025-10-15 | 7 | KEEP | Referenced or recently modified. | medium | keep |
 | pipelines/database/schema_mapper.py | code | 18.59 | 2025-10-09 | 9 | KEEP | Referenced or recently modified. | medium | keep |
 | pipelines/io/__init__.py | code | 0.06 | 2025-10-21 | 8 | KEEP | Referenced or recently modified. | medium | keep |
-| pipelines/io/reader.py | code | 1.48 | 2025-10-24 | 8 | KEEP | Referenced or recently modified. | medium | keep |
-| pipelines/io/s3a.py | code | 0.48 | 2025-10-24 | 6 | KEEP | Referenced or recently modified. | medium | keep |
-| pipelines/io/writer.py | code | 1.42 | 2025-10-24 | 7 | KEEP | Referenced or recently modified. | medium | keep |
-| pipelines/sources.py | code | 13.96 | 2025-10-24 | 8 | KEEP | Referenced or recently modified. | medium | keep |
-| pipelines/spark_job.py | code | 11.51 | 2025-10-24 | 8 | KEEP | Referenced or recently modified. | medium | keep |
+| pipelines/io/reader.py | code | 1.48 | 2025-10-24 | 4 | KEEP | Referenced or recently modified. | medium | keep |
+| pipelines/io/s3a.py | code | 0.48 | 2025-10-24 | 4 | KEEP | Referenced or recently modified. | medium | keep |
+| pipelines/io/writer.py | code | 1.42 | 2025-10-24 | 5 | KEEP | Referenced or recently modified. | medium | keep |
+| pipelines/sources.py | code | 13.96 | 2025-10-24 | 10 | KEEP | Referenced or recently modified. | medium | keep |
+| pipelines/spark_job.py | code | 11.51 | 2025-10-24 | 9 | KEEP | Referenced or recently modified. | medium | keep |
 | pipelines/spark_job_with_db.py | code | 2.11 | 2025-10-24 | 16 | KEEP | Referenced or recently modified. | medium | keep |
 | pipelines/transforms/__init__.py | code | 0.05 | 2025-10-21 | 8 | KEEP | Referenced or recently modified. | medium | keep |
 | pipelines/transforms/apply.py | code | 4.82 | 2025-10-24 | 8 | KEEP | Referenced or recently modified. | medium | keep |
 | pipelines/transforms/tests/__init__.py | code | 0.03 | 2025-10-21 | 8 | KEEP | Referenced or recently modified. | medium | keep |
-| pipelines/transforms/tests/test_apply.py | code | 1.23 | 2025-10-21 | 7 | KEEP | Referenced or recently modified. | medium | keep |
-| pipelines/udf_catalog.py | code | 4.79 | 2025-10-13 | 8 | KEEP | Referenced or recently modified. | medium | keep |
+| pipelines/transforms/tests/test_apply.py | code | 1.23 | 2025-10-21 | 4 | KEEP | Referenced or recently modified. | medium | keep |
+| pipelines/udf_catalog.py | code | 4.79 | 2025-10-13 | 3 | KEEP | Referenced or recently modified. | medium | keep |
 | pipelines/utils/__init__.py | code | 0.06 | 2025-10-21 | 8 | KEEP | Referenced or recently modified. | medium | keep |
 | pipelines/utils/logger.py | code | 1.16 | 2025-10-21 | 4 | KEEP | Referenced or recently modified. | medium | keep |
-| pipelines/utils/parallel.py | code | 0.95 | 2025-10-21 | 6 | KEEP | Referenced or recently modified. | medium | keep |
+| pipelines/utils/parallel.py | code | 0.95 | 2025-10-21 | 4 | KEEP | Referenced or recently modified. | medium | keep |
 | pipelines/validation/__init__.py | code | 0.08 | 2025-10-21 | 8 | KEEP | Referenced or recently modified. | medium | keep |
-| pipelines/validation/quality.py | code | 4.31 | 2025-10-24 | 8 | KEEP | Referenced or recently modified. | medium | keep |
+| pipelines/validation/quality.py | code | 4.31 | 2025-10-24 | 6 | KEEP | Referenced or recently modified. | medium | keep |
 | pyproject.toml | config | 0.81 | 2025-10-24 | 6 | KEEP | Governance or generated artifact | low | keep |
-| requirements.txt | other | 0.68 | 2025-10-24 | 11 | KEEP | Governance or generated artifact | low | keep |
+| requirements.txt | other | 0.68 | 2025-10-24 | 12 | KEEP | Governance or generated artifact | low | keep |
 | scripts/db/init.sql | other | 1.67 | 2025-10-08 | 4 | KEEP | Referenced or recently modified. | medium | keep |
-| scripts/generate_big_payments.py | code | 1.27 | 2025-09-29 | 9 | QUARANTINE | Script de generación legacy reemplazado por generate_synthetic_data.py. | medium | move_to_legacy |
 | scripts/generate_synthetic_data.py | code | 34.54 | 2025-10-24 | 16 | KEEP | Referenced or recently modified. | medium | keep |
-| scripts/run_high_volume_case.py | code | 8.63 | 2025-10-24 | 8 | KEEP | Referenced or recently modified. | medium | keep |
+| scripts/run_high_volume_case.py | code | 8.63 | 2025-10-24 | 9 | KEEP | Referenced or recently modified. | medium | keep |
 | scripts/run_multiformat_case.py | code | 15.11 | 2025-10-24 | 8 | KEEP | Referenced or recently modified. | medium | keep |
-| scripts/runner.sh | other | 4.07 | 2025-10-24 | 10 | KEEP | Referenced or recently modified. | medium | keep |
-| scripts/runner_with_db.sh | other | 3.03 | 2025-10-24 | 8 | KEEP | Referenced or recently modified. | medium | keep |
+| scripts/runner.sh | other | 4.07 | 2025-10-24 | 12 | KEEP | Referenced or recently modified. | medium | keep |
+| scripts/runner_with_db.sh | other | 3.03 | 2025-10-24 | 11 | KEEP | Referenced or recently modified. | medium | keep |
 | src/datacore/__init__.py | code | 0.32 | 2025-10-24 | 8 | KEEP | Referenced or recently modified. | medium | keep |
-| src/datacore/cli.py | code | 4.91 | 2025-10-24 | 8 | KEEP | Referenced or recently modified. | medium | keep |
+| src/datacore/cli.py | code | 4.91 | 2025-10-24 | 5 | KEEP | Referenced or recently modified. | medium | keep |
 | src/datacore/config/schema.py | code | 8.37 | 2025-10-24 | 8 | KEEP | Referenced or recently modified. | medium | keep |
-| src/datacore/context.py | code | 6.29 | 2025-10-24 | 7 | KEEP | Referenced or recently modified. | medium | keep |
+| src/datacore/context.py | code | 6.29 | 2025-10-24 | 3 | KEEP | Referenced or recently modified. | medium | keep |
 | src/datacore/io/__init__.py | code | 0.31 | 2025-10-24 | 8 | KEEP | Referenced or recently modified. | medium | keep |
 | src/datacore/io/adapters.py | code | 3.37 | 2025-10-24 | 8 | KEEP | Referenced or recently modified. | medium | keep |
 | src/datacore/io/fs.py | code | 19.87 | 2025-10-24 | 8 | KEEP | Referenced or recently modified. | medium | keep |
 | src/datacore/layers/__init__.py | code | 0.00 | 2025-10-24 | 8 | KEEP | Referenced or recently modified. | medium | keep |
 | src/datacore/layers/bronze/__init__.py | code | 0.00 | 2025-10-24 | 8 | KEEP | Referenced or recently modified. | medium | keep |
-| src/datacore/layers/bronze/main.py | code | 6.72 | 2025-10-24 | 8 | KEEP | Referenced or recently modified. | medium | keep |
+| src/datacore/layers/bronze/main.py | code | 6.72 | 2025-10-24 | 11 | KEEP | Referenced or recently modified. | medium | keep |
 | src/datacore/layers/gold/__init__.py | code | 0.00 | 2025-10-24 | 8 | KEEP | Referenced or recently modified. | medium | keep |
-| src/datacore/layers/gold/main.py | code | 6.58 | 2025-10-24 | 8 | KEEP | Referenced or recently modified. | medium | keep |
+| src/datacore/layers/gold/main.py | code | 6.58 | 2025-10-24 | 11 | KEEP | Referenced or recently modified. | medium | keep |
 | src/datacore/layers/raw/__init__.py | code | 0.00 | 2025-10-24 | 8 | KEEP | Referenced or recently modified. | medium | keep |
-| src/datacore/layers/raw/main.py | code | 0.62 | 2025-10-24 | 8 | KEEP | Referenced or recently modified. | medium | keep |
+| src/datacore/layers/raw/main.py | code | 0.62 | 2025-10-24 | 11 | KEEP | Referenced or recently modified. | medium | keep |
 | src/datacore/layers/silver/__init__.py | code | 0.00 | 2025-10-24 | 8 | KEEP | Referenced or recently modified. | medium | keep |
-| src/datacore/layers/silver/main.py | code | 6.17 | 2025-10-24 | 8 | KEEP | Referenced or recently modified. | medium | keep |
+| src/datacore/layers/silver/main.py | code | 6.17 | 2025-10-24 | 11 | KEEP | Referenced or recently modified. | medium | keep |
 | src/datacore/pipeline/__init__.py | code | 0.00 | 2025-10-24 | 8 | KEEP | Referenced or recently modified. | medium | keep |
-| src/datacore/pipeline/utils.py | code | 24.75 | 2025-10-24 | 8 | KEEP | Referenced or recently modified. | medium | keep |
+| src/datacore/pipeline/utils.py | code | 24.75 | 2025-10-24 | 10 | KEEP | Referenced or recently modified. | medium | keep |
 | tests/test_cli_smoke.py | code | 2.76 | 2025-10-24 | 8 | KEEP | Referenced or recently modified. | medium | keep |
 | tests/test_config_schema.py | code | 2.22 | 2025-10-24 | 8 | KEEP | Referenced or recently modified. | medium | keep |
-| tests/test_io_adapters.py | code | 1.88 | 2025-10-24 | 4 | KEEP | Referenced or recently modified. | medium | keep |
+| tests/test_io_adapters.py | code | 1.88 | 2025-10-24 | 3 | KEEP | Referenced or recently modified. | medium | keep |
 | tests/test_io_fs.py | code | 7.97 | 2025-10-24 | 8 | KEEP | Referenced or recently modified. | medium | keep |
 | tests/test_layers_config.py | code | 2.24 | 2025-10-24 | 3 | KEEP | Referenced or recently modified. | medium | keep |
 | tests/test_security.py | code | 0.95 | 2025-10-24 | 3 | KEEP | Referenced or recently modified. | medium | keep |
-| tools/audit_cleanup.py | code | 20.54 | - | 8 | KEEP | Referenced or recently modified. | medium | keep |
-| tools/list_io.py | code | 3.18 | - | 8 | KEEP | Referenced or recently modified. | medium | keep |
+| tools/audit_cleanup.py | code | 24.75 | 2025-10-24 | 10 | KEEP | Referenced or recently modified. | medium | keep |
+| tools/list_io.py | code | 3.18 | 2025-10-24 | 9 | KEEP | Referenced or recently modified. | medium | keep |
 
 ## Evidencia por elemento
 
@@ -156,69 +158,61 @@ _Generated on 2025-10-25T02:12:43.911203Z_
 
 Referencias detectadas:
 
-- **code**: scripts/run_high_volume_case.py:29, scripts/run_high_volume_case.py:30, scripts/run_high_volume_case.py:31, scripts/run_high_volume_case.py:39, scripts/run_multiformat_case.py:38, scripts/run_multiformat_case.py:39, scripts/run_multiformat_case.py:40, scripts/run_multiformat_case.py:44
-- **docs**: docs/report.json:174, docs/report.json:175, docs/report.json:176, docs/report.json:177, docs/run/jobs/aws_stepfunctions.json:12, docs/run/jobs/aws_stepfunctions.json:24, docs/run/jobs/aws_stepfunctions.json:36, docs/run/jobs/aws_stepfunctions.json:48
+- **code**: scripts/run_multiformat_case.py:38, scripts/run_multiformat_case.py:39, scripts/run_multiformat_case.py:40, scripts/run_multiformat_case.py:44, scripts/run_multiformat_case.py:48, scripts/run_multiformat_case.py:55, scripts/run_multiformat_case.py:57, scripts/run_multiformat_case.py:63
+- **configs**: legacy/docs/2025-10-25-reports/report.json:174, legacy/docs/2025-10-25-reports/report.json:175, legacy/docs/2025-10-25-reports/report.json:176, legacy/docs/2025-10-25-reports/report.json:177
+- **docs**: docs/cleanup.json:16, docs/cleanup.json:57, docs/run/jobs/aws_stepfunctions.json:12, docs/run/jobs/aws_stepfunctions.json:24, docs/run/jobs/aws_stepfunctions.json:36, docs/run/jobs/aws_stepfunctions.json:48, docs/CLEANUP_REPORT.md:19, docs/CLEANUP_REPORT.md:20
 - Clasificación: KEEP
 
 ### .env.example
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:53, docs/CLEANUP_REPORT.md:20, docs/CLEANUP_REPORT.md:163
+- **docs**: docs/cleanup.json:57, docs/CLEANUP_REPORT.md:20, docs/CLEANUP_REPORT.md:166
 - Clasificación: KEEP
 
 ### .gitignore
 
 Referencias detectadas:
 
-- **code**: data/output/.gitkeep:2, data/processed/.gitkeep:2, data/raw/.gitkeep:2
-- **docs**: docs/cleanup.json:75, docs/CLEANUP_REPORT.md:21, docs/CLEANUP_REPORT.md:170
+- **code**: data/processed/.gitkeep:2, data/raw/.gitkeep:2, data/output/.gitkeep:2
+- **docs**: docs/cleanup.json:79, docs/CLEANUP_REPORT.md:21, docs/CLEANUP_REPORT.md:173
 - Clasificación: KEEP
 
 ### .mc/config.json
 
 Referencias detectadas:
 
-- **code**: tools/audit_cleanup.py:26, tools/audit_cleanup.py:28
-- **docs**: docs/diagrams/deps_cleanup.md:11, docs/cleanup.json:101, docs/cleanup.json:131, docs/cleanup.json:150, docs/CLEANUP_REPORT.md:22, docs/CLEANUP_REPORT.md:23, docs/CLEANUP_REPORT.md:178, docs/CLEANUP_REPORT.md:186
+- **code**: tools/audit_cleanup.py:27, tools/audit_cleanup.py:29
+- **docs**: docs/diagrams/deps_cleanup.md:9, docs/diagrams/deps_cleanup.md:20, docs/cleanup.json:105, docs/CLEANUP_REPORT.md:22, docs/CLEANUP_REPORT.md:181
 - Clasificación: KEEP
-
-### .mc/config.json.old
-
-Referencias detectadas:
-
-- **code**: tools/audit_cleanup.py:26
-- **docs**: docs/diagrams/deps_cleanup.md:11, docs/cleanup.json:131, docs/CLEANUP_REPORT.md:23, docs/CLEANUP_REPORT.md:186
-- Notas: No se usa en CI ni en scripts actuales.
-- Clasificación: REMOVE
 
 ### .mc/share/downloads.json
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:156, docs/CLEANUP_REPORT.md:24, docs/CLEANUP_REPORT.md:195
+- **docs**: docs/cleanup.json:132, docs/CLEANUP_REPORT.md:23, docs/CLEANUP_REPORT.md:189
 - Clasificación: KEEP
 
 ### .mc/share/uploads.json
 
 Referencias detectadas:
 
-- **docs**: docs/CLEANUP_REPORT.md:25, docs/CLEANUP_REPORT.md:202, docs/cleanup.json:178
+- **docs**: docs/cleanup.json:154, docs/CLEANUP_REPORT.md:24, docs/CLEANUP_REPORT.md:196
 - Clasificación: KEEP
 
 ### .pre-commit-config.yaml
 
 Referencias detectadas:
 
-- **docs**: docs/PROJECT_DOCUMENTATION.md:91, docs/cleanup.json:200, docs/CLEANUP_REPORT.md:26, docs/CLEANUP_REPORT.md:209
+- **docs**: docs/cleanup.json:176, docs/PROJECT_DOCUMENTATION.md:91, docs/CLEANUP_REPORT.md:25, docs/CLEANUP_REPORT.md:203
 - Clasificación: KEEP
 
 ### README.md
 
 Referencias detectadas:
 
-- **code**: tools/audit_cleanup.py:210
-- **docs**: docs/PROJECT_DOCUMENTATION.md:107, docs/cleanup.json:223, docs/cleanup.json:525, docs/cleanup.json:1376, docs/cleanup.json:1377, docs/cleanup.json:1378, docs/cleanup.json:1751, docs/cleanup.json:2169
+- **code**: tools/audit_cleanup.py:105, tools/audit_cleanup.py:106, tools/audit_cleanup.py:107, tools/audit_cleanup.py:258
+- **docs**: docs/cleanup.json:199, docs/cleanup.json:1764, docs/cleanup.json:2080, docs/cleanup.json:2091, docs/cleanup.json:2139, docs/cleanup.json:2171, docs/cleanup.json:2189, docs/cleanup.json:2235
 - Clasificación: KEEP
 
 ### cfg/bronze/template.yml
@@ -226,7 +220,7 @@ Referencias detectadas:
 Referencias detectadas:
 
 - **code**: tests/test_cli_smoke.py:20, tests/test_cli_smoke.py:27
-- **docs**: docs/cleanup.json:252, docs/cleanup.json:282, docs/cleanup.json:312, docs/cleanup.json:342, docs/cleanup.json:1369, docs/cleanup.json:1370, docs/cleanup.json:1371, docs/cleanup.json:1372
+- **docs**: legacy/docs/2025-10-25-reports/REPORT.md:105, legacy/docs/2025-10-25-reports/REPORT.md:166, docs/cleanup.json:231, docs/cleanup.json:261, docs/cleanup.json:291, docs/cleanup.json:321, docs/cleanup.json:1349, docs/cleanup.json:1350
 - Clasificación: KEEP
 
 ### cfg/gold/template.yml
@@ -234,7 +228,7 @@ Referencias detectadas:
 Referencias detectadas:
 
 - **code**: tests/test_cli_smoke.py:20, tests/test_cli_smoke.py:27
-- **docs**: docs/cleanup.json:252, docs/cleanup.json:282, docs/cleanup.json:312, docs/cleanup.json:342, docs/cleanup.json:1369, docs/cleanup.json:1370, docs/cleanup.json:1371, docs/cleanup.json:1372
+- **docs**: legacy/docs/2025-10-25-reports/REPORT.md:105, legacy/docs/2025-10-25-reports/REPORT.md:166, docs/cleanup.json:231, docs/cleanup.json:261, docs/cleanup.json:291, docs/cleanup.json:321, docs/cleanup.json:1349, docs/cleanup.json:1350
 - Clasificación: KEEP
 
 ### cfg/raw/template.yml
@@ -242,7 +236,7 @@ Referencias detectadas:
 Referencias detectadas:
 
 - **code**: tests/test_cli_smoke.py:20, tests/test_cli_smoke.py:27
-- **docs**: docs/cleanup.json:252, docs/cleanup.json:282, docs/cleanup.json:312, docs/cleanup.json:342, docs/cleanup.json:1369, docs/cleanup.json:1370, docs/cleanup.json:1371, docs/cleanup.json:1372
+- **docs**: legacy/docs/2025-10-25-reports/REPORT.md:105, legacy/docs/2025-10-25-reports/REPORT.md:166, docs/cleanup.json:231, docs/cleanup.json:261, docs/cleanup.json:291, docs/cleanup.json:321, docs/cleanup.json:1349, docs/cleanup.json:1350
 - Clasificación: KEEP
 
 ### cfg/silver/template.yml
@@ -250,14 +244,14 @@ Referencias detectadas:
 Referencias detectadas:
 
 - **code**: tests/test_cli_smoke.py:20, tests/test_cli_smoke.py:27
-- **docs**: docs/cleanup.json:252, docs/cleanup.json:282, docs/cleanup.json:312, docs/cleanup.json:342, docs/cleanup.json:1369, docs/cleanup.json:1370, docs/cleanup.json:1371, docs/cleanup.json:1372
+- **docs**: legacy/docs/2025-10-25-reports/REPORT.md:105, legacy/docs/2025-10-25-reports/REPORT.md:166, docs/cleanup.json:231, docs/cleanup.json:261, docs/cleanup.json:291, docs/cleanup.json:321, docs/cleanup.json:1349, docs/cleanup.json:1350
 - Clasificación: KEEP
 
 ### ci/build-test.yml
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:372, docs/cleanup.json:2862, docs/CLEANUP_REPORT.md:32, docs/CLEANUP_REPORT.md:256, docs/CLEANUP_REPORT.md:933
+- **docs**: docs/cleanup.json:351, docs/cleanup.json:2985, docs/CLEANUP_REPORT.md:31, docs/CLEANUP_REPORT.md:250, docs/CLEANUP_REPORT.md:966
 - Clasificación: KEEP
 
 ### ci/check_config.sh
@@ -265,37 +259,37 @@ Referencias detectadas:
 Referencias detectadas:
 
 - **configs**: ci/lint.yml:18
-- **docs**: docs/cleanup.json:396, docs/cleanup.json:1004, docs/cleanup.json:1157, docs/CLEANUP_REPORT.md:33, docs/CLEANUP_REPORT.md:263, docs/CLEANUP_REPORT.md:429, docs/CLEANUP_REPORT.md:466, docs/REPORT.md:114
+- **docs**: docs/cleanup.json:375, docs/cleanup.json:984, docs/cleanup.json:1137, docs/CLEANUP_REPORT.md:32, docs/CLEANUP_REPORT.md:257, docs/CLEANUP_REPORT.md:423, docs/CLEANUP_REPORT.md:460, legacy/docs/2025-10-25-reports/REPORT.md:114
 - Clasificación: KEEP
 
 ### ci/docker-compose.override.yml
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:425, docs/CLEANUP_REPORT.md:34, docs/CLEANUP_REPORT.md:271
+- **docs**: docs/cleanup.json:404, docs/CLEANUP_REPORT.md:33, docs/CLEANUP_REPORT.md:265
 - Clasificación: KEEP
 
 ### ci/lint.yml
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:403, docs/cleanup.json:447, docs/CLEANUP_REPORT.md:35, docs/CLEANUP_REPORT.md:267, docs/CLEANUP_REPORT.md:278, docs/REPORT.md:114, docs/REPORT.md:128
+- **docs**: legacy/docs/2025-10-25-reports/REPORT.md:114, legacy/docs/2025-10-25-reports/REPORT.md:128, docs/cleanup.json:382, docs/cleanup.json:426, docs/cleanup.json:1759, docs/cleanup.json:1760, docs/cleanup.json:2069, docs/cleanup.json:2986
 - Clasificación: KEEP
 
 ### ci/test_dataset.yml
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:473, docs/cleanup.json:1001, docs/cleanup.json:1154, docs/cleanup.json:1537, docs/cleanup.json:1637, docs/CLEANUP_REPORT.md:36, docs/CLEANUP_REPORT.md:285, docs/CLEANUP_REPORT.md:428
+- **docs**: docs/cleanup.json:453, docs/cleanup.json:981, docs/cleanup.json:1134, docs/cleanup.json:1517, docs/cleanup.json:1617, docs/CLEANUP_REPORT.md:35, docs/CLEANUP_REPORT.md:279, docs/CLEANUP_REPORT.md:422
 - Clasificación: KEEP
 
 ### config/database.yml
 
 Referencias detectadas:
 
-- **code**: scripts/run_high_volume_case.py:79, scripts/runner.sh:7, scripts/runner_with_db.sh:7, scripts/generate_synthetic_data.py:580, scripts/generate_synthetic_data.py:639, scripts/run_multiformat_case.py:104
-- **configs**: config/datasets/finanzas/payments_v2/dataset.yml:44, config/datasets/finanzas/payments_v3/dataset.yml:6, config/datasets/finanzas/payments_v3/dataset.yml:78, config/datasets/finanzas/payments_v3/dataset_api.yml:5, config/datasets/finanzas/payments_v3/dataset_api.yml:83, config/datasets/finanzas/payments_v1/dataset.yml:49, config/datasets/casos_uso/payments_high_volume.yml:69, config/datasets/casos_uso/events_multiformat.yml:71
-- **docs**: README.md:13, docs/PROJECT_DOCUMENTATION.md:10, docs/PROJECT_DOCUMENTATION.md:31, docs/PROJECT_DOCUMENTATION.md:40, docs/run/configs.md:22, docs/run/configs.md:57, docs/cleanup.json:500, docs/CLEANUP_REPORT.md:37
+- **code**: scripts/generate_synthetic_data.py:580, scripts/generate_synthetic_data.py:639, scripts/run_multiformat_case.py:104, scripts/runner.sh:7, scripts/runner_with_db.sh:7, scripts/run_high_volume_case.py:79
+- **configs**: config/datasets/finanzas/payments_v1/dataset.yml:49, config/datasets/finanzas/payments_v2/dataset.yml:44, config/datasets/finanzas/payments_v3/dataset.yml:6, config/datasets/finanzas/payments_v3/dataset.yml:78, config/datasets/finanzas/payments_v3/dataset_api.yml:5, config/datasets/finanzas/payments_v3/dataset_api.yml:83, config/datasets/casos_uso/payments_high_volume.yml:69, config/datasets/casos_uso/events_multiformat.yml:71
+- **docs**: legacy/docs/2025-10-25-reports/REPORT.md:102, legacy/docs/2025-10-25-reports/REPORT.md:146, docs/cleanup.json:480, docs/run/configs.md:22, docs/run/configs.md:57, docs/PROJECT_DOCUMENTATION.md:10, docs/PROJECT_DOCUMENTATION.md:31, docs/PROJECT_DOCUMENTATION.md:40
 - Clasificación: KEEP
 
 ### config/datasets/casos_uso/events_multiformat.yml
@@ -303,7 +297,7 @@ Referencias detectadas:
 Referencias detectadas:
 
 - **code**: scripts/run_multiformat_case.py:102
-- **docs**: docs/cleanup.json:521, docs/cleanup.json:543, docs/cleanup.json:581, docs/cleanup.json:607, docs/cleanup.json:631, docs/cleanup.json:854, docs/cleanup.json:1000, docs/cleanup.json:1041
+- **docs**: legacy/docs/2025-10-25-reports/REPORT.md:171, docs/cleanup.json:501, docs/cleanup.json:523, docs/cleanup.json:561, docs/cleanup.json:587, docs/cleanup.json:611, docs/cleanup.json:834, docs/cleanup.json:980
 - Clasificación: KEEP
 
 ### config/datasets/casos_uso/events_multiformat_expectations.yml
@@ -312,7 +306,7 @@ Referencias detectadas:
 
 - **code**: scripts/generate_synthetic_data.py:624
 - **configs**: config/datasets/casos_uso/events_multiformat.yml:42
-- **docs**: docs/cleanup.json:572, docs/CLEANUP_REPORT.md:39, docs/CLEANUP_REPORT.md:309
+- **docs**: docs/cleanup.json:552, docs/CLEANUP_REPORT.md:38, docs/CLEANUP_REPORT.md:303
 - Clasificación: KEEP
 
 ### config/datasets/casos_uso/events_multiformat_schema.json
@@ -321,7 +315,7 @@ Referencias detectadas:
 
 - **code**: scripts/generate_synthetic_data.py:621
 - **configs**: config/datasets/casos_uso/events_multiformat.yml:46
-- **docs**: docs/cleanup.json:598, docs/CLEANUP_REPORT.md:40, docs/CLEANUP_REPORT.md:318
+- **docs**: docs/cleanup.json:578, docs/CLEANUP_REPORT.md:39, docs/CLEANUP_REPORT.md:312
 - Clasificación: KEEP
 
 ### config/datasets/casos_uso/events_multiformat_transforms.yml
@@ -329,15 +323,15 @@ Referencias detectadas:
 Referencias detectadas:
 
 - **configs**: config/datasets/casos_uso/events_multiformat.yml:50
-- **docs**: docs/cleanup.json:624, docs/CLEANUP_REPORT.md:41, docs/CLEANUP_REPORT.md:327
+- **docs**: docs/cleanup.json:604, docs/CLEANUP_REPORT.md:40, docs/CLEANUP_REPORT.md:321
 - Clasificación: KEEP
 
 ### config/datasets/casos_uso/payments_high_volume.yml
 
 Referencias detectadas:
 
-- **code**: scripts/run_high_volume_case.py:77, scripts/generate_synthetic_data.py:599, scripts/generate_synthetic_data.py:603, scripts/generate_synthetic_data.py:782
-- **docs**: docs/cleanup.json:520, docs/cleanup.json:648, docs/cleanup.json:689, docs/cleanup.json:715, docs/cleanup.json:784, docs/cleanup.json:962, docs/cleanup.json:999, docs/cleanup.json:1115
+- **code**: scripts/generate_synthetic_data.py:599, scripts/generate_synthetic_data.py:603, scripts/generate_synthetic_data.py:782, scripts/run_high_volume_case.py:77
+- **docs**: legacy/docs/2025-10-25-reports/REPORT.md:172, docs/cleanup.json:500, docs/cleanup.json:628, docs/cleanup.json:669, docs/cleanup.json:695, docs/cleanup.json:764, docs/cleanup.json:942, docs/cleanup.json:979
 - Clasificación: KEEP
 
 ### config/datasets/casos_uso/payments_high_volume_expectations.yml
@@ -346,7 +340,7 @@ Referencias detectadas:
 
 - **code**: scripts/generate_synthetic_data.py:562
 - **configs**: config/datasets/casos_uso/payments_high_volume.yml:45
-- **docs**: docs/cleanup.json:680, docs/CLEANUP_REPORT.md:43, docs/CLEANUP_REPORT.md:343
+- **docs**: docs/cleanup.json:660, docs/CLEANUP_REPORT.md:42, docs/CLEANUP_REPORT.md:337
 - Clasificación: KEEP
 
 ### config/datasets/casos_uso/payments_high_volume_schema.json
@@ -355,7 +349,7 @@ Referencias detectadas:
 
 - **code**: scripts/generate_synthetic_data.py:566
 - **configs**: config/datasets/casos_uso/payments_high_volume.yml:49
-- **docs**: docs/cleanup.json:706, docs/CLEANUP_REPORT.md:44, docs/CLEANUP_REPORT.md:352
+- **docs**: docs/cleanup.json:686, docs/CLEANUP_REPORT.md:43, docs/CLEANUP_REPORT.md:346
 - Clasificación: KEEP
 
 ### config/datasets/finanzas/payments_db_only/dataset.yml
@@ -364,24 +358,24 @@ Referencias detectadas:
 
 - **code**: scripts/runner.sh:5, scripts/runner_with_db.sh:5
 - **configs**: config/datasets/finanzas/payments_v3/dataset.yml:5, config/datasets/finanzas/payments_v3/dataset.yml:6, config/datasets/finanzas/payments_v3/dataset.yml:90
-- **docs**: docs/PROJECT_DOCUMENTATION.md:10, docs/PROJECT_DOCUMENTATION.md:24, docs/cleanup.json:473, docs/cleanup.json:514, docs/cleanup.json:515, docs/cleanup.json:516, docs/cleanup.json:519, docs/cleanup.json:732
+- **docs**: legacy/docs/2025-10-25-reports/REPORT.md:127, legacy/docs/2025-10-25-reports/REPORT.md:168, legacy/docs/2025-10-25-reports/REPORT.md:169, legacy/docs/2025-10-25-reports/REPORT.md:170, docs/cleanup.json:453, docs/cleanup.json:494, docs/cleanup.json:495, docs/cleanup.json:496
 - Clasificación: KEEP
 
 ### config/datasets/finanzas/payments_db_only/expectations.yml
 
 Referencias detectadas:
 
-- **code**: scripts/generate_synthetic_data.py:562, scripts/generate_synthetic_data.py:624, tests/test_config_schema.py:30
-- **configs**: config/datasets/finanzas/payments_multi/dataset.yml:74, config/datasets/finanzas/payments_v2/dataset.yml:29, config/datasets/finanzas/payments_db_only/dataset.yml:54, config/datasets/finanzas/payments_v3/dataset.yml:63, config/datasets/finanzas/payments_v3/dataset_api.yml:69, config/datasets/finanzas/payments_v3/dataset_api.yml:150, config/datasets/finanzas/payments_v1/dataset.yml:30, config/datasets/casos_uso/payments_high_volume.yml:45
-- **docs**: docs/run/configs.md:52, docs/cleanup.json:572, docs/cleanup.json:680, docs/cleanup.json:766, docs/cleanup.json:944, docs/cleanup.json:1097, docs/cleanup.json:1242, docs/CLEANUP_REPORT.md:39
+- **code**: tests/test_config_schema.py:30, scripts/generate_synthetic_data.py:562, scripts/generate_synthetic_data.py:624
+- **configs**: config/datasets/finanzas/payments_db_only/dataset.yml:54, config/datasets/finanzas/payments_v1/dataset.yml:30, config/datasets/finanzas/payments_v2/dataset.yml:29, config/datasets/finanzas/payments_v3/dataset.yml:63, config/datasets/finanzas/payments_v3/dataset_api.yml:69, config/datasets/finanzas/payments_v3/dataset_api.yml:150, config/datasets/finanzas/payments_multi/dataset.yml:74, config/datasets/casos_uso/payments_high_volume.yml:45
+- **docs**: docs/cleanup.json:552, docs/cleanup.json:660, docs/cleanup.json:746, docs/cleanup.json:924, docs/cleanup.json:1077, docs/cleanup.json:1222, docs/run/configs.md:52, docs/CLEANUP_REPORT.md:38
 - Clasificación: KEEP
 
 ### config/datasets/finanzas/payments_db_only/schema.yml
 
 Referencias detectadas:
 
-- **configs**: config/datasets/finanzas/payments_multi/dataset.yml:34, config/datasets/finanzas/payments_db_only/dataset.yml:47, config/datasets/finanzas/payments_v3/dataset.yml:2, config/datasets/finanzas/payments_v3/dataset.yml:56, config/datasets/finanzas/payments_v3/dataset_api.yml:2, config/datasets/finanzas/payments_v3/dataset_api.yml:63
-- **docs**: docs/CLEANUP_REPORT.md:47, docs/CLEANUP_REPORT.md:60, docs/CLEANUP_REPORT.md:379, docs/CLEANUP_REPORT.md:496, docs/cleanup.json:806, docs/cleanup.json:1282
+- **configs**: config/datasets/finanzas/payments_db_only/dataset.yml:47, config/datasets/finanzas/payments_v3/dataset.yml:2, config/datasets/finanzas/payments_v3/dataset.yml:56, config/datasets/finanzas/payments_v3/dataset_api.yml:2, config/datasets/finanzas/payments_v3/dataset_api.yml:63, config/datasets/finanzas/payments_multi/dataset.yml:34
+- **docs**: docs/cleanup.json:786, docs/cleanup.json:1262, docs/CLEANUP_REPORT.md:46, docs/CLEANUP_REPORT.md:59, docs/CLEANUP_REPORT.md:373, docs/CLEANUP_REPORT.md:490
 - Clasificación: KEEP
 
 ### config/datasets/finanzas/payments_db_only/transforms.yml
@@ -389,8 +383,8 @@ Referencias detectadas:
 Referencias detectadas:
 
 - **code**: pipelines/transforms/apply.py:10
-- **configs**: config/datasets/finanzas/payments_multi/dataset.yml:77, config/datasets/finanzas/payments_db_only/dataset.yml:51, config/datasets/finanzas/payments_v3/dataset.yml:2, config/datasets/finanzas/payments_v3/dataset.yml:60, config/datasets/finanzas/payments_v3/dataset_api.yml:2, config/datasets/finanzas/payments_v3/dataset_api.yml:66, config/datasets/finanzas/payments_v1/dataset.yml:11, config/datasets/casos_uso/events_multiformat.yml:50
-- **docs**: docs/PROJECT_DOCUMENTATION.md:28, docs/cleanup.json:624, docs/cleanup.json:838, docs/cleanup.json:1025, docs/cleanup.json:1314, docs/CLEANUP_REPORT.md:41, docs/CLEANUP_REPORT.md:48, docs/CLEANUP_REPORT.md:53
+- **configs**: config/datasets/finanzas/payments_db_only/dataset.yml:51, config/datasets/finanzas/payments_v1/dataset.yml:11, config/datasets/finanzas/payments_v3/dataset.yml:2, config/datasets/finanzas/payments_v3/dataset.yml:60, config/datasets/finanzas/payments_v3/dataset_api.yml:2, config/datasets/finanzas/payments_v3/dataset_api.yml:66, config/datasets/finanzas/payments_multi/dataset.yml:77, config/datasets/casos_uso/events_multiformat.yml:50
+- **docs**: docs/cleanup.json:604, docs/cleanup.json:818, docs/cleanup.json:1005, docs/cleanup.json:1294, docs/PROJECT_DOCUMENTATION.md:28, docs/CLEANUP_REPORT.md:40, docs/CLEANUP_REPORT.md:47, docs/CLEANUP_REPORT.md:52
 - Clasificación: KEEP
 
 ### config/datasets/finanzas/payments_multi/dataset.yml
@@ -399,7 +393,7 @@ Referencias detectadas:
 
 - **code**: scripts/runner.sh:5, scripts/runner_with_db.sh:5
 - **configs**: config/datasets/finanzas/payments_v3/dataset.yml:5, config/datasets/finanzas/payments_v3/dataset.yml:6, config/datasets/finanzas/payments_v3/dataset.yml:90
-- **docs**: docs/PROJECT_DOCUMENTATION.md:10, docs/PROJECT_DOCUMENTATION.md:24, docs/cleanup.json:473, docs/cleanup.json:514, docs/cleanup.json:515, docs/cleanup.json:516, docs/cleanup.json:519, docs/cleanup.json:732
+- **docs**: legacy/docs/2025-10-25-reports/REPORT.md:127, legacy/docs/2025-10-25-reports/REPORT.md:168, legacy/docs/2025-10-25-reports/REPORT.md:169, legacy/docs/2025-10-25-reports/REPORT.md:170, docs/cleanup.json:453, docs/cleanup.json:494, docs/cleanup.json:495, docs/cleanup.json:496
 - Clasificación: KEEP
 
 ### config/datasets/finanzas/payments_v1/dataset.yml
@@ -408,26 +402,26 @@ Referencias detectadas:
 
 - **code**: scripts/runner.sh:5, scripts/runner_with_db.sh:5
 - **configs**: config/datasets/finanzas/payments_v3/dataset.yml:5, config/datasets/finanzas/payments_v3/dataset.yml:6, config/datasets/finanzas/payments_v3/dataset.yml:90
-- **docs**: docs/PROJECT_DOCUMENTATION.md:10, docs/PROJECT_DOCUMENTATION.md:24, docs/cleanup.json:473, docs/cleanup.json:514, docs/cleanup.json:515, docs/cleanup.json:516, docs/cleanup.json:519, docs/cleanup.json:732
+- **docs**: legacy/docs/2025-10-25-reports/REPORT.md:127, legacy/docs/2025-10-25-reports/REPORT.md:168, legacy/docs/2025-10-25-reports/REPORT.md:169, legacy/docs/2025-10-25-reports/REPORT.md:170, docs/cleanup.json:453, docs/cleanup.json:494, docs/cleanup.json:495, docs/cleanup.json:496
 - Clasificación: KEEP
 
 ### config/datasets/finanzas/payments_v1/expectations.yml
 
 Referencias detectadas:
 
-- **code**: scripts/generate_synthetic_data.py:562, scripts/generate_synthetic_data.py:624, tests/test_config_schema.py:30
-- **configs**: config/datasets/finanzas/payments_multi/dataset.yml:74, config/datasets/finanzas/payments_v2/dataset.yml:29, config/datasets/finanzas/payments_db_only/dataset.yml:54, config/datasets/finanzas/payments_v3/dataset.yml:63, config/datasets/finanzas/payments_v3/dataset_api.yml:69, config/datasets/finanzas/payments_v3/dataset_api.yml:150, config/datasets/finanzas/payments_v1/dataset.yml:30, config/datasets/casos_uso/payments_high_volume.yml:45
-- **docs**: docs/run/configs.md:52, docs/cleanup.json:572, docs/cleanup.json:680, docs/cleanup.json:766, docs/cleanup.json:944, docs/cleanup.json:1097, docs/cleanup.json:1242, docs/CLEANUP_REPORT.md:39
+- **code**: tests/test_config_schema.py:30, scripts/generate_synthetic_data.py:562, scripts/generate_synthetic_data.py:624
+- **configs**: config/datasets/finanzas/payments_db_only/dataset.yml:54, config/datasets/finanzas/payments_v1/dataset.yml:30, config/datasets/finanzas/payments_v2/dataset.yml:29, config/datasets/finanzas/payments_v3/dataset.yml:63, config/datasets/finanzas/payments_v3/dataset_api.yml:69, config/datasets/finanzas/payments_v3/dataset_api.yml:150, config/datasets/finanzas/payments_multi/dataset.yml:74, config/datasets/casos_uso/payments_high_volume.yml:45
+- **docs**: docs/cleanup.json:552, docs/cleanup.json:660, docs/cleanup.json:746, docs/cleanup.json:924, docs/cleanup.json:1077, docs/cleanup.json:1222, docs/run/configs.md:52, docs/CLEANUP_REPORT.md:38
 - Clasificación: KEEP
 
 ### config/datasets/finanzas/payments_v1/schema.json
 
 Referencias detectadas:
 
-- **code**: scripts/generate_synthetic_data.py:566, scripts/generate_synthetic_data.py:621, pipelines/database/db_manager.py:706, pipelines/database/__init__.py:1, pipelines/database/schema_mapper.py:428
-- **configs**: config/datasets/finanzas/payments_v2/dataset.yml:25, config/datasets/finanzas/payments_v1/dataset.yml:34, config/datasets/casos_uso/payments_high_volume.yml:49, config/datasets/casos_uso/events_multiformat.yml:46, ci/test_dataset.yml:9
+- **code**: scripts/generate_synthetic_data.py:566, scripts/generate_synthetic_data.py:621, pipelines/database/schema_mapper.py:428, pipelines/database/db_manager.py:706, pipelines/database/__init__.py:1
+- **configs**: config/datasets/finanzas/payments_v1/dataset.yml:34, config/datasets/finanzas/payments_v2/dataset.yml:25, config/datasets/casos_uso/payments_high_volume.yml:49, config/datasets/casos_uso/events_multiformat.yml:46, ci/test_dataset.yml:9
 - **ci**: ci/check_config.sh:6
-- **docs**: docs/cleanup.json:598, docs/cleanup.json:706, docs/cleanup.json:984, docs/cleanup.json:1137, docs/CLEANUP_REPORT.md:40, docs/CLEANUP_REPORT.md:44, docs/CLEANUP_REPORT.md:52, docs/CLEANUP_REPORT.md:56
+- **docs**: docs/cleanup.json:578, docs/cleanup.json:686, docs/cleanup.json:964, docs/cleanup.json:1117, docs/CLEANUP_REPORT.md:39, docs/CLEANUP_REPORT.md:43, docs/CLEANUP_REPORT.md:51, docs/CLEANUP_REPORT.md:55
 - Clasificación: KEEP
 
 ### config/datasets/finanzas/payments_v1/transforms.yml
@@ -435,8 +429,8 @@ Referencias detectadas:
 Referencias detectadas:
 
 - **code**: pipelines/transforms/apply.py:10
-- **configs**: config/datasets/finanzas/payments_multi/dataset.yml:77, config/datasets/finanzas/payments_db_only/dataset.yml:51, config/datasets/finanzas/payments_v3/dataset.yml:2, config/datasets/finanzas/payments_v3/dataset.yml:60, config/datasets/finanzas/payments_v3/dataset_api.yml:2, config/datasets/finanzas/payments_v3/dataset_api.yml:66, config/datasets/finanzas/payments_v1/dataset.yml:11, config/datasets/casos_uso/events_multiformat.yml:50
-- **docs**: docs/PROJECT_DOCUMENTATION.md:28, docs/cleanup.json:624, docs/cleanup.json:838, docs/cleanup.json:1025, docs/cleanup.json:1314, docs/CLEANUP_REPORT.md:41, docs/CLEANUP_REPORT.md:48, docs/CLEANUP_REPORT.md:53
+- **configs**: config/datasets/finanzas/payments_db_only/dataset.yml:51, config/datasets/finanzas/payments_v1/dataset.yml:11, config/datasets/finanzas/payments_v3/dataset.yml:2, config/datasets/finanzas/payments_v3/dataset.yml:60, config/datasets/finanzas/payments_v3/dataset_api.yml:2, config/datasets/finanzas/payments_v3/dataset_api.yml:66, config/datasets/finanzas/payments_multi/dataset.yml:77, config/datasets/casos_uso/events_multiformat.yml:50
+- **docs**: docs/cleanup.json:604, docs/cleanup.json:818, docs/cleanup.json:1005, docs/cleanup.json:1294, docs/CLEANUP_REPORT.md:40, docs/CLEANUP_REPORT.md:47, docs/CLEANUP_REPORT.md:52, docs/CLEANUP_REPORT.md:60
 - Clasificación: KEEP
 
 ### config/datasets/finanzas/payments_v2/dataset.yml
@@ -445,26 +439,26 @@ Referencias detectadas:
 
 - **code**: scripts/runner.sh:5, scripts/runner_with_db.sh:5
 - **configs**: config/datasets/finanzas/payments_v3/dataset.yml:5, config/datasets/finanzas/payments_v3/dataset.yml:6, config/datasets/finanzas/payments_v3/dataset.yml:90
-- **docs**: docs/PROJECT_DOCUMENTATION.md:10, docs/PROJECT_DOCUMENTATION.md:24, docs/CLEANUP_REPORT.md:36, docs/CLEANUP_REPORT.md:45, docs/CLEANUP_REPORT.md:49, docs/CLEANUP_REPORT.md:50, docs/CLEANUP_REPORT.md:54, docs/CLEANUP_REPORT.md:57
+- **docs**: legacy/docs/2025-10-25-reports/REPORT.md:127, legacy/docs/2025-10-25-reports/REPORT.md:168, legacy/docs/2025-10-25-reports/REPORT.md:169, legacy/docs/2025-10-25-reports/REPORT.md:170, docs/cleanup.json:453, docs/cleanup.json:494, docs/cleanup.json:495, docs/cleanup.json:496
 - Clasificación: KEEP
 
 ### config/datasets/finanzas/payments_v2/expectations.yml
 
 Referencias detectadas:
 
-- **code**: scripts/generate_synthetic_data.py:562, scripts/generate_synthetic_data.py:624, tests/test_config_schema.py:30
-- **configs**: config/datasets/finanzas/payments_multi/dataset.yml:74, config/datasets/finanzas/payments_v2/dataset.yml:29, config/datasets/finanzas/payments_db_only/dataset.yml:54, config/datasets/finanzas/payments_v3/dataset.yml:63, config/datasets/finanzas/payments_v3/dataset_api.yml:69, config/datasets/finanzas/payments_v3/dataset_api.yml:150, config/datasets/finanzas/payments_v1/dataset.yml:30, config/datasets/casos_uso/payments_high_volume.yml:45
-- **docs**: docs/run/configs.md:52, docs/cleanup.json:572, docs/cleanup.json:680, docs/cleanup.json:766, docs/cleanup.json:944, docs/cleanup.json:1097, docs/cleanup.json:1242, docs/CLEANUP_REPORT.md:39
+- **code**: tests/test_config_schema.py:30, scripts/generate_synthetic_data.py:562, scripts/generate_synthetic_data.py:624
+- **configs**: config/datasets/finanzas/payments_db_only/dataset.yml:54, config/datasets/finanzas/payments_v1/dataset.yml:30, config/datasets/finanzas/payments_v2/dataset.yml:29, config/datasets/finanzas/payments_v3/dataset.yml:63, config/datasets/finanzas/payments_v3/dataset_api.yml:69, config/datasets/finanzas/payments_v3/dataset_api.yml:150, config/datasets/finanzas/payments_multi/dataset.yml:74, config/datasets/casos_uso/payments_high_volume.yml:45
+- **docs**: docs/cleanup.json:552, docs/cleanup.json:660, docs/cleanup.json:746, docs/cleanup.json:924, docs/cleanup.json:1077, docs/cleanup.json:1222, docs/run/configs.md:52, docs/CLEANUP_REPORT.md:38
 - Clasificación: KEEP
 
 ### config/datasets/finanzas/payments_v2/schema.json
 
 Referencias detectadas:
 
-- **code**: scripts/generate_synthetic_data.py:566, scripts/generate_synthetic_data.py:621, pipelines/database/db_manager.py:706, pipelines/database/__init__.py:1, pipelines/database/schema_mapper.py:428
-- **configs**: config/datasets/finanzas/payments_v2/dataset.yml:25, config/datasets/finanzas/payments_v1/dataset.yml:34, config/datasets/casos_uso/payments_high_volume.yml:49, config/datasets/casos_uso/events_multiformat.yml:46, ci/test_dataset.yml:9
+- **code**: scripts/generate_synthetic_data.py:566, scripts/generate_synthetic_data.py:621, pipelines/database/schema_mapper.py:428, pipelines/database/db_manager.py:706, pipelines/database/__init__.py:1
+- **configs**: config/datasets/finanzas/payments_v1/dataset.yml:34, config/datasets/finanzas/payments_v2/dataset.yml:25, config/datasets/casos_uso/payments_high_volume.yml:49, config/datasets/casos_uso/events_multiformat.yml:46, ci/test_dataset.yml:9
 - **ci**: ci/check_config.sh:6
-- **docs**: docs/cleanup.json:598, docs/cleanup.json:706, docs/cleanup.json:984, docs/cleanup.json:1137, docs/CLEANUP_REPORT.md:40, docs/CLEANUP_REPORT.md:44, docs/CLEANUP_REPORT.md:52, docs/CLEANUP_REPORT.md:56
+- **docs**: docs/cleanup.json:578, docs/cleanup.json:686, docs/cleanup.json:964, docs/cleanup.json:1117, docs/CLEANUP_REPORT.md:39, docs/CLEANUP_REPORT.md:43, docs/CLEANUP_REPORT.md:51, docs/CLEANUP_REPORT.md:55
 - Clasificación: KEEP
 
 ### config/datasets/finanzas/payments_v3/dataset.yml
@@ -473,7 +467,7 @@ Referencias detectadas:
 
 - **code**: scripts/runner.sh:5, scripts/runner_with_db.sh:5
 - **configs**: config/datasets/finanzas/payments_v3/dataset.yml:5, config/datasets/finanzas/payments_v3/dataset.yml:6, config/datasets/finanzas/payments_v3/dataset.yml:90
-- **docs**: docs/PROJECT_DOCUMENTATION.md:10, docs/PROJECT_DOCUMENTATION.md:24, docs/cleanup.json:473, docs/cleanup.json:514, docs/cleanup.json:515, docs/cleanup.json:516, docs/cleanup.json:519, docs/cleanup.json:732
+- **docs**: legacy/docs/2025-10-25-reports/REPORT.md:127, legacy/docs/2025-10-25-reports/REPORT.md:168, legacy/docs/2025-10-25-reports/REPORT.md:169, legacy/docs/2025-10-25-reports/REPORT.md:170, docs/cleanup.json:453, docs/cleanup.json:494, docs/cleanup.json:495, docs/cleanup.json:496
 - Clasificación: KEEP
 
 ### config/datasets/finanzas/payments_v3/dataset_api.yml
@@ -481,24 +475,24 @@ Referencias detectadas:
 Referencias detectadas:
 
 - **configs**: config/datasets/finanzas/payments_v3/dataset_api.yml:4, config/datasets/finanzas/payments_v3/dataset_api.yml:5
-- **docs**: docs/cleanup.json:517, docs/cleanup.json:518, docs/cleanup.json:781, docs/cleanup.json:782, docs/cleanup.json:817, docs/cleanup.json:818, docs/cleanup.json:851, docs/cleanup.json:852
+- **docs**: docs/cleanup.json:498, docs/cleanup.json:499, docs/cleanup.json:761, docs/cleanup.json:762, docs/cleanup.json:796, docs/cleanup.json:797, docs/cleanup.json:831, docs/cleanup.json:832
 - Clasificación: KEEP
 
 ### config/datasets/finanzas/payments_v3/expectations.yml
 
 Referencias detectadas:
 
-- **code**: scripts/generate_synthetic_data.py:562, scripts/generate_synthetic_data.py:624, tests/test_config_schema.py:30
-- **configs**: config/datasets/finanzas/payments_multi/dataset.yml:74, config/datasets/finanzas/payments_v2/dataset.yml:29, config/datasets/finanzas/payments_db_only/dataset.yml:54, config/datasets/finanzas/payments_v3/dataset.yml:63, config/datasets/finanzas/payments_v3/dataset_api.yml:69, config/datasets/finanzas/payments_v3/dataset_api.yml:150, config/datasets/finanzas/payments_v1/dataset.yml:30, config/datasets/casos_uso/payments_high_volume.yml:45
-- **docs**: docs/run/configs.md:52, docs/cleanup.json:572, docs/cleanup.json:680, docs/cleanup.json:766, docs/cleanup.json:944, docs/cleanup.json:1097, docs/cleanup.json:1242, docs/CLEANUP_REPORT.md:39
+- **code**: tests/test_config_schema.py:30, scripts/generate_synthetic_data.py:562, scripts/generate_synthetic_data.py:624
+- **configs**: config/datasets/finanzas/payments_db_only/dataset.yml:54, config/datasets/finanzas/payments_v1/dataset.yml:30, config/datasets/finanzas/payments_v2/dataset.yml:29, config/datasets/finanzas/payments_v3/dataset.yml:63, config/datasets/finanzas/payments_v3/dataset_api.yml:69, config/datasets/finanzas/payments_v3/dataset_api.yml:150, config/datasets/finanzas/payments_multi/dataset.yml:74, config/datasets/casos_uso/payments_high_volume.yml:45
+- **docs**: docs/cleanup.json:552, docs/cleanup.json:660, docs/cleanup.json:746, docs/cleanup.json:924, docs/cleanup.json:1077, docs/cleanup.json:1222, docs/run/configs.md:52, docs/CLEANUP_REPORT.md:38
 - Clasificación: KEEP
 
 ### config/datasets/finanzas/payments_v3/schema.yml
 
 Referencias detectadas:
 
-- **configs**: config/datasets/finanzas/payments_multi/dataset.yml:34, config/datasets/finanzas/payments_db_only/dataset.yml:47, config/datasets/finanzas/payments_v3/dataset.yml:2, config/datasets/finanzas/payments_v3/dataset.yml:56, config/datasets/finanzas/payments_v3/dataset_api.yml:2, config/datasets/finanzas/payments_v3/dataset_api.yml:63
-- **docs**: docs/cleanup.json:806, docs/cleanup.json:1282, docs/CLEANUP_REPORT.md:47, docs/CLEANUP_REPORT.md:60, docs/CLEANUP_REPORT.md:379, docs/CLEANUP_REPORT.md:496
+- **configs**: config/datasets/finanzas/payments_db_only/dataset.yml:47, config/datasets/finanzas/payments_v3/dataset.yml:2, config/datasets/finanzas/payments_v3/dataset.yml:56, config/datasets/finanzas/payments_v3/dataset_api.yml:2, config/datasets/finanzas/payments_v3/dataset_api.yml:63, config/datasets/finanzas/payments_multi/dataset.yml:34
+- **docs**: docs/cleanup.json:786, docs/cleanup.json:1262, docs/CLEANUP_REPORT.md:46, docs/CLEANUP_REPORT.md:59, docs/CLEANUP_REPORT.md:373, docs/CLEANUP_REPORT.md:490
 - Clasificación: KEEP
 
 ### config/datasets/finanzas/payments_v3/transforms.yml
@@ -506,17 +500,17 @@ Referencias detectadas:
 Referencias detectadas:
 
 - **code**: pipelines/transforms/apply.py:10
-- **configs**: config/datasets/finanzas/payments_multi/dataset.yml:77, config/datasets/finanzas/payments_db_only/dataset.yml:51, config/datasets/finanzas/payments_v3/dataset.yml:2, config/datasets/finanzas/payments_v3/dataset.yml:60, config/datasets/finanzas/payments_v3/dataset_api.yml:2, config/datasets/finanzas/payments_v3/dataset_api.yml:66, config/datasets/finanzas/payments_v1/dataset.yml:11, config/datasets/casos_uso/events_multiformat.yml:50
-- **docs**: docs/PROJECT_DOCUMENTATION.md:28, docs/cleanup.json:624, docs/cleanup.json:838, docs/cleanup.json:1025, docs/cleanup.json:1314, docs/CLEANUP_REPORT.md:41, docs/CLEANUP_REPORT.md:48, docs/CLEANUP_REPORT.md:53
+- **configs**: config/datasets/finanzas/payments_db_only/dataset.yml:51, config/datasets/finanzas/payments_v1/dataset.yml:11, config/datasets/finanzas/payments_v3/dataset.yml:2, config/datasets/finanzas/payments_v3/dataset.yml:60, config/datasets/finanzas/payments_v3/dataset_api.yml:2, config/datasets/finanzas/payments_v3/dataset_api.yml:66, config/datasets/finanzas/payments_multi/dataset.yml:77, config/datasets/casos_uso/events_multiformat.yml:50
+- **docs**: docs/cleanup.json:604, docs/cleanup.json:818, docs/cleanup.json:1005, docs/cleanup.json:1294, docs/PROJECT_DOCUMENTATION.md:28, docs/CLEANUP_REPORT.md:40, docs/CLEANUP_REPORT.md:47, docs/CLEANUP_REPORT.md:52
 - Clasificación: KEEP
 
 ### config/env.yml
 
 Referencias detectadas:
 
-- **code**: scripts/runner.sh:6, scripts/runner_with_db.sh:6, pipelines/sources.py:113, pipelines/sources.py:117, src/datacore/io/adapters.py:63
+- **code**: scripts/runner.sh:6, scripts/runner_with_db.sh:6, src/datacore/io/adapters.py:63, pipelines/sources.py:113, pipelines/sources.py:117
 - **configs**: config/datasets/finanzas/payments_v3/dataset.yml:6, config/datasets/finanzas/payments_v3/dataset_api.yml:5, config/datasets/finanzas/payments_v3/dataset_api.yml:15, config/datasets/finanzas/payments_v3/dataset_api.yml:103, cfg/raw/template.yml:7, cfg/gold/template.yml:7, cfg/silver/template.yml:7, cfg/bronze/template.yml:7
-- **docs**: README.md:13, README.md:15, README.md:38, docs/PROJECT_DOCUMENTATION.md:10, docs/PROJECT_DOCUMENTATION.md:22, docs/PROJECT_DOCUMENTATION.md:40, docs/PROJECT_DOCUMENTATION.md:42, docs/run/configs.md:20
+- **docs**: docs/cleanup.json:1332, docs/run/configs.md:20, docs/PROJECT_DOCUMENTATION.md:10, docs/PROJECT_DOCUMENTATION.md:22, docs/PROJECT_DOCUMENTATION.md:40, docs/PROJECT_DOCUMENTATION.md:42, docs/CLEANUP_REPORT.md:61, docs/CLEANUP_REPORT.md:507
 - Clasificación: KEEP
 
 ### config/schema_mapping.yml
@@ -524,268 +518,304 @@ Referencias detectadas:
 Referencias detectadas:
 
 - **code**: pipelines/database/schema_mapper.py:48
-- **docs**: docs/CLEANUP_REPORT.md:63, docs/CLEANUP_REPORT.md:522, docs/CLEANUP_REPORT.md:795, docs/cleanup.json:1394, docs/cleanup.json:2354
+- **docs**: docs/cleanup.json:1374, docs/cleanup.json:2480, docs/CLEANUP_REPORT.md:62, docs/CLEANUP_REPORT.md:516, docs/CLEANUP_REPORT.md:825
 - Clasificación: KEEP
 
 ### data/casos-uso/multi-format/events_batch_001.json
 
 Referencias detectadas:
 
-- **docs**: docs/CLEANUP_REPORT.md:64, docs/CLEANUP_REPORT.md:530, docs/cleanup.json:1420
+- **docs**: docs/cleanup.json:1400, docs/CLEANUP_REPORT.md:63, docs/CLEANUP_REPORT.md:524
 - Clasificación: KEEP
 
 ### data/output/.gitkeep
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:81, docs/cleanup.json:82, docs/cleanup.json:83, docs/cleanup.json:1442, docs/cleanup.json:1469, docs/cleanup.json:1496, docs/CLEANUP_REPORT.md:65, docs/CLEANUP_REPORT.md:66
+- **docs**: docs/cleanup.json:85, docs/cleanup.json:86, docs/cleanup.json:87, docs/cleanup.json:1422, docs/cleanup.json:1449, docs/cleanup.json:1476, docs/CLEANUP_REPORT.md:64, docs/CLEANUP_REPORT.md:65
 - Clasificación: KEEP
 
 ### data/processed/.gitkeep
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:81, docs/cleanup.json:82, docs/cleanup.json:83, docs/cleanup.json:1442, docs/cleanup.json:1469, docs/cleanup.json:1496, docs/CLEANUP_REPORT.md:65, docs/CLEANUP_REPORT.md:66
+- **docs**: docs/cleanup.json:85, docs/cleanup.json:86, docs/cleanup.json:87, docs/cleanup.json:1422, docs/cleanup.json:1449, docs/cleanup.json:1476, docs/CLEANUP_REPORT.md:64, docs/CLEANUP_REPORT.md:65
 - Clasificación: KEEP
 
 ### data/raw/.gitkeep
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:81, docs/cleanup.json:82, docs/cleanup.json:83, docs/cleanup.json:1442, docs/cleanup.json:1469, docs/cleanup.json:1496, docs/CLEANUP_REPORT.md:65, docs/CLEANUP_REPORT.md:66
+- **docs**: docs/cleanup.json:85, docs/cleanup.json:86, docs/cleanup.json:87, docs/cleanup.json:1422, docs/cleanup.json:1449, docs/cleanup.json:1476, docs/CLEANUP_REPORT.md:64, docs/CLEANUP_REPORT.md:65
 - Clasificación: KEEP
 
 ### data/raw/payments/sample.csv
 
 Referencias detectadas:
 
-- **code**: scripts/generate_big_payments.py:6, tests/test_io_fs.py:185, tests/test_io_fs.py:186, tests/test_io_fs.py:187, tests/test_io_fs.py:211
+- **code**: tests/test_io_fs.py:185, tests/test_io_fs.py:186, tests/test_io_fs.py:187, tests/test_io_fs.py:211, legacy/scripts/2025-10-25-generation/generate_big_payments.py:6
 - **configs**: config/datasets/finanzas/payments_v2/dataset.yml:5, ci/test_dataset.yml:5
-- **docs**: docs/CLEANUP_REPORT.md:68, docs/CLEANUP_REPORT.md:72, docs/CLEANUP_REPORT.md:558, docs/CLEANUP_REPORT.md:588, docs/cleanup.json:1523, docs/cleanup.json:1623
+- **docs**: docs/cleanup.json:1503, docs/cleanup.json:1603, docs/CLEANUP_REPORT.md:67, docs/CLEANUP_REPORT.md:71, docs/CLEANUP_REPORT.md:552, docs/CLEANUP_REPORT.md:582
 - Clasificación: KEEP
 
 ### data/s3a-staging/finanzas/payments/raw/sample.jsonl
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:1557, docs/CLEANUP_REPORT.md:69, docs/CLEANUP_REPORT.md:567
+- **docs**: docs/cleanup.json:1537, docs/CLEANUP_REPORT.md:68, docs/CLEANUP_REPORT.md:561
 - Clasificación: KEEP
 
 ### data/s3a-staging/raw/casos-uso/payments-high-volume/payments-high-volume/payments_batch_001.csv
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:1579, docs/CLEANUP_REPORT.md:70, docs/CLEANUP_REPORT.md:574
+- **docs**: docs/cleanup.json:1559, docs/CLEANUP_REPORT.md:69, docs/CLEANUP_REPORT.md:568
 - Clasificación: KEEP
 
 ### data/s3a-staging/raw/casos-uso/payments-high-volume/payments-high-volume/payments_batch_002.csv
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:1601, docs/CLEANUP_REPORT.md:71, docs/CLEANUP_REPORT.md:581
+- **docs**: docs/cleanup.json:1581, docs/CLEANUP_REPORT.md:70, docs/CLEANUP_REPORT.md:575
 - Clasificación: KEEP
 
 ### data/s3a-staging/raw/payments_v3/sample.csv
 
 Referencias detectadas:
 
-- **code**: scripts/generate_big_payments.py:6, tests/test_io_fs.py:185, tests/test_io_fs.py:186, tests/test_io_fs.py:187, tests/test_io_fs.py:211
+- **code**: tests/test_io_fs.py:185, tests/test_io_fs.py:186, tests/test_io_fs.py:187, tests/test_io_fs.py:211, legacy/scripts/2025-10-25-generation/generate_big_payments.py:6
 - **configs**: config/datasets/finanzas/payments_v2/dataset.yml:5, ci/test_dataset.yml:5
-- **docs**: docs/cleanup.json:1523, docs/cleanup.json:1623, docs/CLEANUP_REPORT.md:68, docs/CLEANUP_REPORT.md:72, docs/CLEANUP_REPORT.md:558, docs/CLEANUP_REPORT.md:588
+- **docs**: docs/cleanup.json:1503, docs/cleanup.json:1603, docs/CLEANUP_REPORT.md:67, docs/CLEANUP_REPORT.md:71, docs/CLEANUP_REPORT.md:552, docs/CLEANUP_REPORT.md:582
 - Clasificación: KEEP
 
 ### docker/spark-pandas-udf/Dockerfile
 
 Referencias detectadas:
 
-- **code**: tools/audit_cleanup.py:131
+- **code**: tools/audit_cleanup.py:179
 - **configs**: docker-compose.yml:49, docker-compose.yml:65, docker-compose.yml:81
-- **docs**: docs/cleanup.json:1657, docs/CLEANUP_REPORT.md:73, docs/CLEANUP_REPORT.md:597
+- **docs**: docs/cleanup.json:1637, docs/CLEANUP_REPORT.md:72, docs/CLEANUP_REPORT.md:591
 - Clasificación: KEEP
 
 ### docker-compose.yml
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:1666, docs/cleanup.json:1667, docs/cleanup.json:1668, docs/cleanup.json:1685, docs/cleanup.json:2889, docs/cleanup.json:3032, docs/cleanup.json:3033, docs/CLEANUP_REPORT.md:74
+- **docs**: docs/cleanup.json:1646, docs/cleanup.json:1647, docs/cleanup.json:1648, docs/cleanup.json:1665, docs/cleanup.json:3013, docs/cleanup.json:3131, docs/cleanup.json:3132, docs/CLEANUP_REPORT.md:73
 - Clasificación: KEEP
 
 ### docs/CLEANUP_REPORT.md
 
 Referencias detectadas:
 
-- **code**: tools/audit_cleanup.py:211, tools/audit_cleanup.py:527
-- **docs**: docs/diagrams/deps_cleanup.md:15, docs/cleanup.json:63, docs/cleanup.json:64, docs/cleanup.json:89, docs/cleanup.json:90, docs/cleanup.json:117, docs/cleanup.json:118, docs/cleanup.json:119
+- **code**: tools/audit_cleanup.py:259, tools/audit_cleanup.py:618
+- **docs**: docs/cleanup.json:45, docs/cleanup.json:46, docs/cleanup.json:67, docs/cleanup.json:68, docs/cleanup.json:93, docs/cleanup.json:94, docs/cleanup.json:120, docs/cleanup.json:121
 - Clasificación: KEEP
 
 ### docs/PROJECT_DOCUMENTATION.md
 
 Referencias detectadas:
 
-- **docs**: README.md:33, docs/cleanup.json:209, docs/cleanup.json:234, docs/cleanup.json:526, docs/cleanup.json:527, docs/cleanup.json:528, docs/cleanup.json:748, docs/cleanup.json:749
+- **docs**: README.md:33, docs/cleanup.json:186, docs/cleanup.json:510, docs/cleanup.json:511, docs/cleanup.json:512, docs/cleanup.json:842, docs/cleanup.json:1029, docs/cleanup.json:1318
 - Clasificación: KEEP
-
-### docs/REPORT.md
-
-Referencias detectadas:
-
-- **code**: tools/audit_cleanup.py:33, tools/audit_cleanup.py:211, tools/audit_cleanup.py:527
-- **docs**: docs/diagrams/deps_cleanup.md:9, docs/diagrams/deps_cleanup.md:15, docs/cleanup.json:63, docs/cleanup.json:64, docs/cleanup.json:89, docs/cleanup.json:90, docs/cleanup.json:117, docs/cleanup.json:118
-- Notas: Conservar en /legacy/docs hasta validar que no sea referencia externa.
-- Clasificación: QUARANTINE
 
 ### docs/cleanup.json
 
 Referencias detectadas:
 
-- **code**: tools/audit_cleanup.py:212, tools/audit_cleanup.py:526
-- **docs**: docs/cleanup.json:62, docs/cleanup.json:88, docs/cleanup.json:114, docs/cleanup.json:115, docs/cleanup.json:116, docs/cleanup.json:143, docs/cleanup.json:165, docs/cleanup.json:187
+- **code**: tools/audit_cleanup.py:260, tools/audit_cleanup.py:617
+- **configs**: ci/lint.yml:35, ci/lint.yml:39
+- **docs**: docs/policies/DEP-001-legacy-removal.md:17, docs/cleanup.json:39, docs/cleanup.json:40, docs/cleanup.json:66, docs/cleanup.json:92, docs/cleanup.json:119, docs/cleanup.json:141, docs/cleanup.json:165
 - Clasificación: KEEP
 
 ### docs/diagrams/dependencies.md
 
 Referencias detectadas:
 
-- **docs**: docs/REPORT.md:45, docs/cleanup.json:1830, docs/CLEANUP_REPORT.md:79, docs/CLEANUP_REPORT.md:645
+- **docs**: legacy/docs/2025-10-25-reports/REPORT.md:45, docs/cleanup.json:1782, docs/CLEANUP_REPORT.md:77, docs/CLEANUP_REPORT.md:631, docs/CLEANUP_REPORT.md:1246
 - Clasificación: KEEP
 
 ### docs/diagrams/deps_cleanup.md
 
 Referencias detectadas:
 
-- **code**: tools/audit_cleanup.py:213
-- **docs**: docs/cleanup.json:113, docs/cleanup.json:142, docs/cleanup.json:1724, docs/cleanup.json:1782, docs/cleanup.json:1783, docs/cleanup.json:1853, docs/cleanup.json:1945, docs/cleanup.json:2917
+- **code**: tools/audit_cleanup.py:104, tools/audit_cleanup.py:261
+- **docs**: docs/cleanup.json:117, docs/cleanup.json:118, docs/cleanup.json:1806, docs/cleanup.json:2140, docs/cleanup.json:2141, docs/cleanup.json:2172, docs/cleanup.json:2173, docs/cleanup.json:2236
 - Clasificación: KEEP
 
 ### docs/diagrams/pipeline_flow.md
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:1881, docs/cleanup.json:2511, docs/cleanup.json:2550, docs/CLEANUP_REPORT.md:81, docs/CLEANUP_REPORT.md:660, docs/CLEANUP_REPORT.md:838, docs/CLEANUP_REPORT.md:847, docs/REPORT.md:46
+- **docs**: legacy/docs/2025-10-25-reports/REPORT.md:46, docs/cleanup.json:1836, docs/cleanup.json:2645, docs/cleanup.json:2681, docs/CLEANUP_REPORT.md:79, docs/CLEANUP_REPORT.md:646, docs/CLEANUP_REPORT.md:870, docs/CLEANUP_REPORT.md:879
 - Clasificación: KEEP
 
 ### docs/policies/DEP-001-legacy-removal.md
 
 Referencias detectadas:
 
-- **code**: tools/audit_cleanup.py:214
-- **docs**: docs/cleanup.json:1908, docs/CLEANUP_REPORT.md:82, docs/CLEANUP_REPORT.md:667
+- **code**: tools/audit_cleanup.py:262
+- **docs**: docs/cleanup.json:1765, docs/cleanup.json:1863, docs/CLEANUP_REPORT.md:80, docs/CLEANUP_REPORT.md:628, docs/CLEANUP_REPORT.md:653
 - Clasificación: KEEP
-
-### docs/report.json
-
-Referencias detectadas:
-
-- **code**: tools/audit_cleanup.py:40
-- **docs**: docs/diagrams/deps_cleanup.md:10, docs/cleanup.json:35, docs/cleanup.json:36, docs/cleanup.json:37, docs/cleanup.json:38, docs/cleanup.json:1934, docs/cleanup.json:2222, docs/cleanup.json:2223
-- Notas: Generado por tooling previo; no usado en pipelines.
-- Clasificación: QUARANTINE
 
 ### docs/run/aws.md
 
 Referencias detectadas:
 
-- **docs**: docs/PROJECT_DOCUMENTATION.md:49, docs/cleanup.json:1963, docs/CLEANUP_REPORT.md:84, docs/CLEANUP_REPORT.md:684
+- **docs**: docs/cleanup.json:1889, docs/PROJECT_DOCUMENTATION.md:49, docs/CLEANUP_REPORT.md:81, docs/CLEANUP_REPORT.md:661
 - Clasificación: KEEP
 
 ### docs/run/azure.md
 
 Referencias detectadas:
 
-- **docs**: docs/PROJECT_DOCUMENTATION.md:51, docs/cleanup.json:1986, docs/CLEANUP_REPORT.md:85, docs/CLEANUP_REPORT.md:691, docs/CLEANUP_REPORT.md:1336, docs/CLEANUP_REPORT.md:1337
+- **docs**: docs/cleanup.json:1912, docs/PROJECT_DOCUMENTATION.md:51, docs/CLEANUP_REPORT.md:82, docs/CLEANUP_REPORT.md:668, docs/CLEANUP_REPORT.md:1244, docs/CLEANUP_REPORT.md:1245
 - Clasificación: KEEP
 
 ### docs/run/configs.md
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:529, docs/cleanup.json:530, docs/cleanup.json:788, docs/cleanup.json:966, docs/cleanup.json:1119, docs/cleanup.json:1264, docs/cleanup.json:1383, docs/cleanup.json:2011
+- **docs**: docs/cleanup.json:508, docs/cleanup.json:509, docs/cleanup.json:774, docs/cleanup.json:952, docs/cleanup.json:1105, docs/cleanup.json:1250, docs/cleanup.json:1357, docs/cleanup.json:1937
 - Clasificación: KEEP
 
 ### docs/run/databricks.md
 
 Referencias detectadas:
 
-- **docs**: docs/PROJECT_DOCUMENTATION.md:48, docs/cleanup.json:2038, docs/CLEANUP_REPORT.md:87, docs/CLEANUP_REPORT.md:705, docs/CLEANUP_REPORT.md:1338, docs/CLEANUP_REPORT.md:1339, docs/CLEANUP_REPORT.md:1340
+- **docs**: docs/cleanup.json:1964, docs/PROJECT_DOCUMENTATION.md:48, docs/CLEANUP_REPORT.md:84, docs/CLEANUP_REPORT.md:682, docs/CLEANUP_REPORT.md:1241, docs/CLEANUP_REPORT.md:1242, docs/CLEANUP_REPORT.md:1243
 - Clasificación: KEEP
 
 ### docs/run/gcp.md
 
 Referencias detectadas:
 
-- **docs**: docs/PROJECT_DOCUMENTATION.md:50, docs/cleanup.json:2064, docs/CLEANUP_REPORT.md:88, docs/CLEANUP_REPORT.md:712
+- **docs**: docs/cleanup.json:1990, docs/PROJECT_DOCUMENTATION.md:50, docs/CLEANUP_REPORT.md:85, docs/CLEANUP_REPORT.md:689
 - Clasificación: KEEP
 
 ### docs/run/jobs/aws_stepfunctions.json
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:39, docs/cleanup.json:40, docs/cleanup.json:41, docs/cleanup.json:42, docs/cleanup.json:2087, docs/CLEANUP_REPORT.md:89, docs/CLEANUP_REPORT.md:160, docs/CLEANUP_REPORT.md:719
+- **docs**: docs/cleanup.json:41, docs/cleanup.json:42, docs/cleanup.json:43, docs/cleanup.json:44, docs/cleanup.json:2013, docs/CLEANUP_REPORT.md:86, docs/CLEANUP_REPORT.md:163, docs/CLEANUP_REPORT.md:696
 - Clasificación: KEEP
 
 ### docs/run/jobs/databricks_job.json
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:2114, docs/CLEANUP_REPORT.md:90, docs/CLEANUP_REPORT.md:726
+- **docs**: docs/cleanup.json:2040, docs/CLEANUP_REPORT.md:87, docs/CLEANUP_REPORT.md:703
 - Clasificación: KEEP
-
-### docs/run/jobs/dataproc_workflow.yaml
-
-Referencias detectadas:
-
-- **code**: tools/audit_cleanup.py:54
-- **docs**: docs/cleanup.json:2136, docs/CLEANUP_REPORT.md:91, docs/CLEANUP_REPORT.md:733
-- Notas: Considerar mover a legacy/infra antes de eliminar.
-- Clasificación: QUARANTINE
 
 ### docs/tools/list_io.py
 
 Referencias detectadas:
 
-- **docs**: README.md:40, docs/cleanup.json:2160, docs/cleanup.json:3737, docs/CLEANUP_REPORT.md:92, docs/CLEANUP_REPORT.md:151, docs/CLEANUP_REPORT.md:742, docs/CLEANUP_REPORT.md:1166, docs/CLEANUP_REPORT.md:1259
+- **configs**: ci/lint.yml:34
+- **docs**: docs/cleanup.json:2062, docs/cleanup.json:3860, docs/PROJECT_DOCUMENTATION.md:115, docs/CLEANUP_REPORT.md:88, docs/CLEANUP_REPORT.md:153, docs/CLEANUP_REPORT.md:710, docs/CLEANUP_REPORT.md:1199, README.md:40
 - Clasificación: KEEP
+
+### legacy/docs/2025-10-25-reports/README.md
+
+Referencias detectadas:
+
+- **code**: tools/audit_cleanup.py:105, tools/audit_cleanup.py:106, tools/audit_cleanup.py:107, tools/audit_cleanup.py:258
+- **docs**: docs/cleanup.json:199, docs/cleanup.json:1764, docs/cleanup.json:2080, docs/cleanup.json:2091, docs/cleanup.json:2139, docs/cleanup.json:2171, docs/cleanup.json:2189, docs/cleanup.json:2235
+- Clasificación: KEEP
+
+### legacy/docs/2025-10-25-reports/REPORT.md
+
+Referencias detectadas:
+
+- **code**: tools/audit_cleanup.py:34, tools/audit_cleanup.py:40, tools/audit_cleanup.py:66, tools/audit_cleanup.py:97, tools/audit_cleanup.py:259, tools/audit_cleanup.py:618
+- **docs**: legacy/docs/2025-10-25-reports/README.md:6, docs/diagrams/deps_cleanup.md:5, docs/diagrams/deps_cleanup.md:16, docs/cleanup.json:45, docs/cleanup.json:46, docs/cleanup.json:67, docs/cleanup.json:68, docs/cleanup.json:93
+- Notas: Restaurar solo si gobernanza lo aprueba.
+- Clasificación: QUARANTINE
+
+### legacy/docs/2025-10-25-reports/report.json
+
+Referencias detectadas:
+
+- **code**: tools/audit_cleanup.py:42, tools/audit_cleanup.py:48, tools/audit_cleanup.py:73, tools/audit_cleanup.py:98
+- **docs**: legacy/docs/2025-10-25-reports/README.md:6, docs/diagrams/deps_cleanup.md:6, docs/diagrams/deps_cleanup.md:17, docs/cleanup.json:32, docs/cleanup.json:33, docs/cleanup.json:34, docs/cleanup.json:35, docs/cleanup.json:2157
+- Notas: Mantener disponible durante la ventana de 30 días.
+- Clasificación: QUARANTINE
+
+### legacy/infra/2025-10-25-gcp/README.md
+
+Referencias detectadas:
+
+- **code**: tools/audit_cleanup.py:105, tools/audit_cleanup.py:106, tools/audit_cleanup.py:107, tools/audit_cleanup.py:258
+- **docs**: docs/cleanup.json:199, docs/cleanup.json:1764, docs/cleanup.json:2080, docs/cleanup.json:2091, docs/cleanup.json:2139, docs/cleanup.json:2171, docs/cleanup.json:2189, docs/cleanup.json:2235
+- Clasificación: KEEP
+
+### legacy/infra/2025-10-25-gcp/dataproc_workflow.yaml
+
+Referencias detectadas:
+
+- **code**: tools/audit_cleanup.py:58, tools/audit_cleanup.py:64, tools/audit_cleanup.py:80, tools/audit_cleanup.py:100
+- **docs**: legacy/infra/2025-10-25-gcp/README.md:6, docs/diagrams/deps_cleanup.md:7, docs/diagrams/deps_cleanup.md:18, docs/cleanup.json:2221, docs/PROJECT_DOCUMENTATION.md:113, docs/CLEANUP_REPORT.md:93, docs/CLEANUP_REPORT.md:752
+- Notas: Coordinar con Cloud Data Engineering antes de restaurar.
+- Clasificación: QUARANTINE
+
+### legacy/scripts/2025-10-25-generation/README.md
+
+Referencias detectadas:
+
+- **code**: tools/audit_cleanup.py:105, tools/audit_cleanup.py:106, tools/audit_cleanup.py:107, tools/audit_cleanup.py:258
+- **docs**: docs/cleanup.json:199, docs/cleanup.json:1764, docs/cleanup.json:2080, docs/cleanup.json:2091, docs/cleanup.json:2139, docs/cleanup.json:2171, docs/cleanup.json:2189, docs/cleanup.json:2235
+- Clasificación: KEEP
+
+### legacy/scripts/2025-10-25-generation/generate_big_payments.py
+
+Referencias detectadas:
+
+- **code**: tools/audit_cleanup.py:50, tools/audit_cleanup.py:56, tools/audit_cleanup.py:87, tools/audit_cleanup.py:99
+- **docs**: legacy/scripts/2025-10-25-generation/README.md:6, docs/diagrams/deps_cleanup.md:8, docs/diagrams/deps_cleanup.md:19, docs/cleanup.json:1513, docs/cleanup.json:1613, docs/cleanup.json:2284, docs/PROJECT_DOCUMENTATION.md:114, docs/CLEANUP_REPORT.md:95
+- Notas: Reactivar solo con aprobación del owner registrado en README.
+- Clasificación: QUARANTINE
 
 ### pipelines/__init__.py
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:993, docs/cleanup.json:1146, docs/cleanup.json:2186, docs/cleanup.json:2240, docs/cleanup.json:2293, docs/cleanup.json:2376, docs/cleanup.json:2566, docs/cleanup.json:2620
+- **docs**: docs/cleanup.json:974, docs/cleanup.json:1127, docs/cleanup.json:2316, docs/cleanup.json:2370, docs/cleanup.json:2420, docs/cleanup.json:2502, docs/cleanup.json:2695, docs/cleanup.json:2749
 - Clasificación: KEEP
 
 ### pipelines/common.py
 
 Referencias detectadas:
 
-- **docs**: docs/report.json:128, docs/report.json:144, docs/cleanup.json:2213, docs/CLEANUP_REPORT.md:94, docs/CLEANUP_REPORT.md:756, docs/CLEANUP_REPORT.md:1196, docs/CLEANUP_REPORT.md:1260, docs/CLEANUP_REPORT.md:1261
+- **configs**: legacy/docs/2025-10-25-reports/report.json:128, legacy/docs/2025-10-25-reports/report.json:144
+- **docs**: legacy/docs/2025-10-25-reports/REPORT.md:115, legacy/docs/2025-10-25-reports/REPORT.md:121, docs/cleanup.json:2343, docs/CLEANUP_REPORT.md:97, docs/CLEANUP_REPORT.md:785
 - Clasificación: KEEP
 
 ### pipelines/config/__init__.py
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:993, docs/cleanup.json:1146, docs/cleanup.json:2186, docs/cleanup.json:2240, docs/cleanup.json:2293, docs/cleanup.json:2376, docs/cleanup.json:2566, docs/cleanup.json:2620
+- **docs**: docs/cleanup.json:974, docs/cleanup.json:1127, docs/cleanup.json:2316, docs/cleanup.json:2370, docs/cleanup.json:2420, docs/cleanup.json:2502, docs/cleanup.json:2695, docs/cleanup.json:2749
 - Clasificación: KEEP
 
 ### pipelines/config/loader.py
 
 Referencias detectadas:
 
-- **docs**: docs/PROJECT_DOCUMENTATION.md:15, docs/cleanup.json:2267, docs/CLEANUP_REPORT.md:96, docs/CLEANUP_REPORT.md:770, docs/CLEANUP_REPORT.md:1197, docs/CLEANUP_REPORT.md:1198, docs/CLEANUP_REPORT.md:1199, docs/CLEANUP_REPORT.md:1265
+- **docs**: docs/cleanup.json:2397, docs/PROJECT_DOCUMENTATION.md:15, docs/CLEANUP_REPORT.md:99, docs/CLEANUP_REPORT.md:800
 - Clasificación: KEEP
 
 ### pipelines/database/__init__.py
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:993, docs/cleanup.json:1146, docs/cleanup.json:2186, docs/cleanup.json:2240, docs/cleanup.json:2293, docs/cleanup.json:2376, docs/cleanup.json:2566, docs/cleanup.json:2620
+- **docs**: docs/cleanup.json:974, docs/cleanup.json:1127, docs/cleanup.json:2316, docs/cleanup.json:2370, docs/cleanup.json:2420, docs/cleanup.json:2502, docs/cleanup.json:2695, docs/cleanup.json:2749
 - Clasificación: KEEP
 
 ### pipelines/database/db_manager.py
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:992, docs/cleanup.json:1145, docs/cleanup.json:2320, docs/CLEANUP_REPORT.md:98, docs/CLEANUP_REPORT.md:427, docs/CLEANUP_REPORT.md:464, docs/CLEANUP_REPORT.md:784, docs/CLEANUP_REPORT.md:1200
+- **docs**: docs/cleanup.json:973, docs/cleanup.json:1126, docs/cleanup.json:2447, docs/CLEANUP_REPORT.md:101, docs/CLEANUP_REPORT.md:421, docs/CLEANUP_REPORT.md:458, docs/CLEANUP_REPORT.md:814
 - Clasificación: KEEP
 
 ### pipelines/database/schema_mapper.py
@@ -793,145 +823,148 @@ Referencias detectadas:
 Referencias detectadas:
 
 - **configs**: config/schema_mapping.yml:2
-- **docs**: docs/cleanup.json:994, docs/cleanup.json:1147, docs/cleanup.json:1400, docs/cleanup.json:2347, docs/CLEANUP_REPORT.md:99, docs/CLEANUP_REPORT.md:427, docs/CLEANUP_REPORT.md:464, docs/CLEANUP_REPORT.md:526
+- **docs**: docs/cleanup.json:972, docs/cleanup.json:1125, docs/cleanup.json:1380, docs/cleanup.json:2473, docs/CLEANUP_REPORT.md:102, docs/CLEANUP_REPORT.md:421, docs/CLEANUP_REPORT.md:458, docs/CLEANUP_REPORT.md:520
 - Clasificación: KEEP
 
 ### pipelines/io/__init__.py
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:993, docs/cleanup.json:1146, docs/cleanup.json:2186, docs/cleanup.json:2240, docs/cleanup.json:2293, docs/cleanup.json:2376, docs/cleanup.json:2566, docs/cleanup.json:2620
+- **docs**: docs/cleanup.json:974, docs/cleanup.json:1127, docs/cleanup.json:2316, docs/cleanup.json:2370, docs/cleanup.json:2420, docs/cleanup.json:2502, docs/cleanup.json:2695, docs/cleanup.json:2749
 - Clasificación: KEEP
 
 ### pipelines/io/reader.py
 
 Referencias detectadas:
 
-- **docs**: docs/PROJECT_DOCUMENTATION.md:16, docs/cleanup.json:2403, docs/CLEANUP_REPORT.md:101, docs/CLEANUP_REPORT.md:806, docs/CLEANUP_REPORT.md:1219, docs/CLEANUP_REPORT.md:1273, docs/CLEANUP_REPORT.md:1274, docs/CLEANUP_REPORT.md:1275
+- **docs**: docs/cleanup.json:2529, docs/PROJECT_DOCUMENTATION.md:16, docs/CLEANUP_REPORT.md:104, docs/CLEANUP_REPORT.md:836
 - Clasificación: KEEP
 
 ### pipelines/io/s3a.py
 
 Referencias detectadas:
 
-- **docs**: docs/PROJECT_DOCUMENTATION.md:16, docs/cleanup.json:2427, docs/CLEANUP_REPORT.md:102, docs/CLEANUP_REPORT.md:813, docs/CLEANUP_REPORT.md:1220, docs/CLEANUP_REPORT.md:1276
+- **docs**: docs/cleanup.json:2552, docs/CLEANUP_REPORT.md:105, docs/CLEANUP_REPORT.md:843, docs/PROJECT_DOCUMENTATION.md:16
 - Clasificación: KEEP
 
 ### pipelines/io/writer.py
 
 Referencias detectadas:
 
-- **docs**: docs/PROJECT_DOCUMENTATION.md:16, docs/PROJECT_DOCUMENTATION.md:79, docs/cleanup.json:2451, docs/CLEANUP_REPORT.md:103, docs/CLEANUP_REPORT.md:820, docs/CLEANUP_REPORT.md:1277, docs/CLEANUP_REPORT.md:1278
+- **docs**: docs/cleanup.json:2575, docs/PROJECT_DOCUMENTATION.md:16, docs/PROJECT_DOCUMENTATION.md:79, docs/CLEANUP_REPORT.md:106, docs/CLEANUP_REPORT.md:850
 - Clasificación: KEEP
 
 ### pipelines/sources.py
 
 Referencias detectadas:
 
-- **docs**: docs/report.json:61, docs/report.json:68, docs/PROJECT_DOCUMENTATION.md:18, docs/PROJECT_DOCUMENTATION.md:56, docs/REPORT.md:155, docs/REPORT.md:156, docs/cleanup.json:1360, docs/cleanup.json:1361
+- **configs**: legacy/docs/2025-10-25-reports/report.json:61, legacy/docs/2025-10-25-reports/report.json:68
+- **docs**: docs/cleanup.json:1340, docs/cleanup.json:1341, docs/cleanup.json:2599, docs/PROJECT_DOCUMENTATION.md:18, docs/PROJECT_DOCUMENTATION.md:56, docs/CLEANUP_REPORT.md:107, docs/CLEANUP_REPORT.md:511, docs/CLEANUP_REPORT.md:857
 - Clasificación: KEEP
 
 ### pipelines/spark_job.py
 
 Referencias detectadas:
 
-- **docs**: docs/diagrams/pipeline_flow.md:7, docs/report.json:75, docs/cleanup.json:2502, docs/CLEANUP_REPORT.md:105, docs/CLEANUP_REPORT.md:834, docs/CLEANUP_REPORT.md:1221, docs/CLEANUP_REPORT.md:1282, docs/CLEANUP_REPORT.md:1283
+- **configs**: legacy/docs/2025-10-25-reports/report.json:75
+- **docs**: legacy/docs/2025-10-25-reports/REPORT.md:22, legacy/docs/2025-10-25-reports/REPORT.md:86, legacy/docs/2025-10-25-reports/REPORT.md:92, legacy/docs/2025-10-25-reports/REPORT.md:134, legacy/docs/2025-10-25-reports/REPORT.md:157, docs/diagrams/pipeline_flow.md:7, docs/cleanup.json:2629, docs/CLEANUP_REPORT.md:108
 - Clasificación: KEEP
 
 ### pipelines/spark_job_with_db.py
 
 Referencias detectadas:
 
-- **code**: scripts/run_high_volume_case.py:85, scripts/runner.sh:106, scripts/runner_with_db.sh:61, scripts/generate_synthetic_data.py:782, scripts/run_multiformat_case.py:110, pipelines/spark_job_with_db.py:13
+- **code**: scripts/generate_synthetic_data.py:782, scripts/run_multiformat_case.py:110, scripts/runner.sh:106, scripts/runner_with_db.sh:61, scripts/run_high_volume_case.py:85, pipelines/spark_job_with_db.py:13
 - **configs**: config/datasets/finanzas/payments_v3/dataset.yml:6, config/datasets/finanzas/payments_v3/dataset_api.yml:5
-- **docs**: README.md:13, README.md:29, docs/diagrams/pipeline_flow.md:8, docs/PROJECT_DOCUMENTATION.md:17, docs/PROJECT_DOCUMENTATION.md:40, docs/cleanup.json:2529, docs/cleanup.json:2540, docs/CLEANUP_REPORT.md:106
+- **docs**: legacy/docs/2025-10-25-reports/REPORT.md:22, legacy/docs/2025-10-25-reports/REPORT.md:86, legacy/docs/2025-10-25-reports/REPORT.md:87, legacy/docs/2025-10-25-reports/REPORT.md:120, docs/diagrams/pipeline_flow.md:8, docs/cleanup.json:2658, docs/cleanup.json:2669, docs/PROJECT_DOCUMENTATION.md:17
 - Clasificación: KEEP
 
 ### pipelines/transforms/__init__.py
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:993, docs/cleanup.json:1146, docs/cleanup.json:2186, docs/cleanup.json:2240, docs/cleanup.json:2293, docs/cleanup.json:2376, docs/cleanup.json:2566, docs/cleanup.json:2620
+- **docs**: docs/cleanup.json:974, docs/cleanup.json:1127, docs/cleanup.json:2316, docs/cleanup.json:2370, docs/cleanup.json:2420, docs/cleanup.json:2502, docs/cleanup.json:2695, docs/cleanup.json:2749
 - Clasificación: KEEP
 
 ### pipelines/transforms/apply.py
 
 Referencias detectadas:
 
-- **docs**: docs/PROJECT_DOCUMENTATION.md:14, docs/PROJECT_DOCUMENTATION.md:90, docs/cleanup.json:844, docs/cleanup.json:1031, docs/cleanup.json:1320, docs/cleanup.json:2593, docs/cleanup.json:2647, docs/CLEANUP_REPORT.md:108
+- **docs**: docs/cleanup.json:824, docs/cleanup.json:1011, docs/cleanup.json:1300, docs/cleanup.json:2722, docs/cleanup.json:2776, docs/PROJECT_DOCUMENTATION.md:14, docs/PROJECT_DOCUMENTATION.md:90, docs/CLEANUP_REPORT.md:111
 - Clasificación: KEEP
 
 ### pipelines/transforms/tests/__init__.py
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:993, docs/cleanup.json:1146, docs/cleanup.json:2186, docs/cleanup.json:2240, docs/cleanup.json:2293, docs/cleanup.json:2376, docs/cleanup.json:2566, docs/cleanup.json:2620
+- **docs**: docs/cleanup.json:974, docs/cleanup.json:1127, docs/cleanup.json:2316, docs/cleanup.json:2370, docs/cleanup.json:2420, docs/cleanup.json:2502, docs/cleanup.json:2695, docs/cleanup.json:2749
 - Clasificación: KEEP
 
 ### pipelines/transforms/tests/test_apply.py
 
 Referencias detectadas:
 
-- **docs**: docs/PROJECT_DOCUMENTATION.md:90, docs/cleanup.json:2647, docs/CLEANUP_REPORT.md:110, docs/CLEANUP_REPORT.md:871, docs/CLEANUP_REPORT.md:1293, docs/CLEANUP_REPORT.md:1294, docs/CLEANUP_REPORT.md:1295
+- **docs**: docs/cleanup.json:2776, docs/PROJECT_DOCUMENTATION.md:90, docs/CLEANUP_REPORT.md:113, docs/CLEANUP_REPORT.md:903
 - Clasificación: KEEP
 
 ### pipelines/udf_catalog.py
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:2670, docs/CLEANUP_REPORT.md:111, docs/CLEANUP_REPORT.md:878, docs/CLEANUP_REPORT.md:1222, docs/CLEANUP_REPORT.md:1223, docs/CLEANUP_REPORT.md:1224, docs/CLEANUP_REPORT.md:1225, docs/CLEANUP_REPORT.md:1226
+- **docs**: docs/cleanup.json:2799, docs/CLEANUP_REPORT.md:114, docs/CLEANUP_REPORT.md:910
 - Clasificación: KEEP
 
 ### pipelines/utils/__init__.py
 
 Referencias detectadas:
 
-- **docs**: docs/CLEANUP_REPORT.md:93, docs/CLEANUP_REPORT.md:95, docs/CLEANUP_REPORT.md:97, docs/CLEANUP_REPORT.md:100, docs/CLEANUP_REPORT.md:107, docs/CLEANUP_REPORT.md:109, docs/CLEANUP_REPORT.md:112, docs/CLEANUP_REPORT.md:115
+- **docs**: docs/cleanup.json:974, docs/cleanup.json:1127, docs/cleanup.json:2316, docs/cleanup.json:2370, docs/cleanup.json:2420, docs/cleanup.json:2502, docs/cleanup.json:2695, docs/cleanup.json:2749
 - Clasificación: KEEP
 
 ### pipelines/utils/logger.py
 
 Referencias detectadas:
 
-- **docs**: docs/PROJECT_DOCUMENTATION.md:12, docs/cleanup.json:2724, docs/CLEANUP_REPORT.md:113, docs/CLEANUP_REPORT.md:892
+- **docs**: docs/cleanup.json:2848, docs/PROJECT_DOCUMENTATION.md:12, docs/CLEANUP_REPORT.md:116, docs/CLEANUP_REPORT.md:924
 - Clasificación: KEEP
 
 ### pipelines/utils/parallel.py
 
 Referencias detectadas:
 
-- **docs**: docs/PROJECT_DOCUMENTATION.md:12, docs/cleanup.json:2747, docs/CLEANUP_REPORT.md:114, docs/CLEANUP_REPORT.md:899, docs/CLEANUP_REPORT.md:1230, docs/CLEANUP_REPORT.md:1231
+- **docs**: docs/cleanup.json:2871, docs/PROJECT_DOCUMENTATION.md:12, docs/CLEANUP_REPORT.md:117, docs/CLEANUP_REPORT.md:931
 - Clasificación: KEEP
 
 ### pipelines/validation/__init__.py
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:993, docs/cleanup.json:1146, docs/cleanup.json:2186, docs/cleanup.json:2240, docs/cleanup.json:2293, docs/cleanup.json:2376, docs/cleanup.json:2566, docs/cleanup.json:2620
+- **docs**: docs/cleanup.json:974, docs/cleanup.json:1127, docs/cleanup.json:2316, docs/cleanup.json:2370, docs/cleanup.json:2420, docs/cleanup.json:2502, docs/cleanup.json:2695, docs/cleanup.json:2749
 - Clasificación: KEEP
 
 ### pipelines/validation/quality.py
 
 Referencias detectadas:
 
-- **docs**: docs/report.json:119, docs/PROJECT_DOCUMENTATION.md:13, docs/cleanup.json:2799, docs/CLEANUP_REPORT.md:116, docs/CLEANUP_REPORT.md:913, docs/CLEANUP_REPORT.md:1300, docs/CLEANUP_REPORT.md:1301, docs/REPORT.md:124
+- **configs**: legacy/docs/2025-10-25-reports/report.json:119
+- **docs**: legacy/docs/2025-10-25-reports/REPORT.md:124, docs/cleanup.json:2921, docs/PROJECT_DOCUMENTATION.md:13, docs/CLEANUP_REPORT.md:119, docs/CLEANUP_REPORT.md:945
 - Clasificación: KEEP
 
 ### pyproject.toml
 
 Referencias detectadas:
 
-- **code**: tools/audit_cleanup.py:208
-- **docs**: docs/PROJECT_DOCUMENTATION.md:91, docs/cleanup.json:2824, docs/CLEANUP_REPORT.md:117, docs/CLEANUP_REPORT.md:920, docs/REPORT.md:84
+- **code**: tools/audit_cleanup.py:256
+- **docs**: legacy/docs/2025-10-25-reports/REPORT.md:84, docs/cleanup.json:2947, docs/PROJECT_DOCUMENTATION.md:91, docs/CLEANUP_REPORT.md:120, docs/CLEANUP_REPORT.md:953
 - Clasificación: KEEP
 
 ### requirements.txt
 
 Referencias detectadas:
 
-- **code**: scripts/runner.sh:29, scripts/runner.sh:30, scripts/runner_with_db.sh:31, tools/audit_cleanup.py:209
-- **configs**: ci/build-test.yml:28
-- **docs**: README.md:11, docs/PROJECT_DOCUMENTATION.md:39, docs/cleanup.json:2850, docs/CLEANUP_REPORT.md:118, docs/CLEANUP_REPORT.md:928, docs/REPORT.md:116
+- **code**: scripts/runner.sh:29, scripts/runner.sh:30, scripts/runner_with_db.sh:31, tools/audit_cleanup.py:257
+- **configs**: ci/build-test.yml:28, ci/lint.yml:30
+- **docs**: legacy/docs/2025-10-25-reports/REPORT.md:116, docs/cleanup.json:2973, docs/PROJECT_DOCUMENTATION.md:39, docs/CLEANUP_REPORT.md:121, docs/CLEANUP_REPORT.md:961, README.md:11
 - Clasificación: KEEP
 
 ### scripts/db/init.sql
@@ -939,240 +972,241 @@ Referencias detectadas:
 Referencias detectadas:
 
 - **configs**: docker-compose.yml:22
-- **docs**: docs/cleanup.json:2882, docs/CLEANUP_REPORT.md:119, docs/CLEANUP_REPORT.md:937
+- **docs**: docs/cleanup.json:3006, docs/CLEANUP_REPORT.md:122, docs/CLEANUP_REPORT.md:970
 - Clasificación: KEEP
-
-### scripts/generate_big_payments.py
-
-Referencias detectadas:
-
-- **code**: tools/audit_cleanup.py:47
-- **docs**: docs/diagrams/deps_cleanup.md:8, docs/CLEANUP_REPORT.md:120, docs/CLEANUP_REPORT.md:562, docs/CLEANUP_REPORT.md:592, docs/CLEANUP_REPORT.md:945, docs/cleanup.json:1529, docs/cleanup.json:1629, docs/cleanup.json:2906
-- Notas: No referenciado desde CLI actuales.
-- Clasificación: QUARANTINE
 
 ### scripts/generate_synthetic_data.py
 
 Referencias detectadas:
 
-- **code**: scripts/run_high_volume_case.py:49, scripts/generate_synthetic_data.py:21, scripts/generate_synthetic_data.py:22, scripts/generate_synthetic_data.py:23, scripts/generate_synthetic_data.py:670, scripts/generate_synthetic_data.py:671, scripts/generate_synthetic_data.py:672, scripts/generate_synthetic_data.py:673
-- **docs**: docs/diagrams/deps_cleanup.md:7, docs/cleanup.json:509, docs/cleanup.json:510, docs/cleanup.json:578, docs/cleanup.json:604, docs/cleanup.json:655, docs/cleanup.json:656, docs/cleanup.json:657
+- **code**: scripts/generate_synthetic_data.py:21, scripts/generate_synthetic_data.py:22, scripts/generate_synthetic_data.py:23, scripts/generate_synthetic_data.py:670, scripts/generate_synthetic_data.py:671, scripts/generate_synthetic_data.py:672, scripts/generate_synthetic_data.py:673, scripts/run_multiformat_case.py:74
+- **docs**: docs/diagrams/deps_cleanup.md:15, docs/cleanup.json:486, docs/cleanup.json:487, docs/cleanup.json:558, docs/cleanup.json:584, docs/cleanup.json:634, docs/cleanup.json:635, docs/cleanup.json:636
 - Clasificación: KEEP
 
 ### scripts/run_high_volume_case.py
 
 Referencias detectadas:
 
-- **docs**: docs/report.json:161, docs/cleanup.json:23, docs/cleanup.json:24, docs/cleanup.json:25, docs/cleanup.json:26, docs/cleanup.json:506, docs/cleanup.json:654, docs/cleanup.json:2535
+- **configs**: legacy/docs/2025-10-25-reports/report.json:161
+- **docs**: legacy/docs/2025-10-25-reports/REPORT.md:100, legacy/docs/2025-10-25-reports/REPORT.md:125, docs/cleanup.json:491, docs/cleanup.json:637, docs/cleanup.json:2668, docs/cleanup.json:3066, docs/CLEANUP_REPORT.md:124, docs/CLEANUP_REPORT.md:290
 - Clasificación: KEEP
 
 ### scripts/run_multiformat_case.py
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:27, docs/cleanup.json:28, docs/cleanup.json:29, docs/cleanup.json:30, docs/cleanup.json:511, docs/cleanup.json:549, docs/cleanup.json:2539, docs/cleanup.json:2998
+- **docs**: docs/cleanup.json:488, docs/cleanup.json:529, docs/cleanup.json:2665, docs/cleanup.json:3043, docs/cleanup.json:3095, docs/CLEANUP_REPORT.md:125, docs/CLEANUP_REPORT.md:290, docs/CLEANUP_REPORT.md:299
 - Clasificación: KEEP
 
 ### scripts/runner.sh
 
 Referencias detectadas:
 
-- **configs**: docker-compose.yml:85, docker-compose.yml:86
-- **docs**: README.md:15, docs/report.json:136, docs/report.json:154, docs/PROJECT_DOCUMENTATION.md:42, docs/cleanup.json:507, docs/cleanup.json:738, docs/cleanup.json:882, docs/cleanup.json:916
+- **configs**: legacy/docs/2025-10-25-reports/report.json:136, legacy/docs/2025-10-25-reports/report.json:154, docker-compose.yml:85, docker-compose.yml:86
+- **docs**: legacy/docs/2025-10-25-reports/REPORT.md:87, legacy/docs/2025-10-25-reports/REPORT.md:126, docs/cleanup.json:489, docs/cleanup.json:718, docs/cleanup.json:862, docs/cleanup.json:896, docs/cleanup.json:1049, docs/cleanup.json:1164
 - Clasificación: KEEP
 
 ### scripts/runner_with_db.sh
 
 Referencias detectadas:
 
-- **docs**: docs/report.json:132, docs/report.json:149, docs/report.json:166, docs/cleanup.json:508, docs/cleanup.json:739, docs/cleanup.json:883, docs/cleanup.json:917, docs/cleanup.json:1070
+- **configs**: legacy/docs/2025-10-25-reports/report.json:132, legacy/docs/2025-10-25-reports/report.json:149, legacy/docs/2025-10-25-reports/report.json:166
+- **docs**: legacy/docs/2025-10-25-reports/REPORT.md:87, legacy/docs/2025-10-25-reports/REPORT.md:100, legacy/docs/2025-10-25-reports/REPORT.md:125, legacy/docs/2025-10-25-reports/REPORT.md:126, docs/cleanup.json:490, docs/cleanup.json:719, docs/cleanup.json:863, docs/cleanup.json:897
 - Clasificación: KEEP
 
 ### src/datacore/__init__.py
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:993, docs/cleanup.json:1146, docs/cleanup.json:2186, docs/cleanup.json:2240, docs/cleanup.json:2293, docs/cleanup.json:2376, docs/cleanup.json:2566, docs/cleanup.json:2620
+- **docs**: docs/cleanup.json:974, docs/cleanup.json:1127, docs/cleanup.json:2316, docs/cleanup.json:2370, docs/cleanup.json:2420, docs/cleanup.json:2502, docs/cleanup.json:2695, docs/cleanup.json:2749
 - Clasificación: KEEP
 
 ### src/datacore/cli.py
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:3109, docs/CLEANUP_REPORT.md:127, docs/CLEANUP_REPORT.md:998, docs/CLEANUP_REPORT.md:1234, docs/CLEANUP_REPORT.md:1307, docs/CLEANUP_REPORT.md:1308, docs/CLEANUP_REPORT.md:1309, docs/CLEANUP_REPORT.md:1310
+- **docs**: legacy/docs/2025-10-25-reports/REPORT.md:85, legacy/docs/2025-10-25-reports/REPORT.md:119, docs/cleanup.json:3212, docs/CLEANUP_REPORT.md:129, docs/CLEANUP_REPORT.md:1024
 - Clasificación: KEEP
 
 ### src/datacore/config/schema.py
 
 Referencias detectadas:
 
-- **docs**: docs/run/configs.md:5, docs/run/configs.md:77, docs/cleanup.json:774, docs/cleanup.json:952, docs/cleanup.json:1105, docs/cleanup.json:1250, docs/cleanup.json:3134, docs/cleanup.json:3589
+- **docs**: docs/cleanup.json:22, docs/cleanup.json:752, docs/cleanup.json:930, docs/cleanup.json:1083, docs/cleanup.json:1228, docs/cleanup.json:3236, docs/cleanup.json:3709, docs/run/configs.md:5
 - Clasificación: KEEP
 
 ### src/datacore/context.py
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:3161, docs/CLEANUP_REPORT.md:129, docs/CLEANUP_REPORT.md:1012, docs/CLEANUP_REPORT.md:1241, docs/CLEANUP_REPORT.md:1313, docs/CLEANUP_REPORT.md:1314, docs/CLEANUP_REPORT.md:1315
+- **docs**: docs/cleanup.json:3263, docs/CLEANUP_REPORT.md:131, docs/CLEANUP_REPORT.md:1038
 - Clasificación: KEEP
 
 ### src/datacore/io/__init__.py
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:993, docs/cleanup.json:1146, docs/cleanup.json:2186, docs/cleanup.json:2240, docs/cleanup.json:2293, docs/cleanup.json:2376, docs/cleanup.json:2566, docs/cleanup.json:2620
+- **docs**: docs/cleanup.json:974, docs/cleanup.json:1127, docs/cleanup.json:2316, docs/cleanup.json:2370, docs/cleanup.json:2420, docs/cleanup.json:2502, docs/cleanup.json:2695, docs/cleanup.json:2749
 - Clasificación: KEEP
 
 ### src/datacore/io/adapters.py
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:1362, docs/cleanup.json:3211, docs/cleanup.json:3616, docs/CLEANUP_REPORT.md:131, docs/CLEANUP_REPORT.md:146, docs/CLEANUP_REPORT.md:517, docs/CLEANUP_REPORT.md:1026, docs/CLEANUP_REPORT.md:1131
+- **docs**: docs/cleanup.json:1342, docs/cleanup.json:3312, docs/cleanup.json:3736, docs/CLEANUP_REPORT.md:133, docs/CLEANUP_REPORT.md:148, docs/CLEANUP_REPORT.md:511, docs/CLEANUP_REPORT.md:1052, docs/CLEANUP_REPORT.md:1162
 - Clasificación: KEEP
 
 ### src/datacore/io/fs.py
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:1530, docs/cleanup.json:1531, docs/cleanup.json:1532, docs/cleanup.json:1533, docs/cleanup.json:1630, docs/cleanup.json:1631, docs/cleanup.json:1632, docs/cleanup.json:1633
+- **docs**: legacy/docs/2025-10-25-reports/REPORT.md:115, docs/cleanup.json:23, docs/cleanup.json:24, docs/cleanup.json:25, docs/cleanup.json:26, docs/cleanup.json:27, docs/cleanup.json:28, docs/cleanup.json:29
 - Clasificación: KEEP
 
 ### src/datacore/layers/__init__.py
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:993, docs/cleanup.json:1146, docs/cleanup.json:2186, docs/cleanup.json:2240, docs/cleanup.json:2293, docs/cleanup.json:2376, docs/cleanup.json:2566, docs/cleanup.json:2620
+- **docs**: docs/cleanup.json:974, docs/cleanup.json:1127, docs/cleanup.json:2316, docs/cleanup.json:2370, docs/cleanup.json:2420, docs/cleanup.json:2502, docs/cleanup.json:2695, docs/cleanup.json:2749
 - Clasificación: KEEP
 
 ### src/datacore/layers/bronze/__init__.py
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:993, docs/cleanup.json:1146, docs/cleanup.json:2186, docs/cleanup.json:2240, docs/cleanup.json:2293, docs/cleanup.json:2376, docs/cleanup.json:2566, docs/cleanup.json:2620
+- **docs**: docs/cleanup.json:974, docs/cleanup.json:1127, docs/cleanup.json:2316, docs/cleanup.json:2370, docs/cleanup.json:2420, docs/cleanup.json:2502, docs/cleanup.json:2695, docs/cleanup.json:2749
 - Clasificación: KEEP
 
 ### src/datacore/layers/bronze/main.py
 
 Referencias detectadas:
 
-- **docs**: docs/report.json:17, docs/report.json:31, docs/report.json:46, docs/cleanup.json:3319, docs/cleanup.json:3373, docs/cleanup.json:3427, docs/cleanup.json:3481, docs/CLEANUP_REPORT.md:135
+- **configs**: legacy/docs/2025-10-25-reports/report.json:17, legacy/docs/2025-10-25-reports/report.json:31, legacy/docs/2025-10-25-reports/report.json:46
+- **docs**: legacy/docs/2025-10-25-reports/REPORT.md:51, legacy/docs/2025-10-25-reports/REPORT.md:59, legacy/docs/2025-10-25-reports/REPORT.md:67, docs/cleanup.json:3420, docs/cleanup.json:3478, docs/cleanup.json:3536, docs/cleanup.json:3594, docs/CLEANUP_REPORT.md:137
 - Clasificación: KEEP
 
 ### src/datacore/layers/gold/__init__.py
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:993, docs/cleanup.json:1146, docs/cleanup.json:2186, docs/cleanup.json:2240, docs/cleanup.json:2293, docs/cleanup.json:2376, docs/cleanup.json:2566, docs/cleanup.json:2620
+- **docs**: docs/cleanup.json:974, docs/cleanup.json:1127, docs/cleanup.json:2316, docs/cleanup.json:2370, docs/cleanup.json:2420, docs/cleanup.json:2502, docs/cleanup.json:2695, docs/cleanup.json:2749
 - Clasificación: KEEP
 
 ### src/datacore/layers/gold/main.py
 
 Referencias detectadas:
 
-- **docs**: docs/report.json:17, docs/report.json:31, docs/report.json:46, docs/CLEANUP_REPORT.md:135, docs/CLEANUP_REPORT.md:137, docs/CLEANUP_REPORT.md:139, docs/CLEANUP_REPORT.md:141, docs/CLEANUP_REPORT.md:1054
+- **configs**: legacy/docs/2025-10-25-reports/report.json:17, legacy/docs/2025-10-25-reports/report.json:31, legacy/docs/2025-10-25-reports/report.json:46
+- **docs**: legacy/docs/2025-10-25-reports/REPORT.md:51, legacy/docs/2025-10-25-reports/REPORT.md:59, legacy/docs/2025-10-25-reports/REPORT.md:67, docs/cleanup.json:3420, docs/cleanup.json:3478, docs/cleanup.json:3536, docs/cleanup.json:3594, docs/CLEANUP_REPORT.md:137
 - Clasificación: KEEP
 
 ### src/datacore/layers/raw/__init__.py
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:993, docs/cleanup.json:1146, docs/cleanup.json:2186, docs/cleanup.json:2240, docs/cleanup.json:2293, docs/cleanup.json:2376, docs/cleanup.json:2566, docs/cleanup.json:2620
+- **docs**: docs/cleanup.json:974, docs/cleanup.json:1127, docs/cleanup.json:2316, docs/cleanup.json:2370, docs/cleanup.json:2420, docs/cleanup.json:2502, docs/cleanup.json:2695, docs/cleanup.json:2749
 - Clasificación: KEEP
 
 ### src/datacore/layers/raw/main.py
 
 Referencias detectadas:
 
-- **docs**: docs/report.json:17, docs/report.json:31, docs/report.json:46, docs/cleanup.json:3319, docs/cleanup.json:3373, docs/cleanup.json:3427, docs/cleanup.json:3481, docs/CLEANUP_REPORT.md:135
+- **configs**: legacy/docs/2025-10-25-reports/report.json:17, legacy/docs/2025-10-25-reports/report.json:31, legacy/docs/2025-10-25-reports/report.json:46
+- **docs**: legacy/docs/2025-10-25-reports/REPORT.md:51, legacy/docs/2025-10-25-reports/REPORT.md:59, legacy/docs/2025-10-25-reports/REPORT.md:67, docs/cleanup.json:3420, docs/cleanup.json:3478, docs/cleanup.json:3536, docs/cleanup.json:3594, docs/CLEANUP_REPORT.md:137
 - Clasificación: KEEP
 
 ### src/datacore/layers/silver/__init__.py
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:993, docs/cleanup.json:1146, docs/cleanup.json:2186, docs/cleanup.json:2240, docs/cleanup.json:2293, docs/cleanup.json:2376, docs/cleanup.json:2566, docs/cleanup.json:2620
+- **docs**: docs/cleanup.json:974, docs/cleanup.json:1127, docs/cleanup.json:2316, docs/cleanup.json:2370, docs/cleanup.json:2420, docs/cleanup.json:2502, docs/cleanup.json:2695, docs/cleanup.json:2749
 - Clasificación: KEEP
 
 ### src/datacore/layers/silver/main.py
 
 Referencias detectadas:
 
-- **docs**: docs/report.json:17, docs/report.json:31, docs/report.json:46, docs/cleanup.json:3319, docs/cleanup.json:3373, docs/cleanup.json:3427, docs/cleanup.json:3481, docs/CLEANUP_REPORT.md:135
+- **configs**: legacy/docs/2025-10-25-reports/report.json:17, legacy/docs/2025-10-25-reports/report.json:31, legacy/docs/2025-10-25-reports/report.json:46
+- **docs**: legacy/docs/2025-10-25-reports/REPORT.md:51, legacy/docs/2025-10-25-reports/REPORT.md:59, legacy/docs/2025-10-25-reports/REPORT.md:67, docs/cleanup.json:3420, docs/cleanup.json:3478, docs/cleanup.json:3536, docs/cleanup.json:3594, docs/CLEANUP_REPORT.md:137
 - Clasificación: KEEP
 
 ### src/datacore/pipeline/__init__.py
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:993, docs/cleanup.json:1146, docs/cleanup.json:2186, docs/cleanup.json:2240, docs/cleanup.json:2293, docs/cleanup.json:2376, docs/cleanup.json:2566, docs/cleanup.json:2620
+- **docs**: docs/cleanup.json:974, docs/cleanup.json:1127, docs/cleanup.json:2316, docs/cleanup.json:2370, docs/cleanup.json:2420, docs/cleanup.json:2502, docs/cleanup.json:2695, docs/cleanup.json:2749
 - Clasificación: KEEP
 
 ### src/datacore/pipeline/utils.py
 
 Referencias detectadas:
 
-- **docs**: docs/report.json:82, docs/report.json:91, docs/report.json:98, docs/report.json:105, docs/report.json:112, docs/cleanup.json:3535, docs/CLEANUP_REPORT.md:143, docs/CLEANUP_REPORT.md:1110
+- **configs**: legacy/docs/2025-10-25-reports/report.json:82, legacy/docs/2025-10-25-reports/report.json:91, legacy/docs/2025-10-25-reports/report.json:98, legacy/docs/2025-10-25-reports/report.json:105, legacy/docs/2025-10-25-reports/report.json:112
+- **docs**: legacy/docs/2025-10-25-reports/REPORT.md:122, legacy/docs/2025-10-25-reports/REPORT.md:123, docs/cleanup.json:3652, docs/CLEANUP_REPORT.md:145, docs/CLEANUP_REPORT.md:1140
 - Clasificación: KEEP
 
 ### tests/test_cli_smoke.py
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:258, docs/cleanup.json:259, docs/cleanup.json:288, docs/cleanup.json:289, docs/cleanup.json:318, docs/cleanup.json:319, docs/cleanup.json:348, docs/cleanup.json:349
+- **docs**: legacy/docs/2025-10-25-reports/REPORT.md:115, docs/cleanup.json:237, docs/cleanup.json:238, docs/cleanup.json:267, docs/cleanup.json:268, docs/cleanup.json:297, docs/cleanup.json:298, docs/cleanup.json:327
 - Clasificación: KEEP
 
 ### tests/test_config_schema.py
 
 Referencias detectadas:
 
-- **docs**: docs/run/configs.md:77, docs/cleanup.json:774, docs/cleanup.json:952, docs/cleanup.json:1105, docs/cleanup.json:1250, docs/cleanup.json:3589, docs/CLEANUP_REPORT.md:145, docs/CLEANUP_REPORT.md:374
+- **docs**: docs/cleanup.json:752, docs/cleanup.json:930, docs/cleanup.json:1083, docs/cleanup.json:1228, docs/cleanup.json:3709, docs/run/configs.md:77, docs/CLEANUP_REPORT.md:147, docs/CLEANUP_REPORT.md:368
 - Clasificación: KEEP
 
 ### tests/test_io_adapters.py
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:3616, docs/CLEANUP_REPORT.md:146, docs/CLEANUP_REPORT.md:1131, docs/CLEANUP_REPORT.md:1249
+- **docs**: docs/cleanup.json:3736, docs/CLEANUP_REPORT.md:148, docs/CLEANUP_REPORT.md:1162
 - Clasificación: KEEP
 
 ### tests/test_io_fs.py
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:1530, docs/cleanup.json:1531, docs/cleanup.json:1532, docs/cleanup.json:1533, docs/cleanup.json:1630, docs/cleanup.json:1631, docs/cleanup.json:1632, docs/cleanup.json:1633
+- **docs**: legacy/docs/2025-10-25-reports/REPORT.md:115, docs/cleanup.json:1509, docs/cleanup.json:1510, docs/cleanup.json:1511, docs/cleanup.json:1512, docs/cleanup.json:1609, docs/cleanup.json:1610, docs/cleanup.json:1611
 - Clasificación: KEEP
 
 ### tests/test_layers_config.py
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:3666, docs/CLEANUP_REPORT.md:148, docs/CLEANUP_REPORT.md:1145
+- **docs**: docs/cleanup.json:3785, docs/CLEANUP_REPORT.md:150, docs/CLEANUP_REPORT.md:1176
 - Clasificación: KEEP
 
 ### tests/test_security.py
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:3688, docs/CLEANUP_REPORT.md:149, docs/CLEANUP_REPORT.md:1152
+- **docs**: docs/cleanup.json:3807, docs/CLEANUP_REPORT.md:151, docs/CLEANUP_REPORT.md:1183
 - Clasificación: KEEP
 
 ### tools/audit_cleanup.py
 
 Referencias detectadas:
 
-- **docs**: docs/cleanup.json:107, docs/cleanup.json:108, docs/cleanup.json:137, docs/cleanup.json:229, docs/cleanup.json:1663, docs/cleanup.json:1718, docs/cleanup.json:1719, docs/cleanup.json:1775
+- **code**: tools/audit_cleanup.py:108
+- **configs**: ci/lint.yml:32
+- **docs**: docs/cleanup.json:111, docs/cleanup.json:112, docs/cleanup.json:205, docs/cleanup.json:206, docs/cleanup.json:207, docs/cleanup.json:208, docs/cleanup.json:1643, docs/cleanup.json:1698
 - Clasificación: KEEP
 
 ### tools/list_io.py
 
 Referencias detectadas:
 
-- **docs**: README.md:40, docs/cleanup.json:2160, docs/cleanup.json:3737, docs/CLEANUP_REPORT.md:92, docs/CLEANUP_REPORT.md:151, docs/CLEANUP_REPORT.md:742, docs/CLEANUP_REPORT.md:1166, docs/CLEANUP_REPORT.md:1259
+- **configs**: ci/lint.yml:34
+- **docs**: docs/cleanup.json:2062, docs/cleanup.json:3860, docs/PROJECT_DOCUMENTATION.md:115, docs/CLEANUP_REPORT.md:88, docs/CLEANUP_REPORT.md:153, docs/CLEANUP_REPORT.md:710, docs/CLEANUP_REPORT.md:1199, README.md:40
 - Clasificación: KEEP
 
 ## Impacto estimado
 
-- Archivos candidatos a eliminar inmediatamente: 1
+- Archivos candidatos a eliminar inmediatamente: 0
 - Archivos candidatos a cuarentena: 4
 - Ahorro aproximado: 0.02 MB
 
@@ -1193,151 +1227,24 @@ Referencias detectadas:
 ### Hallazgos de Vulture
 
 ```
-pipelines/common.py:28: unused function 'norm_type' (60% confidence)
-pipelines/config/loader.py:20: unused function 'load_dataset_config' (60% confidence)
-pipelines/config/loader.py:24: unused function 'load_env_config' (60% confidence)
-pipelines/config/loader.py:28: unused function 'load_db_config' (60% confidence)
-pipelines/database/db_manager.py:14: unused import 'sa' (90% confidence)
-pipelines/database/db_manager.py:15: unused import 'Column' (90% confidence)
-pipelines/database/db_manager.py:15: unused import 'DateTime' (90% confidence)
-pipelines/database/db_manager.py:15: unused import 'Integer' (90% confidence)
-pipelines/database/db_manager.py:15: unused import 'String' (90% confidence)
-pipelines/database/db_manager.py:15: unused import 'Table' (90% confidence)
-pipelines/database/db_manager.py:16: unused import 'SQLAlchemyError' (90% confidence)
-pipelines/database/db_manager.py:17: unused import 'Engine' (90% confidence)
-pipelines/database/db_manager.py:72: unused variable 'created_at' (60% confidence)
-pipelines/database/db_manager.py:87: unused method 'get_connection' (60% confidence)
-pipelines/database/db_manager.py:190: unused method 'table_exists' (60% confidence)
-pipelines/database/db_manager.py:264: unused variable 'connection_props' (60% confidence)
-pipelines/database/db_manager.py:437: unused method 'execute_query' (60% confidence)
-pipelines/database/db_manager.py:447: unused method 'close' (60% confidence)
-pipelines/database/db_manager.py:568: unused method 'get_latest_dataset_version' (60% confidence)
-pipelines/database/db_manager.py:587: unused method 'get_pipeline_execution_status' (60% confidence)
-pipelines/database/schema_mapper.py:312: unused method 'generate_alter_table_ddl' (60% confidence)
-pipelines/database/schema_mapper.py:363: unused method 'validate_engine_support' (60% confidence)
-pipelines/database/schema_mapper.py:377: unused method 'validate_schema' (60% confidence)
-pipelines/io/reader.py:38: unused function 'read_table_by_jdbc' (60% confidence)
-pipelines/io/s3a.py:6: unused function 'configure_s3a' (60% confidence)
-pipelines/spark_job.py:7: unused import 'norm_type' (90% confidence)
-pipelines/udf_catalog.py:16: unused import 'udf' (90% confidence)
-pipelines/udf_catalog.py:21: unused import 'pa' (90% confidence)
-pipelines/udf_catalog.py:22: unused variable 'PANDAS_AVAILABLE' (60% confidence)
-pipelines/udf_catalog.py:37: unused function 'normalize_id_py' (60% confidence)
-pipelines/udf_catalog.py:42: unused function 'sanitize_string_py' (60% confidence)
-pipelines/udf_catalog.py:48: unused function 'standardize_name_py' (60% confidence)
-pipelines/udf_catalog.py:56: unused function 'calculate_age_py' (60% confidence)
-pipelines/udf_catalog.py:79: unused function 'format_address_py' (60% confidence)
-pipelines/utils/parallel.py:4: unused function 'run_in_threads' (60% confidence)
-pipelines/utils/parallel.py:21: unused function 'run_map_in_threads' (60% confidence)
-scripts/generate_synthetic_data.py:35: unused import 'Decimal' (90% confidence)
-scripts/generate_synthetic_data.py:42: unused import 'codecs' (90% confidence)
-src/datacore/cli.py:90: unused function 'run_layer' (60% confidence)
-src/datacore/config/schema.py:12: unused variable 'model_config' (60% confidence)
-src/datacore/config/schema.py:35: unused variable 'standardization' (60% confidence)
-src/datacore/config/schema.py:39: unused variable 'references' (60% confidence)
-src/datacore/config/schema.py:59: unused variable 'id' (60% confidence)
-src/datacore/config/schema.py:60: unused variable 'description' (60% confidence)
-src/datacore/config/schema.py:85: unused variable 'storage' (60% confidence)
-src/datacore/context.py:171: unused function 'context_paths' (60% confidence)
-src/datacore/io/fs.py:76: unused function '_load_env_value' (60% confidence)
-src/datacore/pipeline/utils.py:23: unused variable 'kwargs' (100% confidence)
-src/datacore/pipeline/utils.py:241: unused function 'run_bronze_stage' (60% confidence)
-src/datacore/pipeline/utils.py:308: unused function 'run_silver_stage' (60% confidence)
-src/datacore/pipeline/utils.py:501: unused function 'apply_gold_transformations' (60% confidence)
-src/datacore/pipeline/utils.py:533: unused function 'write_to_gold_database' (60% confidence)
-src/datacore/pipeline/utils.py:580: unused function 'write_to_gold_bucket' (60% confidence)
-tests/test_io_adapters.py:8: unused function '_clear_env' (60% confidence)
+vulture no disponible
 ```
 
 ### Hallazgos de Deptry
 
 ```
-Assuming the corresponding module name of package 'typer' is 'typer'. Install the package or configure a package_module_name_map entry to override this behaviour.
-Assuming the corresponding module name of package 'pydantic' is 'pydantic'. Install the package or configure a package_module_name_map entry to override this behaviour.
-Scanning 49 files...
-
-[1mdocs/tools/list_io.py[m[36m:[m17[36m:[m8[36m:[m [1m[31mDEP003[m 'yaml' imported but it is a transitive dependency
-[1mpipelines/common.py[m[36m:[m7[36m:[m1[36m:[m [1m[31mDEP003[m 'pyspark' imported but it is a transitive dependency
-[1mpipelines/common.py[m[36m:[m8[36m:[m1[36m:[m [1m[31mDEP003[m 'pyspark' imported but it is a transitive dependency
-[1mpipelines/common.py[m[36m:[m9[36m:[m1[36m:[m [1m[31mDEP003[m 'pyspark' imported but it is a transitive dependency
-[1mpipelines/common.py[m[36m:[m54[36m:[m5[36m:[m [1m[31mDEP003[m 'pyspark' imported but it is a transitive dependency
-[1mpipelines/common.py[m[36m:[m99[36m:[m5[36m:[m [1m[31mDEP003[m 'pyspark' imported but it is a transitive dependency
-[1mpipelines/config/loader.py[m[36m:[m3[36m:[m8[36m:[m [1m[31mDEP003[m 'yaml' imported but it is a transitive dependency
-[1mpipelines/database/db_manager.py[m[36m:[m9[36m:[m8[36m:[m [1m[31mDEP003[m 'yaml' imported but it is a transitive dependency
-[1mpipelines/database/db_manager.py[m[36m:[m14[36m:[m8[36m:[m [1m[31mDEP003[m 'sqlalchemy' imported but it is a transitive dependency
-[1mpipelines/database/db_manager.py[m[36m:[m15[36m:[m1[36m:[m [1m[31mDEP003[m 'sqlalchemy' imported but it is a transitive dependency
-[1mpipelines/database/db_manager.py[m[36m:[m16[36m:[m1[36m:[m [1m[31mDEP003[m 'sqlalchemy' imported but it is a transitive dependency
-[1mpipelines/database/db_manager.py[m[36m:[m17[36m:[m1[36m:[m [1m[31mDEP003[m 'sqlalchemy' imported but it is a transitive dependency
-[1mpipelines/database/db_manager.py[m[36m:[m18[36m:[m1[36m:[m [1m[31mDEP003[m 'pyspark' imported but it is a transitive dependency
-[1mpipelines/database/schema_mapper.py[m[36m:[m8[36m:[m8[36m:[m [1m[31mDEP003[m 'yaml' imported but it is a transitive dependency
-[1mpipelines/io/reader.py[m[36m:[m3[36m:[m1[36m:[m [1m[31mDEP003[m 'pyspark' imported but it is a transitive dependency
-[1mpipelines/io/reader.py[m[36m:[m4[36m:[m1[36m:[m [1m[31mDEP003[m 'tenacity' imported but it is a transitive dependency
-[1mpipelines/io/reader.py[m[36m:[m6[36m:[m1[36m:[m [1m[31mDEP001[m 'datacore' imported but missing from the dependency definitions
-[1mpipelines/io/s3a.py[m[36m:[m3[36m:[m1[36m:[m [1m[31mDEP001[m 'datacore' imported but missing from the dependency definitions
-[1mpipelines/io/writer.py[m[36m:[m3[36m:[m1[36m:[m [1m[31mDEP003[m 'tenacity' imported but it is a transitive dependency
-[1mpipelines/io/writer.py[m[36m:[m5[36m:[m1[36m:[m [1m[31mDEP001[m 'datacore' imported but missing from the dependency definitions
-[1mpipelines/sources.py[m[36m:[m4[36m:[m1[36m:[m [1m[31mDEP003[m 'pyspark' imported but it is a transitive dependency
-[1mpipelines/sources.py[m[36m:[m7[36m:[m1[36m:[m [1m[31mDEP001[m 'datacore' imported but missing from the dependency definitions
-[1mpipelines/sources.py[m[36m:[m145[36m:[m20[36m:[m [1m[31mDEP003[m 'requests' imported but it is a transitive dependency
-[1mpipelines/spark_job.py[m[36m:[m1[36m:[m17[36m:[m [1m[31mDEP003[m 'yaml' imported but it is a transitive dependency
-[1mpipelines/spark_job.py[m[36m:[m3[36m:[m1[36m:[m [1m[31mDEP003[m 'pyspark' imported but it is a transitive dependency
-[1mpipelines/spark_job.py[m[36m:[m4[36m:[m1[36m:[m [1m[31mDEP003[m 'pyspark' imported but it is a transitive dependency
-[1mpipelines/spark_job.py[m[36m:[m7[36m:[m1[36m:[m [1m[31mDEP001[m 'common' imported but missing from the dependency definitions
-[1mpipelines/spark_job.py[m[36m:[m8[36m:[m1[36m:[m [1m[31mDEP001[m 'datacore' imported but missing from the dependency definitions
-[1mpipelines/spark_job_with_db.py[m[36m:[m6[36m:[m1[36m:[m [1m[31mDEP001[m 'datacore' imported but missing from the dependency definitions
-[1mpipelines/spark_job_with_db.py[m[36m:[m7[36m:[m1[36m:[m [1m[31mDEP001[m 'datacore' imported but missing from the dependency definitions
-[1mpipelines/spark_job_with_db.py[m[36m:[m8[36m:[m1[36m:[m [1m[31mDEP001[m 'datacore' imported but missing from the dependency definitions
-[1mpipelines/spark_job_with_db.py[m[36m:[m9[36m:[m1[36m:[m [1m[31mDEP001[m 'datacore' imported but missing from the dependency definitions
-[1mpipelines/spark_job_with_db.py[m[36m:[m10[36m:[m1[36m:[m [1m[31mDEP001[m 'datacore' imported but missing from the dependency definitions
-[1mpipelines/transforms/apply.py[m[36m:[m2[36m:[m1[36m:[m [1m[31mDEP003[m 'pyspark' imported but it is a transitive dependency
-[1mpipelines/transforms/tests/test_apply.py[m[36m:[m1[36m:[m8[36m:[m [1m[31mDEP003[m 'pytest' imported but it is a transitive dependency
-[1mpipelines/transforms/tests/test_apply.py[m[36m:[m2[36m:[m1[36m:[m [1m[31mDEP003[m 'pyspark' imported but it is a transitive dependency
-[1mpipelines/transforms/tests/test_apply.py[m[36m:[m3[36m:[m1[36m:[m [1m[31mDEP003[m 'pyspark' imported but it is a transitive dependency
-[1mpipelines/udf_catalog.py[m[36m:[m16[36m:[m1[36m:[m [1m[31mDEP003[m 'pyspark' imported but it is a transitive dependency
-[1mpipelines/udf_catalog.py[m[36m:[m17[36m:[m1[36m:[m [1m[31mDEP003[m 'pyspark' imported but it is a transitive dependency
-[1mpipelines/udf_catalog.py[m[36m:[m20[36m:[m8[36m:[m [1m[31mDEP003[m 'pandas' imported but it is a transitive dependency
-[1mpipelines/udf_catalog.py[m[36m:[m21[36m:[m8[36m:[m [1m[31mDEP003[m 'pyarrow' imported but it is a transitive dependency
-[1mpipelines/validation/quality.py[m[36m:[m2[36m:[m1[36m:[m [1m[31mDEP003[m 'pyspark' imported but it is a transitive dependency
-[1mpipelines/validation/quality.py[m[36m:[m4[36m:[m1[36m:[m [1m[31mDEP001[m 'datacore' imported but missing from the dependency definitions
-[1mscripts/generate_synthetic_data.py[m[36m:[m59[36m:[m5[36m:[m [1m[31mDEP001[m 'faker' imported but missing from the dependency definitions
-[1mscripts/generate_synthetic_data.py[m[36m:[m600[36m:[m20[36m:[m [1m[31mDEP003[m 'yaml' imported but it is a transitive dependency
-[1mscripts/generate_synthetic_data.py[m[36m:[m658[36m:[m20[36m:[m [1m[31mDEP003[m 'yaml' imported but it is a transitive dependency
-[1mscripts/run_high_volume_case.py[m[36m:[m134[36m:[m16[36m:[m [1m[31mDEP001[m 'psutil' imported but missing from the dependency definitions
-[1mscripts/run_multiformat_case.py[m[36m:[m189[36m:[m16[36m:[m [1m[31mDEP001[m 'psutil' imported but missing from the dependency definitions
-[1msrc/datacore/cli.py[m[36m:[m8[36m:[m8[36m:[m [1m[31mDEP003[m 'yaml' imported but it is a transitive dependency
-[1msrc/datacore/cli.py[m[36m:[m10[36m:[m1[36m:[m [1m[31mDEP001[m 'datacore' imported but missing from the dependency definitions
-[1msrc/datacore/cli.py[m[36m:[m11[36m:[m1[36m:[m [1m[31mDEP001[m 'datacore' imported but missing from the dependency definitions
-[1msrc/datacore/cli.py[m[36m:[m12[36m:[m1[36m:[m [1m[31mDEP001[m 'datacore' imported but missing from the dependency definitions
-[1msrc/datacore/cli.py[m[36m:[m13[36m:[m1[36m:[m [1m[31mDEP001[m 'datacore' imported but missing from the dependency definitions
-[1msrc/datacore/cli.py[m[36m:[m15[36m:[m1[36m:[m [1m[31mDEP001[m 'datacore' imported but missing from the dependency definitions
-[1msrc/datacore/context.py[m[36m:[m8[36m:[m8[36m:[m [1m[31mDEP003[m 'yaml' imported but it is a transitive dependency
-[1msrc/datacore/context.py[m[36m:[m11[36m:[m5[36m:[m [1m[31mDEP003[m 'pyspark' imported but it is a transitive dependency
-[1msrc/datacore/context.py[m[36m:[m17[36m:[m1[36m:[m [1m[31mDEP001[m 'datacore' imported but missing from the dependency definitions
-[1msrc/datacore/io/fs.py[m[36m:[m21[36m:[m8[36m:[m [1m[31mDEP001[m 'fsspec' imported but missing from the dependency definitions
-[1msrc/datacore/io/fs.py[m[36m:[m24[36m:[m12[36m:[m [1m[31mDEP003[m 'pandas' imported but it is a transitive dependency
-[1msrc/datacore/io/fs.py[m[36m:[m29[36m:[m12[36m:[m [1m[31mDEP001[m 'polars' imported but missing from the dependency definitions
-[1msrc/datacore/io/fs.py[m[36m:[m36[36m:[m5[36m:[m [1m[31mDEP003[m 'pyspark' imported but it is a transitive dependency
-[1msrc/datacore/layers/bronze/main.py[m[36m:[m7[36m:[m5[36m:[m [1m[31mDEP003[m 'pyspark' imported but it is a transitive dependency
-[1msrc/datacore/layers/gold/main.py[m[36m:[m7[36m:[m5[36m:[m [1m[31mDEP003[m 'pyspark' imported but it is a transitive dependency
-[1msrc/datacore/layers/raw/main.py[m[36m:[m5[36m:[m1[36m:[m [1m[31mDEP001[m 'datacore' imported but missing from the dependency definitions
-[1msrc/datacore/layers/raw/main.py[m[36m:[m6[36m:[m1[36m:[m [1m[31mDEP001[m 'datacore' imported but missing from the dependency definitions
-[1msrc/datacore/layers/silver/main.py[m[36m:[m7[36m:[m5[36m:[m [1m[31mDEP003[m 'pyspark' imported but it is a transitive dependency
-[1msrc/datacore/pipeline/utils.py[m[36m:[m8[36m:[m8[36m:[m [1m[31mDEP003[m 'yaml' imported but it is a transitive dependency
-[1msrc/datacore/pipeline/utils.py[m[36m:[m11[36m:[m5[36m:[m [1m[31mDEP003[m 'pyspark' imported but it is a transitive dependency
-[1msrc/datacore/pipeline/utils.py[m[36m:[m12[36m:[m5[36m:[m [1m[31mDEP003[m 'pyspark' imported but it is a transitive dependency
-[1msrc/datacore/pipeline/utils.py[m[36m:[m36[36m:[m1[36m:[m [1m[31mDEP001[m 'datacore' imported but missing from the dependency definitions
-[1m[31mFound 70 dependency issues.[m
-
-For more information, see the documentation: https://deptry.com/
+deptry no disponible
 ```
 
 ### Links rotos
 
-- docs/run/azure.md → https://learn.microsoft.com/azure/synapse-analytics/spark/spark-job-definitions (HTTP Error 404: Not Found)
-- docs/run/azure.md → https://learn.microsoft.com/azure/synapse-analytics/spark/apache-spark-monitor-application (HTTP Error 404: Not Found)
 - docs/run/databricks.md → https://docs.databricks.com/jobs/jobs-parameterization.html (<urlopen error Tunnel connection failed: 403 Forbidden>)
 - docs/run/databricks.md → https://docs.databricks.com/security/secrets/index.html (<urlopen error Tunnel connection failed: 403 Forbidden>)
 - docs/run/databricks.md → https://docs.databricks.com/workflows/jobs/jobs-notifications.html (<urlopen error Tunnel connection failed: 403 Forbidden>)
+- docs/run/azure.md → https://learn.microsoft.com/azure/synapse-analytics/spark/spark-job-definitions (HTTP Error 404: Not Found)
+- docs/run/azure.md → https://learn.microsoft.com/azure/synapse-analytics/spark/apache-spark-monitor-application (HTTP Error 404: Not Found)
+- legacy/docs/2025-10-25-reports/REPORT.md → diagrams/dependencies.md (missing file)
+- legacy/docs/2025-10-25-reports/REPORT.md → diagrams/pipeline_flow.md (missing file)
 
 ### Documentos huérfanos
 
