@@ -7,3 +7,15 @@ paths:
   environment: config/env.yml
   database: config/database.yml
 environment: development
+
+# storage:
+#   s3:
+#     storage_options:
+#       client_kwargs:
+#         endpoint_url: http://minio:9000
+#   abfss:
+#     storage_options:
+#       tenant_id: "<azure-tenant>"
+#   gs:
+#     storage_options:
+#       project: "my-gcp-project"

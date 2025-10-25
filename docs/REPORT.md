@@ -20,7 +20,7 @@
 ## Resumen ejecutivo
 - Las capas están fuertemente acopladas en cascada (`gold → silver → bronze → raw`) y la CLI perpetúa la cadena; no existe aislamiento real por capa.
 - El CLI moderno (`prodi run-layer`) existe, pero el empaquetado carece de `build-system` y convive con scripts monolíticos heredados (`pipelines/spark_job.py`, `spark_job_with_db.py`).
-- El stack de I/O usa `fsspec` para lecturas/escrituras portables, pero los helpers S3A heredados siguen configurando `spark.hadoop.fs.s3a.*` y permiten desactivar TLS.
+- El stack de I/O usa `fsspec` para lecturas/escrituras portables y los adaptadores fusionan credenciales neutrales sin tocar `spark.hadoop.fs.s3a.*`, reforzando TLS por defecto.
 - Se encontraron logs y scripts que imprimen credenciales y contraseñas (AWS keys, postgres) y deshabilitan SSL explícitamente.
 - La configuración por capa en `cfg/` son plantillas mínimas; los datasets reales en `config/datasets/**` no siguen un esquema armonizado (`compute`, `io.source/sink`, `transform.sql`, `dq`).
 - No hay notebooks en el repositorio, pero los scripts `run_*` mantienen lógica de orquestación pesada fuera de `src/`.
@@ -78,7 +78,7 @@ La CLI y los jobs heredados también encadenan todas las capas de forma secuenci
 
 ### Capas
 - Los módulos `datacore.layers.*` delegan la mayor parte de la lógica a `datacore.pipeline.utils`, pero mantienen imports cruzados que ejecutan capas previas si no se les entrega un `DataFrame`. Esto impide ejecutar una capa aislada para pruebas o para pipelines parciales.
-- `datacore.pipeline.utils` contiene lógica compartida de transforms, calidad y escrituras que depende fuertemente de Spark y de rutas `s3a://` provenientes de la configuración.
+- `datacore.pipeline.utils` contiene lógica compartida de transforms, calidad y escrituras, ahora reutilizando adaptadores multi-nube basados en `datacore.io` para normalizar URIs `s3://`, `abfss://` y `gs://`.
 
 ### CLI y empaquetado
 - `pyproject.toml` define el script `prodi = "datacore.cli:main"`, pero no declara un bloque `[build-system]`, por lo que no se puede construir un wheel estándar.
@@ -88,20 +88,17 @@ La CLI y los jobs heredados también encadenan todas las capas de forma secuenci
 
 ### I/O y portabilidad
 - Lecturas:
-  - `pipelines/sources.load_source` usa `datacore.io.fs.read_df` (fsspec) para `s3://`, `abfss://`, `gs://`, pero hace fallback a `spark.read.format("jdbc")` para fuentes JDBC.
-  - `pipelines/spark_job.py` continúa leyendo directamente con `spark.read.csv/json/parquet` sobre rutas `s3a://`.
+  - `pipelines/sources.load_source` usa `datacore.io.read_df` con adaptadores de protocolo (`build_storage_adapter`) y sólo recurre a `spark.read.format("jdbc")` para JDBC.
+  - `pipelines/spark_job.py` continúa como script heredado con lecturas Spark directas.
 - Escrituras:
-  - `run_bronze_stage` escribe `parquet` en la ruta configurada (`s3a://...` por defecto) y relanza la lectura desde el mismo path.
-  - `run_silver_stage` escribe al sink configurado (`save(out["path"])`) con soporte para `overwrite_dynamic`.
-  - `write_to_gold_bucket` soporta `parquet/json/csv` con `df.write.save(path)` tras configurar S3A.
-  - La cuarentena de calidad (`pipelines.validation.quality.apply_quality`) escribe en modo append `parquet` al `quarantine_path`.
+  - `run_bronze_stage` y `run_silver_stage` escriben vía `datacore.io.write_df`, lo que estandariza URIs remotas y aplica `storage_options` por protocolo.
+  - La cuarentena de calidad (`pipelines.validation.quality.apply_quality`) delega en `write_df` con `storage_options` neutrales.
 - Non-portable:
-  - `pipelines.common.maybe_config_s3a` configura claves `spark.hadoop.fs.s3a.*` y desactiva TLS si la configuración lo pide.
-  - Los scripts `runner*.sh` hardcodean `spark.hadoop.fs.s3a.connection.ssl.enabled=false` y credenciales MinIO.
+  - Los scripts `runner*.sh` mantienen credenciales MinIO en variables de entorno; evaluar su limpieza futura.
 
 ### Seguridad
 - Logs de credenciales: `scripts/run_high_volume_case.py` imprime `Set AWS_ACCESS_KEY_ID=minioadmin` y similares. `scripts/runner_with_db.sh` hace `echo "AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID"`.
-- TLS desactivado: `pipelines.common.maybe_config_s3a` puede escribir `spark.hadoop.fs.s3a.connection.ssl.enabled=false`; los runners de Spark lo forzan por defecto.
+- TLS forzado: `storage_options_from_env` valida que no se deshabilite SSL en S3 y lanza error si se intenta.
 - Contraseñas en texto plano: `config/database.yml` mantiene `postgres123` para entornos default y development.
 
 ### Configuraciones por capa
@@ -135,17 +132,17 @@ La CLI y los jobs heredados también encadenan todas las capas de forma secuenci
 | --- | --- | --- | --- |
 | Cross-layer acoplado | Silver/Bronze/Gold importan y ejecutan capas anteriores. | Imposibilita despliegues parciales, aumenta riesgo de regresiones. | P0 |
 | Scripts heredados vs CLI | `spark_job.py` y runners siguen operativos fuera del paquete. | Doble camino operativo, difícil gobernanza. | P0 |
-| Desactivación de TLS | `maybe_config_s3a` y runners fijan `ssl.enabled=false`. | Compromete seguridad en nubes públicas. | P0 |
+| Desactivación de TLS | `storage_options_from_env` lanza error si se intenta deshabilitar SSL. | Evita despliegues inseguros en S3. | ✅ |
 | Logs de secretos | Scripts imprimen AWS keys y contraseñas. | Exposición de credenciales. | P0 |
 | Config heterogénea | Datasets no siguen esquema `compute/io`. | Dificulta validaciones y automatización multi-nube. | P1 |
 | Falta de CI/tests | No se ejecutan tests ni builds. | Riesgo de regresiones sin detección temprana. | P1 |
 | Paquete sin build-system | No se puede publicar wheel limpio. | Bloquea distribución estandarizada. | P1 |
-| Portabilidad incompleta | Helpers S3A heredados dominan rutas `s3a://`. | Limita adopción real multi-nube si no se normaliza a URIs genéricas. | P2 |
+| Portabilidad incompleta | Rutas normalizadas a `s3://`, `abfss://`, `gs://` con adaptadores que fusionan `storage_options`. | Habilita configuración multi-nube consistente. | ✅ |
 
 ## Plan sugerido de correcciones
 1. **Cortar dependencias entre capas**: refactorizar `execute` para requerir `df` explícito y mover orquestación al CLI (o a un planificador) con flujos configurables. Añadir tests de integración por capa.
 2. **Unificar entrypoints**: deprecar `pipelines/spark_job*.py` y exponer comandos Typer (`prodi run-layer`, `prodi run-pipeline`) encapsulados en `src/`. Actualizar runners a usar la CLI.
-3. **Endurecer I/O multi-nube**: reemplazar `maybe_config_s3a` por adaptadores fsspec, habilitar TLS por defecto y parametrizar endpoints/credenciales via `storage_options_from_env`.
+3. **Endurecer I/O multi-nube**: ✅ Adaptadores `datacore.io` reemplazan `maybe_config_s3a`, forzando TLS y parametrizando credenciales con `storage_options_from_env`.
 4. **Sanear seguridad**: eliminar logs de claves, cargar secretos desde vault/ENV sin imprimirlos, y remover `ssl.enabled=false` por defecto. Revisar `config/database.yml` para manejar secretos cifrados.
 5. **Normalizar configuraciones**: definir esquema YAML común (`compute`, `io.source`, `io.sink`, `transform`, `dq`) y validar con `jsonschema`. Ajustar plantillas `cfg/` y datasets reales.
 6. **Fortalecer CI**: agregar workflow que instale dependencias, construya wheel (`build`/`pip install .`) y ejecute `pytest --cov`. Añadir suites por capa y por adaptadores de I/O.
@@ -155,7 +152,7 @@ La CLI y los jobs heredados también encadenan todas las capas de forma secuenci
 ### Tabla de lecturas/escrituras
 | Tipo | Archivo / Función | URI / Destino | Formato | Engine |
 | --- | --- | --- | --- | --- |
-| Lectura | `pipelines/sources.py::load_source` | `cfg['source']['path']` (ej. `s3a://...`) | csv/json/jsonl/parquet | `read_df` (fsspec + Spark/Pandas/Polars) |
+| Lectura | `pipelines/sources.py::load_source` | `cfg['source']['path']` (ej. `s3://...`) | csv/json/jsonl/parquet | `read_df` (fsspec + Spark/Pandas/Polars) |
 | Lectura | `pipelines/sources.py::load_source` (branch JDBC) | `jdbc.url` | jdbc | `spark.read.format("jdbc")` |
 | Lectura | `pipelines/spark_job.py::main` | `cfg['source']['path']` | csv/json/parquet | `spark.read` |
 | Lectura | `datacore/pipeline/utils.run_bronze_stage` | `bronze_path` | parquet | `spark.read.parquet` |
@@ -176,7 +173,7 @@ La CLI y los jobs heredados también encadenan todas las capas de forma secuenci
 
 ### Resultados de búsqueda clave
 - `rg "datacore.layers" src/datacore` → identifica imports cruzados.
-- `rg "s3a://"` → rutas S3A hardcodeadas en configs, scripts y tests.
+- `rg "s3://"` → rutas normalizadas; validar que scripts no expongan credenciales.
 - `rg "ssl.enabled=false"` → ubicaciones que deshabilitan TLS.
 - `find . -name '*.ipynb'` → confirma ausencia de notebooks.
 - `ci/check_config.sh` → único chequeo automatizado en CI.

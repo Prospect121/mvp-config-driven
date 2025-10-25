@@ -52,13 +52,13 @@ transforms_ref: config/datasets/finanzas/payments_db_only/transforms.yml
 
 quality:
   expectations_ref: config/datasets/finanzas/payments_db_only/expectations.yml
-  quarantine: s3a://raw/quarantine/payments_db_only/
+  quarantine: s3://raw/quarantine/payments_db_only/
 
 # Capas de salida
 output:
   silver:
     format: parquet
-    path:  s3a://silver/payments_db_only/
+    path:  s3://silver/payments_db_only/
     partition_by: ["year", "month"]
     partition_from: payment_date
     merge_schema: true
@@ -72,7 +72,7 @@ output:
       - { name: "processed_at", value: "current_timestamp()", type: "timestamp" }
     bucket:
       enabled: true
-      path: s3a://gold/payments_db_only/
+      path: s3://gold/payments_db_only/
       format: parquet
       mode: append
       partition_by: ["year", "month"]

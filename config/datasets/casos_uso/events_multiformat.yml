@@ -2,7 +2,7 @@ id: events_multiformat
 
 source:
   input_format: json  # Formato principal, pero el pipeline soporta CSV y Parquet
-  path: "s3a://raw/casos-uso/events-multiformat/*.json"
+  path: "s3://raw/casos-uso/events-multiformat/*.json"
   options:
     multiLine: "true"
     allowComments: "true"
@@ -40,7 +40,7 @@ standardization:
 
 quality:
   expectations_ref: config/datasets/casos_uso/events_multiformat_expectations.yml
-  quarantine: "s3a://raw/quarantine/events-multiformat/"
+  quarantine: "s3://raw/quarantine/events-multiformat/"
 
 schema:
   ref: config/datasets/casos_uso/events_multiformat_schema.json
@@ -52,7 +52,7 @@ transforms_ref: config/datasets/casos_uso/events_multiformat_transforms.yml
 output:
   silver:
     format: parquet
-    path: "s3a://silver/events-multiformat/"
+    path: "s3://silver/events-multiformat/"
     partition_by: [year, month]
     merge_schema: true
     mode: overwrite_dynamic

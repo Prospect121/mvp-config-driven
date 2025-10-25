@@ -2,7 +2,7 @@ id: payments_high_volume
 
 source:
   input_format: csv
-  path: "s3a://raw/casos-uso/payments-high-volume/*.csv"
+  path: "s3://raw/casos-uso/payments-high-volume/*.csv"
   options:
     header: "true"
     inferSchema: "false"  # Control manual de tipos para mejor performance
@@ -43,7 +43,7 @@ standardization:
 
 quality:
   expectations_ref: config/datasets/casos_uso/payments_high_volume_expectations.yml
-  quarantine: s3a://raw/quarantine/payments-high-volume/
+  quarantine: s3://raw/quarantine/payments-high-volume/
 
 schema:
   ref: config/datasets/casos_uso/payments_high_volume_schema.json
@@ -52,7 +52,7 @@ schema:
 output:
   silver:
     format: parquet
-    path: "s3a://silver/payments-high-volume/"
+    path: "s3://silver/payments-high-volume/"
     partition_by: [year, month]
     merge_schema: true
     mode: overwrite_dynamic

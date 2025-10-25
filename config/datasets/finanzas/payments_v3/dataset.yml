@@ -11,7 +11,7 @@ description: "Pagos - versión v3. Estructura organizada en carpeta dedicada."
 sources:
   - type: file
     input_format: csv
-    path: s3a://raw/payments/*/*/*/*.csv
+    path: s3://raw/payments/*/*/*/*.csv
     options:
       header: "true"
       inferSchema: "true"
@@ -61,13 +61,13 @@ transforms_ref: config/datasets/finanzas/payments_v3/transforms.yml
 
 quality:
   expectations_ref: config/datasets/finanzas/payments_v3/expectations.yml
-  quarantine: s3a://raw/quarantine/payments_v3/
+  quarantine: s3://raw/quarantine/payments_v3/
 
 # Capas de salida
 output:
   silver:
     format: parquet
-    path:  s3a://silver/payments_v3/
+    path:  s3://silver/payments_v3/
     partition_by: ["year", "month"]
     partition_from: payment_date
     merge_schema: true

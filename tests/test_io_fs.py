@@ -182,7 +182,7 @@ def _strip_protocol(uri: str) -> str:
 @pytest.mark.parametrize(
     "uri, protocol",
     [
-        ("s3a://bucket/data/sample.csv", "s3"),
+        ("s3://bucket/data/sample.csv", "s3"),
         ("abfss://container/data/sample.csv", "abfss"),
         ("gs://bucket/data/sample.csv", "gs"),
     ],
@@ -236,7 +236,7 @@ def test_read_with_wildcard(monkeypatch, tmp_path):
         handle.write("id,value\n2,b\n")
 
     spark = DummySparkSession()
-    df = read_df("s3a://bucket/data/*.csv", "csv", spark=spark, storage_options={})
+    df = read_df("s3://bucket/data/*.csv", "csv", spark=spark, storage_options={})
     assert df._pdf.shape == (2, 2)
 
 
@@ -247,7 +247,7 @@ def test_storage_options_from_env(monkeypatch):
     monkeypatch.setenv("AWS_ENDPOINT_URL", "https://example.com")
     monkeypatch.setenv("S3A_DISABLE_SSL", "false")
 
-    opts = storage_options_from_env("s3a://bucket/data", {})
+    opts = storage_options_from_env("s3://bucket/data", {})
     assert opts["key"] == "AKIA123"
     assert opts["secret"] == "secret"
     assert opts["token"] == "token"

@@ -22,7 +22,7 @@ source:
     query_params: {}
     staging:
       enabled: true
-      path: s3a://raw/staging/payments_v3_api
+      path: s3://raw/staging/payments_v3_api
       format: jsonl
       mode: overwrite
 
@@ -67,11 +67,11 @@ transforms_ref: config/datasets/finanzas/payments_v3/transforms.yml
 
 quality:
   expectations_ref: config/datasets/finanzas/payments_v3/expectations.yml
-  quarantine: s3a://raw/quarantine/payments_v3_api/
+  quarantine: s3://raw/quarantine/payments_v3_api/
 
 output:
   silver:
-    path: s3a://silver/payments_v3_api/
+    path: s3://silver/payments_v3_api/
     format: parquet
     partition_by: ["year", "month"]
     partition_from: payment_date

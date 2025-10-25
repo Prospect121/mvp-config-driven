@@ -104,20 +104,25 @@ class AdvancedSyntheticDataGenerator:
         Args:
             output_base_dir: Directorio base para guardar los archivos generados
         """
-        # Manejar paths S3A - convertir a path local para generación
-        if output_base_dir.startswith("s3a://"):
-            # Extraer la parte del path después de s3a://
-            s3_path = output_base_dir.replace("s3a://", "").replace("/", os.sep)
-            # Crear path local equivalente
-            self.output_base_dir = Path("data") / "s3a-staging" / s3_path
-            self.is_s3_target = True
-            self.s3_target_path = output_base_dir
-            logger.info(f"[S3A] Path S3A detectado. Generando localmente en: {self.output_base_dir}")
-            logger.info(f"[S3A] Target S3A: {self.s3_target_path}")
+        remote_protocols = ("s3://", "abfss://", "gs://")
+        for prefix in remote_protocols:
+            if output_base_dir.startswith(prefix):
+                suffix = output_base_dir[len(prefix):].replace("/", os.sep)
+                staging_dir = f"{prefix.split('://')[0]}-staging"
+                self.output_base_dir = Path("data") / staging_dir / suffix
+                self.is_remote_target = True
+                self.remote_target_path = output_base_dir
+                logger.info(
+                    "[remote] Path %s detectado. Generando localmente en: %s",
+                    prefix,
+                    self.output_base_dir,
+                )
+                logger.info("[remote] Target: %s", self.remote_target_path)
+                break
         else:
             self.output_base_dir = Path(output_base_dir)
-            self.is_s3_target = False
-            self.s3_target_path = None
+            self.is_remote_target = False
+            self.remote_target_path = None
             
         self.metrics = DataGenerationMetrics()
         
@@ -515,7 +520,7 @@ class AdvancedSyntheticDataGenerator:
             "id": "payments_high_volume",
             "source": {
                 "input_format": "csv",
-                "path": "s3a://raw/casos-uso/payments-high-volume/*.csv",
+                "path": "s3://raw/casos-uso/payments-high-volume/*.csv",
                 "options": {
                     "header": "true",
                     "inferSchema": "false",
@@ -555,7 +560,7 @@ class AdvancedSyntheticDataGenerator:
             },
             "quality": {
                 "expectations_ref": "config/datasets/casos_uso/payments_high_volume_expectations.yml",
-                "quarantine": "s3a://raw/quarantine/payments-high-volume/"
+                "quarantine": "s3://raw/quarantine/payments-high-volume/"
             },
             "schema": {
                 "ref": "config/datasets/casos_uso/payments_high_volume_schema.json",
@@ -564,7 +569,7 @@ class AdvancedSyntheticDataGenerator:
             "output": {
                 "silver": {
                     "format": "parquet",
-                    "path": "s3a://silver/payments-high-volume/",
+                    "path": "s3://silver/payments-high-volume/",
                     "partition_by": ["year", "month"],
                     "merge_schema": True,
                     "mode": "overwrite_dynamic",
@@ -604,7 +609,7 @@ class AdvancedSyntheticDataGenerator:
             "id": "events_multiformat_extreme",
             "source": {
                 "input_format": "json",
-                "path": "s3a://raw/casos-uso/events-multiformat/*.json",
+                "path": "s3://raw/casos-uso/events-multiformat/*.json",
                 "options": {
                     "multiline": "true",
                     "mode": "PERMISSIVE",
@@ -617,11 +622,11 @@ class AdvancedSyntheticDataGenerator:
             },
             "quality": {
                 "expectations_ref": "config/datasets/casos_uso/events_multiformat_expectations.yml",
-                "quarantine": "s3a://raw/quarantine/events-multiformat/"
+                "quarantine": "s3://raw/quarantine/events-multiformat/"
             },
             "output": {
                 "silver": {
-                    "path": "s3a://silver/events-multiformat/",
+                    "path": "s3://silver/events-multiformat/",
                     "format": "parquet",
                     "mode": "overwrite_dynamic",
                     "partition_by": ["year", "month", "event_type"],
@@ -762,9 +767,14 @@ Ejemplos de uso:
         logger.info(f"[STATS] Tiempo total: {final_summary['elapsed_time_seconds']:.1f} segundos")
         
         logger.info("\n[NEXT] PRÓXIMOS PASOS:")
-        if generator.is_s3_target:
-            logger.info("1. Copiar archivos a MinIO/S3:")
-            logger.info(f"   mc cp --recursive {generator.output_base_dir}/ local/{generator.s3_target_path.replace('s3a://', '')}")
+        if generator.is_remote_target and generator.remote_target_path:
+            logger.info("1. Copiar archivos al destino remoto:")
+            clean_target = generator.remote_target_path.split('://', 1)[1]
+            logger.info(
+                "   mc cp --recursive %s/ local/%s",
+                generator.output_base_dir,
+                clean_target,
+            )
         else:
             logger.info("1. Copiar archivos a MinIO/S3:")
             logger.info("   mc cp --recursive data/casos-uso/ local/raw/casos-uso/")

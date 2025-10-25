@@ -25,7 +25,7 @@ except ModuleNotFoundError:  # pragma: no cover - pyspark optional for smoke tes
 
     F = _MissingFunctions()  # type: ignore
     Window = _MissingWindow()  # type: ignore
-from pipelines.common import parse_order, safe_cast, maybe_config_s3a
+from pipelines.common import parse_order, safe_cast
 from pipelines.sources import load_sources_or_source, flatten_json, sanitize_nulls, project_columns
 from pipelines.udf_catalog import get_udf
 from pipelines.validation.quality import apply_quality as apply_quality_mod
@@ -33,6 +33,7 @@ from pipelines.transforms.apply import (
     apply_sql_transforms as apply_sql_transforms_mod,
     apply_udf_transforms as apply_udf_transforms_mod,
 )
+from datacore.io import build_storage_adapter, read_df, write_df
 
 
 def load_json_schema(path: str) -> Dict[str, Any]:
@@ -221,7 +222,6 @@ def apply_quality(df: DataFrame, rules: Iterable[Dict[str, Any]], quarantine_pat
 
 
 def run_raw_sources(cfg: Dict[str, Any], spark: SparkSession, env: Dict[str, Any]) -> DataFrame:
-    maybe_config_s3a(spark, cfg["output"]["silver"]["path"], env)
     df = load_sources_or_source(cfg, spark, env)
     sources_list = cfg.get("sources")
     if sources_list:
@@ -254,9 +254,9 @@ def run_bronze_stage(cfg: Dict[str, Any], env: Dict[str, Any], spark: SparkSessi
     if not bronze_path:
         return df
 
-    maybe_config_s3a(spark, bronze_path, env)
-    writer = df.write.mode(bronze_mode).option("compression", compression)
+    adapter = build_storage_adapter(bronze_path, env, bronze_cfg)
 
+    partition_cols_for_write: Optional[Iterable[str]] = None
     if part_cols:
         if base_col is not None:
             ts_col = F.to_timestamp(base_col)
@@ -271,18 +271,36 @@ def run_bronze_stage(cfg: Dict[str, Any], env: Dict[str, Any], spark: SparkSessi
                         df = df.withColumn("day", F.dayofmonth(ts_col))
                     elif lowered == "date":
                         df = df.withColumn("date", F.to_date(ts_col))
-            writer = writer.partitionBy(*part_cols)
+            partition_cols_for_write = part_cols
         else:
             existing = [col for col in part_cols if col in df.columns]
             if len(existing) == len(part_cols):
-                writer = writer.partitionBy(*part_cols)
+                partition_cols_for_write = part_cols
             else:
                 print(f"[bronze] Base column '{base_col_name}' not found; skipping partitioning")
 
-    if bronze_format != "parquet":
+    if bronze_format not in {"parquet", "csv", "json", "jsonl"}:
         print(f"[bronze] Formato '{bronze_format}' no soportado, usando parquet")
-    writer.parquet(bronze_path)
-    df = spark.read.parquet(bronze_path)
+        bronze_format = "parquet"
+
+    writer_options = adapter.merge_writer_options({"compression": compression})
+    write_df(
+        df,
+        bronze_path,
+        bronze_format,
+        mode=bronze_mode,
+        partition_by=partition_cols_for_write,
+        storage_options=adapter.storage_options,
+        writer_options=writer_options,
+    )
+
+    df = read_df(
+        bronze_path,
+        bronze_format,
+        spark=spark,
+        storage_options=adapter.storage_options,
+        reader_options=adapter.reader_options,
+    )
     print(f"[bronze] Wrote and reloaded Bronze dataset at {bronze_path}")
     return df
 
@@ -396,27 +414,48 @@ def run_silver_stage(cfg: Dict[str, Any], env: Dict[str, Any], spark: SparkSessi
         expectations = load_expectations(quality_cfg["expectations_ref"]) or {}
         rules = expectations.get("rules", [])
         quarantine_path = quality_cfg.get("quarantine")
-        maybe_config_s3a(spark, quarantine_path or "", env)
-        df, _, stats = apply_quality_mod(df, rules, quarantine_path, run_id)
+        quality_adapter = build_storage_adapter(quarantine_path, env, quality_cfg)
+        df, _, stats = apply_quality_mod(
+            df,
+            rules,
+            quarantine_path,
+            run_id,
+            storage_options=quality_adapter.storage_options,
+            writer_options=quality_adapter.writer_options,
+        )
         print("[quality] stats:", stats)
 
     df.printSchema()
     final_count = df.count()
     print(f"[silver] Final row count: {final_count}")
 
-    writer = (
-        df.write.format(out.get("format", "parquet"))
-        .option("mergeSchema", str(out.get("merge_schema", True)).lower())
-    )
+    target_path = out.get("path")
+    if not target_path:
+        print("[silver] No output path configured; skipping write")
+        return df
 
-    if parts:
-        writer = writer.partitionBy(*parts)
+    adapter = build_storage_adapter(target_path, env, out)
+    fmt = (out.get("format", "parquet") or "parquet").lower()
+    if fmt not in {"parquet", "csv", "json", "jsonl"}:
+        print(f"[silver] Formato '{fmt}' no soportado, usando parquet")
+        fmt = "parquet"
 
+    writer_overrides = {"mergeSchema": str(out.get("merge_schema", True)).lower()}
+    writer_options = adapter.merge_writer_options(writer_overrides)
+
+    partition_cols_for_write = parts if parts else None
     mode_cfg = (out.get("mode", "append") or "append").lower()
-    if mode_cfg == "overwrite_dynamic":
-        writer.mode("overwrite").save(out["path"])
-    else:
-        writer.mode("append").save(out["path"])
+    mode = "overwrite" if mode_cfg == "overwrite_dynamic" else mode_cfg
+
+    write_df(
+        df,
+        adapter.uri,
+        fmt,
+        mode=mode,
+        partition_by=partition_cols_for_write,
+        storage_options=adapter.storage_options,
+        writer_options=writer_options,
+    )
 
     print(f"[silver] Successfully wrote to {out['path']}")
 
@@ -560,8 +599,6 @@ def write_to_gold_bucket(
         coalesce_n = bucket_cfg.get("coalesce")
         repartition = bucket_cfg.get("repartition")
 
-        maybe_config_s3a(spark, path, env)
-
         base_col = F.col(partition_from) if partition_from and partition_from in df.columns else None
         if base_col is not None and partition_by:
             ts_col = F.to_timestamp(base_col)
@@ -577,25 +614,39 @@ def write_to_gold_bucket(
                     elif lowered == "date":
                         df = df.withColumn("date", F.to_date(ts_col))
 
+        repartition_value: Optional[int] = None
+        coalesce_value: Optional[int] = None
         if isinstance(coalesce_n, int) and coalesce_n > 0:
-            df = df.coalesce(coalesce_n)
+            coalesce_value = coalesce_n
         elif isinstance(repartition, int) and repartition > 0:
-            df = df.repartition(repartition)
+            repartition_value = repartition
         elif isinstance(repartition, list) and repartition:
             cols = [col for col in repartition if col in df.columns]
             if cols:
                 df = df.repartition(*[F.col(col) for col in cols])
+        adapter = build_storage_adapter(path, env, bucket_cfg)
+        writer_options = adapter.merge_writer_options({
+            "compression": compression,
+            "mergeSchema": merge_schema,
+        })
 
-        writer = df.write.format(fmt).mode("overwrite" if mode == "overwrite" else "append")
-        writer = writer.option("compression", compression).option("mergeSchema", merge_schema)
-        if partition_by:
-            writer = writer.partitionBy(*partition_by)
-
-        if fmt in ("parquet", "json", "csv"):
-            writer.save(path)
-        else:
+        if fmt not in {"parquet", "csv", "json", "jsonl"}:
             print(f"[gold][bucket] Unsupported format '{fmt}', falling back to parquet")
-            df.write.mode(mode).option("compression", compression).save(path)
+            fmt = "parquet"
+
+        mode_to_use = "overwrite" if mode == "overwrite" else "append"
+
+        write_df(
+            df,
+            path,
+            fmt,
+            mode=mode_to_use,
+            partition_by=partition_by or None,
+            storage_options=adapter.storage_options,
+            writer_options=writer_options,
+            coalesce=coalesce_value,
+            repartition=repartition_value,
+        )
 
         print(f"[gold][bucket] Wrote {df.count()} rows to {path}")
         return True

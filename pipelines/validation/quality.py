@@ -1,9 +1,18 @@
-from typing import Dict, List, Tuple, Optional
+from typing import Any, Dict, List, Tuple, Optional
 from pyspark.sql import DataFrame, functions as F
 from pipelines.utils.logger import get_logger
+from datacore.io import write_df
 
 
-def apply_quality(df: DataFrame, rules: List[Dict], quarantine_path: Optional[str], run_id: str):
+def apply_quality(
+    df: DataFrame,
+    rules: List[Dict],
+    quarantine_path: Optional[str],
+    run_id: str,
+    *,
+    storage_options: Optional[Dict[str, Any]] = None,
+    writer_options: Optional[Dict[str, Any]] = None,
+):
     """Apply quality rules with quarantine, drop, warn, and fail semantics.
 
     Args:
@@ -83,12 +92,21 @@ def apply_quality(df: DataFrame, rules: List[Dict], quarantine_path: Optional[st
 
     # Write quarantine if needed
     if bad_df is not None and quarantine_path and stats.get('quarantine_count', 0) > 0:
-        (bad_df
-          .withColumn('_quarantine_reason', F.concat(F.lit('rules_failed: '), F.col('_failed_rules')))
-          .withColumn('_run_id', F.lit(run_id))
-          .withColumn('_ingestion_ts', F.current_timestamp())
-          .drop('_failed_rules')
-          .write.mode('append').parquet(quarantine_path))
+        quarantine_df = (
+            bad_df
+            .withColumn('_quarantine_reason', F.concat(F.lit('rules_failed: '), F.col('_failed_rules')))
+            .withColumn('_run_id', F.lit(run_id))
+            .withColumn('_ingestion_ts', F.current_timestamp())
+            .drop('_failed_rules')
+        )
+        write_df(
+            quarantine_df,
+            quarantine_path,
+            "parquet",
+            mode="append",
+            storage_options=storage_options or {},
+            writer_options=writer_options or {},
+        )
         logger.info(f"[quality] Quarantine -> {quarantine_path} rows={stats.get('quarantine_count',0)}")
     elif quarantine_rules and quarantine_path:
         logger.info("[quality] No quarantine needed - all records passed validation")
