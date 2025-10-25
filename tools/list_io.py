@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 from typing import Dict, Iterable, List
 
-SCAN_ROOTS = [Path("src"), Path("pipelines"), Path("scripts")]
+SCAN_ROOTS = [Path("src"), Path("scripts")]
 IO_PATTERNS = {
     "spark_read": re.compile(r"spark\.read\.(\w+)", re.IGNORECASE),
     "spark_write": re.compile(r"\.write\.(\w+)", re.IGNORECASE),

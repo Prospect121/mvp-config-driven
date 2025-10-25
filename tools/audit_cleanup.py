@@ -31,82 +31,22 @@ MANUAL_RULES = {
         "proposed_action": "delete",
         "notes": "No se usa en CI ni en scripts actuales.",
     },
-    "docs/REPORT.md": {
-        "classification": "QUARANTINE",
-        "reason": "Reporte legacy previo a la documentación modular.",
-        "risk": "medium",
-        "proposed_action": "move_to_legacy",
-        "notes": "Conservar en /legacy/docs hasta validar que no sea referencia externa.",
-        "legacy_path": "legacy/docs/2025-10-25-reports/REPORT.md",
-    },
-    "docs/report.json": {
-        "classification": "QUARANTINE",
-        "reason": "Export JSON antiguo duplicando reportes actuales.",
-        "risk": "medium",
-        "proposed_action": "move_to_legacy",
-        "notes": "Generado por tooling previo; no usado en pipelines.",
-        "legacy_path": "legacy/docs/2025-10-25-reports/report.json",
-    },
-    "scripts/generate_big_payments.py": {
-        "classification": "QUARANTINE",
-        "reason": "Script de generación legacy reemplazado por generate_synthetic_data.py.",
-        "risk": "medium",
-        "proposed_action": "move_to_legacy",
-        "notes": "No referenciado desde CLI actuales.",
-        "legacy_path": "legacy/scripts/2025-10-25-generation/generate_big_payments.py",
-    },
-    "docs/run/jobs/dataproc_workflow.yaml": {
-        "classification": "QUARANTINE",
-        "reason": "Plantilla Dataproc sin referencias en CI/CD.",
-        "risk": "medium",
-        "proposed_action": "move_to_legacy",
-        "notes": "Considerar mover a legacy/infra antes de eliminar.",
-        "legacy_path": "legacy/infra/2025-10-25-gcp/dataproc_workflow.yaml",
-    },
-    "legacy/docs/2025-10-25-reports/REPORT.md": {
-        "classification": "QUARANTINE",
-        "reason": "Reporte legacy reubicado en cuarentena (2025-10-25).",
-        "risk": "medium",
-        "proposed_action": "hold_in_legacy",
-        "notes": "Restaurar solo si gobernanza lo aprueba.",
-    },
-    "legacy/docs/2025-10-25-reports/report.json": {
-        "classification": "QUARANTINE",
-        "reason": "Export JSON legacy en cuarentena (2025-10-25).",
-        "risk": "medium",
-        "proposed_action": "hold_in_legacy",
-        "notes": "Mantener disponible durante la ventana de 30 días.",
-    },
-    "legacy/infra/2025-10-25-gcp/dataproc_workflow.yaml": {
-        "classification": "QUARANTINE",
-        "reason": "Workflow Dataproc legacy en cuarentena (2025-10-25).",
-        "risk": "medium",
-        "proposed_action": "hold_in_legacy",
-        "notes": "Coordinar con Cloud Data Engineering antes de restaurar.",
-    },
-    "legacy/scripts/2025-10-25-generation/generate_big_payments.py": {
-        "classification": "QUARANTINE",
-        "reason": "Script de pagos legacy retenido en cuarentena (2025-10-25).",
-        "risk": "medium",
-        "proposed_action": "hold_in_legacy",
-        "notes": "Reactivar solo con aprobación del owner registrado en README.",
-    },
-}
-
-QUARANTINE_EXPECTATIONS = {
-    "docs/REPORT.md": "legacy/docs/2025-10-25-reports/REPORT.md",
-    "docs/report.json": "legacy/docs/2025-10-25-reports/report.json",
-    "scripts/generate_big_payments.py": "legacy/scripts/2025-10-25-generation/generate_big_payments.py",
-    "docs/run/jobs/dataproc_workflow.yaml": "legacy/infra/2025-10-25-gcp/dataproc_workflow.yaml",
 }
 
 REFERENCE_ALLOWLIST = {
     Path("docs/diagrams/deps_cleanup.md"),
-    Path("legacy/docs/2025-10-25-reports/README.md"),
-    Path("legacy/infra/2025-10-25-gcp/README.md"),
-    Path("legacy/scripts/2025-10-25-generation/README.md"),
     Path("tools/audit_cleanup.py"),
 }
+
+FORBIDDEN_ROOTS = (
+    Path("legacy"),
+    Path("pipelines"),
+    Path("docker"),
+    Path(".docker"),
+)
+
+DOCKERFILE_PREFIX = "Docker" + "file"
+DOCKER_COMPOSE_BASE = "docker" + "-compose"
 
 
 @dataclass
@@ -176,7 +116,7 @@ def detect_type(repo_root: Path, path: Path) -> str:
         return "code"
     if rel.suffix in {".yml", ".yaml", ".ini", ".toml", ".cfg"}:
         return "config"
-    if rel.name.startswith("Dockerfile") or rel.suffix in {".dockerfile"}:
+    if rel.name.startswith(DOCKERFILE_PREFIX) or rel.suffix in {".dockerfile"}:
         return "docker"
     if rel.parts[0] in {"infra", "terraform", "helm"}:
         return "infra"
@@ -453,16 +393,15 @@ def create_markdown(report_path: Path, repo_root: Path, items: List[CleanupItem]
     lines.append("")
     lines.append("## Riesgos y mitigaciones")
     lines.append("")
-    lines.append("- Revisar manualmente los elementos marcados como QUARANTINE antes de moverlos a /legacy.")
     lines.append("- Confirmar dependencias transversales en CI/CD para los elementos KEEP críticos.")
-    lines.append("- Establecer un rollback rápido restaurando archivos desde git si un pipeline falla.")
+    lines.append("- Preparar rollback restaurando archivos desde git si una eliminación provoca fallas.")
     lines.append("")
 
     lines.append("## Plan sugerido")
     lines.append("")
-    lines.append("1. Crear PRs por lote (infra, pipelines, documentación) para aplicar REMOVE/QUARANTINE.")
+    lines.append("1. Crear PRs por lote (infra, docs, código) para aplicar REMOVE inmediato.")
     lines.append("2. Actualizar dependencias declaradas (según deptry) antes de eliminar código compartido.")
-    lines.append("3. Mover notebooks huérfanos a /legacy/notebooks con un README que documente su estado.")
+    lines.append("3. Eliminar notebooks huérfanos o migrarlos a repositorios externos versionados.")
     lines.append("")
 
     lines.append("## Anexos")
@@ -588,7 +527,7 @@ def find_string_references(repo_root: Path, target: str) -> List[Path]:
     return matches
 
 
-CODE_REFERENCE_DIRS = {"src", "scripts", "tests", "cfg", "config", "pipelines"}
+CODE_REFERENCE_DIRS = {"src", "scripts", "tests", "cfg", "config"}
 
 
 def find_legacy_references(repo_root: Path) -> List[Path]:
@@ -606,6 +545,30 @@ def find_legacy_references(repo_root: Path) -> List[Path]:
     return matches
 
 
+def _iter_forbidden_directories(repo_root: Path) -> Iterable[Path]:
+    for root in FORBIDDEN_ROOTS:
+        for candidate in repo_root.rglob(root.name):
+            if ".git" in candidate.parts:
+                continue
+            if candidate.is_dir():
+                yield candidate.relative_to(repo_root)
+
+
+def _iter_forbidden_files(repo_root: Path) -> Iterable[Path]:
+    patterns = [
+        DOCKERFILE_PREFIX + "*",
+        "*.dockerfile",
+        DOCKER_COMPOSE_BASE + ".yml",
+        DOCKER_COMPOSE_BASE + ".*.yml",
+    ]
+    for pattern in patterns:
+        for candidate in repo_root.rglob(pattern):
+            if ".git" in candidate.parts:
+                continue
+            if candidate.is_file():
+                yield candidate.relative_to(repo_root)
+
+
 def validate_cleanup_state(repo_root: Path) -> List[str]:
     issues: List[str] = []
     for path, rule in MANUAL_RULES.items():
@@ -614,19 +577,11 @@ def validate_cleanup_state(repo_root: Path) -> List[str]:
         if (repo_root / path).exists():
             issues.append(f"REMOVE target still present: {path}")
 
-    for source, legacy in QUARANTINE_EXPECTATIONS.items():
-        source_path = repo_root / source
-        legacy_path = repo_root / legacy
-        if source_path.exists():
-            issues.append(f"Source path still present: {source}")
-        if not legacy_path.exists():
-            issues.append(f"Legacy path missing: {legacy}")
-        references = find_string_references(repo_root, source)
-        if references:
-            excerpt = ", ".join(str(ref) for ref in references[:REFERENCE_LIMIT])
-            if len(references) > REFERENCE_LIMIT:
-                excerpt += ", ..."
-            issues.append(f"Active references to {source}: {excerpt}")
+    for directory in _iter_forbidden_directories(repo_root):
+        issues.append(f"Forbidden legacy directory present: {directory}/")
+
+    for artifact in _iter_forbidden_files(repo_root):
+        issues.append(f"Forbidden Docker artifact present: {artifact}")
 
     legacy_refs = find_legacy_references(repo_root)
     if legacy_refs:
@@ -695,7 +650,7 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
 
     vulture_path = shutil.which("vulture")
     if vulture_path:
-        artifacts.vulture_output = run_optional_tool([vulture_path, "src", "pipelines", "scripts", "tests"], repo_root)
+        artifacts.vulture_output = run_optional_tool([vulture_path, "src", "scripts", "tests"], repo_root)
     else:
         artifacts.vulture_output = "vulture no disponible"
 

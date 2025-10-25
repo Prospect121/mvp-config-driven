@@ -12,7 +12,10 @@ try:  # pragma: no cover - optional dependency when running smoke tests
 except ModuleNotFoundError:  # pragma: no cover - allow dry-run environments
     SparkSession = None  # type: ignore
 
-from pipelines.database.db_manager import create_database_manager_from_file
+try:
+    from datacore.pipeline.db_manager import create_database_manager_from_file
+except ImportError:  # pragma: no cover - optional database manager
+    create_database_manager_from_file = None  # type: ignore
 
 from datacore.config.schema import (
     DatasetConfigModel,
@@ -112,15 +115,19 @@ def build_context(raw_config: Dict[str, Any]) -> PipelineContext:
         db_cfg_path = layer_config.database_config
         if db_cfg_path and os.path.exists(db_cfg_path):
             full_db_cfg = _load_yaml(db_cfg_path)
-            db_manager = create_database_manager_from_file(db_cfg_path, layer_config.environment)
+            if create_database_manager_from_file is None:
+                print("[gold] Database manager unavailable; skipping Gold layer integration.")
+            else:
+                db_manager = create_database_manager_from_file(db_cfg_path, layer_config.environment)
             table_settings = full_db_cfg.get("table_settings", {})
             try:
-                execution_id = db_manager.log_pipeline_execution(
-                    dataset_name=dataset_cfg.get("id", "unknown"),
-                    pipeline_type="etl",
-                    status="started",
-                )
-                print(f"[metadata] Pipeline execution started: {execution_id}")
+                if db_manager is not None:
+                    execution_id = db_manager.log_pipeline_execution(
+                        dataset_name=dataset_cfg.get("id", "unknown"),
+                        pipeline_type="etl",
+                        status="started",
+                    )
+                    print(f"[metadata] Pipeline execution started: {execution_id}")
             except Exception as exc:  # pragma: no cover - defensive logging
                 print(f"[metadata] Warning: Failed to log pipeline start: {exc}")
         elif db_cfg_path:

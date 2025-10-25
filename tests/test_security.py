@@ -15,7 +15,7 @@ def _run_rg(pattern: str, *relative_paths: str):
 
 
 def test_no_scripts_disable_tls():
-    code, output = _run_rg(r"ssl\\.enabled=false", "pipelines", "scripts")
+    code, output = _run_rg(r"ssl\\.enabled=false", "scripts")
     assert code == 1, f"Found insecure TLS disable flags:\n{output}"
 
 

@@ -3,7 +3,7 @@
 # vive en la carpeta dedicada config/datasets/finanzas/payments_v3/.
 #
 # Uso: se referencia este dataset.yml al ejecutar el job:
-#   python pipelines/spark_job_with_db.py config/datasets/finanzas/payments_v3/dataset.yml config/env.yml config/database.yml development
+#   prodi run-layer raw -c cfg/raw/example.yml
 
 id: payments_v3
 description: "Pagos - versión v3. Estructura organizada en carpeta dedicada."

@@ -1,25 +1,22 @@
-# Impacto de limpieza
+# Impacto de la purga final
 
-| Activo | Ubicación anterior | Ubicación actual | Estado |
-| --- | --- | --- | --- |
-| Reporte operativo | `docs/REPORT.md` | `legacy/docs/2025-10-25-reports/REPORT.md` | Quarantine |
-| Resumen JSON | `docs/report.json` | `legacy/docs/2025-10-25-reports/report.json` | Quarantine |
-| Workflow Dataproc | `docs/run/jobs/dataproc_workflow.yaml` | `legacy/infra/2025-10-25-gcp/dataproc_workflow.yaml` | Quarantine |
-| Script generación pagos | `scripts/generate_big_payments.py` | `legacy/scripts/2025-10-25-generation/generate_big_payments.py` | Quarantine |
-| Config antigua | `.mc/config.json.old` | Eliminado | Remove |
+Todos los artefactos legacy fueron eliminados; no existe carpeta `legacy` ni monolito pipelines heredado.
+
+| Activo retirado | Ubicación original | Acción |
+| --- | --- | --- |
+| Monolito Spark | pipelines heredado | Eliminado |
+| Artefactos Docker | builds Docker, manifests compose, `docker/`, `.docker/` | Eliminados |
+| Reportes cuarentenados | legacy docs (2025-10-25-reports) | Eliminados |
+| Scripts Docker runners | `scripts/runner*.sh` | Eliminados |
 
 ```mermaid
 graph TD
-    A[Plataforma actual] -->|KEEP| B[src/datacore]
-    A -->|KEEP| C[pipelines/]
-    A -->|KEEP| D[scripts/generate_synthetic_data.py]
-    A -->|QUARANTINE| L1[legacy/docs/2025-10-25-reports/REPORT.md]
-    A -->|QUARANTINE| L2[legacy/docs/2025-10-25-reports/report.json]
-    A -->|QUARANTINE| L3[legacy/infra/2025-10-25-gcp/dataproc_workflow.yaml]
-    A -->|QUARANTINE| L4[legacy/scripts/2025-10-25-generation/generate_big_payments.py]
-    A -->|REMOVE| H[.mc/config.json.old]
-    C -->|dependencia| I[cfg/]
-    C -->|dependencia| J[config/]
+    A[Repositorio limpio] -->|KEEP| B[src/datacore]
+    A -->|KEEP| C[cfg/<layer>/]
+    A -->|KEEP| D[tools/*]
+    A -.->|BLOQUEADO| X[pipelines heredados]
+    A -.->|BLOQUEADO| Y[docker artefacts]
+    A -.->|BLOQUEADO| Z[carpeta legacy]
 ```
 
-El diagrama resalta los artefactos trasladados a `legacy/` y la eliminación aplicada. Sigue la política DEP-001 para cuarentena de 30 días con reversibilidad documentada.
+CI ejecuta `tools/audit_cleanup.py --check` para fallar si reaparecen los nodos bloqueados.

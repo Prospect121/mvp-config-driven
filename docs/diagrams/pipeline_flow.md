@@ -4,8 +4,6 @@
 flowchart LR
     subgraph CLI "CLI & Jobs"
         prodi([prodi run-layer])
-        sparkjob([pipelines/spark_job.py])
-        sparkjobdb([pipelines/spark_job_with_db.py])
     end
 
     subgraph Layers "Capas Datacore"
@@ -27,16 +25,6 @@ flowchart LR
     prodi --> silver
     prodi --> gold
 
-    sparkjob --> raw
-    sparkjob --> bronze
-    sparkjob --> silver
-    sparkjob --> gold
-
-    sparkjobdb --> raw
-    sparkjobdb --> bronze
-    sparkjobdb --> silver
-    sparkjobdb --> gold
-
     raw --> bronze
     bronze --> silver
     silver --> gold
@@ -47,4 +35,4 @@ flowchart LR
     gold --> goldBucket
 ```
 
-> El flujo muestra que tanto la CLI moderna como los scripts heredados disparan la cadena completa de capas, manteniendo dependencias verticales fuertes.
+> Las ejecuciones se disparan exclusivamente vía `prodi run-layer`, lo que simplifica la observabilidad y evita monolitos heredados.

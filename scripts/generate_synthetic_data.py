@@ -778,8 +778,11 @@ Ejemplos de uso:
         else:
             logger.info("1. Copiar archivos a MinIO/S3:")
             logger.info("   mc cp --recursive data/casos-uso/ local/raw/casos-uso/")
-        logger.info("2. Ejecutar pipelines:")
-        logger.info("   python pipelines/spark_job_with_db.py config/datasets/casos_uso/payments_high_volume.yml ...")
+        logger.info("2. Ejecutar capas con el CLI:")
+        logger.info("   prodi run-layer raw    -c cfg/raw/example.yml")
+        logger.info("   prodi run-layer bronze -c cfg/bronze/example.yml")
+        logger.info("   prodi run-layer silver -c cfg/silver/example.yml")
+        logger.info("   prodi run-layer gold   -c cfg/gold/example.yml")
         logger.info("3. Validar resultados y métricas de rendimiento")
         
     except KeyboardInterrupt:
