@@ -1,0 +1,21 @@
+layer: gold
+dry_run: true
+environment: development
+paths:
+  dataset: config/datasets/examples/toy_customers.yml
+  environment: config/env.yml
+  database: config/database.yml
+compute:
+  engine: spark
+  options:
+    spark.sql.session.timeZone: UTC
+io:
+  source:
+    dataset_config: config/datasets/examples/toy_customers.yml
+  sink:
+    format: delta
+    options:
+      path: s3://example-gold/marts/customers/
+transform:
+  sql:
+    - SELECT * FROM __THIS__

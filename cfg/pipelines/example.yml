@@ -1,0 +1,12 @@
+pipeline:
+  name: example_pipeline
+  schedule: "0 * * * *"
+  layers:
+    - name: raw
+      config: cfg/raw/example.yml
+    - name: bronze
+      config: cfg/bronze/example.yml
+    - name: silver
+      config: cfg/silver/example.yml
+    - name: gold
+      config: cfg/gold/example.yml
