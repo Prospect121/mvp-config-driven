@@ -1,0 +1,21 @@
+dry_run: false
+environment: development
+environment_config: dbfs:/FileStore/prodi/cfg/env.yml
+compute:
+  engine: spark
+io:
+  source:
+    path: abfss://gold@__ACCOUNT__.dfs.core.windows.net/marts/customers/
+    format: delta
+  sink:
+    format: delta
+    uris:
+      abfss: abfss://gold@__ACCOUNT__.dfs.core.windows.net/marts/customers_curated/
+dq:
+  expectations:
+    min_row_count: 1
+    expect_columns_to_exist:
+      - customer_id
+      - segment
+      - status
+  fail_on_error: true

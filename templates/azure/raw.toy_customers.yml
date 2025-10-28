@@ -1,0 +1,16 @@
+dry_run: false
+environment: development
+environment_config: dbfs:/FileStore/prodi/cfg/env.yml
+compute:
+  engine: spark
+io:
+  source:
+    path: abfss://raw@__ACCOUNT__.dfs.core.windows.net/toy/customers.csv
+    format: csv
+    options:
+      header: true
+      inferSchema: true
+  sink:
+    format: delta
+    uris:
+      abfss: abfss://bronze@__ACCOUNT__.dfs.core.windows.net/tables/customers_raw/
