@@ -1,0 +1,57 @@
+# yamllint disable rule:line-length
+---
+id: toy_customers
+description: Toy customer sample configured for Azure Databricks.
+layers:
+  raw:
+    compute:
+      engine: spark
+      options:
+        spark.sql.shuffle.partitions: 1
+    io:
+      source:
+        format: csv
+        options:
+          header: true
+        uris:
+          abfss: abfss://landing@<ACCOUNT>.dfs.core.windows.net/raw/toy/customers/source/
+        local_fallback: file:/tmp/raw/toy_customers/source/
+      sink:
+        format: delta
+        mode: overwrite
+        uris:
+          abfss: abfss://landing@<ACCOUNT>.dfs.core.windows.net/raw/toy/customers/
+  bronze:
+    compute:
+      engine: spark
+    io:
+      sink:
+        format: delta
+        mode: overwrite
+        options:
+          checkpointLocation: abfss://landing@<ACCOUNT>.dfs.core.windows.net/_checkpoints/bronze/customers/
+        uris:
+          abfss: abfss://landing@<ACCOUNT>.dfs.core.windows.net/bronze/customers/
+  silver:
+    compute:
+      engine: spark
+    dq:
+      expectations:
+        min_row_count: 1
+    io:
+      sink:
+        format: delta
+        mode: overwrite
+        options:
+          checkpointLocation: abfss://landing@<ACCOUNT>.dfs.core.windows.net/_checkpoints/silver/customers/
+        uris:
+          abfss: abfss://landing@<ACCOUNT>.dfs.core.windows.net/silver/customers/
+  gold:
+    compute:
+      engine: spark
+    io:
+      sink:
+        format: delta
+        mode: overwrite
+        uris:
+          abfss: abfss://landing@<ACCOUNT>.dfs.core.windows.net/gold/customers/

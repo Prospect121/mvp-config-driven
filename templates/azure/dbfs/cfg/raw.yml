@@ -1,0 +1,14 @@
+# yamllint disable rule:line-length
+---
+dry_run: false
+environment: development
+environment_config: /dbfs/configs/datacore/env.yml
+compute:
+  engine: spark
+io:
+  source:
+    dataset_config: /dbfs/configs/datacore/datasets/toy_customers.yml
+  sink:
+    uris:
+      abfss: abfss://landing@<ACCOUNT>.dfs.core.windows.net/raw/toy/customers/
+    mode: overwrite
