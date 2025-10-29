@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Mapping, Optional
 
 import yaml
 
@@ -123,9 +123,10 @@ class LocalStreamingAdapter(StreamingPort):
         return None
 
 
-def build_default_adapters() -> dict[str, object]:
+def build_default_adapters(config: Mapping[str, object] | None = None) -> dict[str, object]:
     """Return local adapters for every supported port."""
 
+    _ = config  # unused hook for interface parity
     storage = LocalStorageAdapter()
     return {
         "storage": storage,
