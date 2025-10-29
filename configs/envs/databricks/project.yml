@@ -1,0 +1,129 @@
+project: mvp-config-driven
+environment: databricks
+platform: azure
+spark:
+  shuffle_partitions: 200
+  sql_adaptive_enabled: true
+  sql_adaptive_coalescePartitions_enabled: true
+  
+# Configuración específica para Azure Databricks
+databricks:
+  workspace_url: "https://adb-957726413625040.0.azuredatabricks.net/"
+  cluster_config:
+    spark_version: "13.3.x-scala2.12"
+    node_type_id: "Standard_DS3_v2"
+    driver_node_type_id: "Standard_DS3_v2"
+    num_workers: 2
+    autotermination_minutes: 30
+
+# Datasets configurados para Azure Data Lake Storage Gen2
+datasets:
+  - name: customers_raw
+    layer: raw
+    source:
+      type: storage
+      format: csv
+      uri: "abfss://raw@stprodimvpwestus2.dfs.core.windows.net/customers/"
+      options:
+        header: "true"
+        inferSchema: "true"
+    sink:
+      type: storage
+      format: delta
+      uri: "abfss://raw@stprodimvpwestus2.dfs.core.windows.net/customers/"
+      backend: azure
+    incremental:
+      mode: append
+      
+  - name: customers_bronze
+    layer: bronze
+    source:
+      type: storage
+      format: delta
+      uri: "abfss://raw@stprodimvpwestus2.dfs.core.windows.net/customers/"
+      backend: azure
+    transform:
+      sql:
+        - "SELECT customer_id, first_name, last_name, email, age, current_timestamp() AS ingestion_ts FROM _src"
+      validation:
+        expect_not_null: ["customer_id", "email"]
+        expect_column_values_to_be_unique: ["customer_id"]
+    sink:
+      type: storage
+      format: delta
+      uri: "abfss://bronze@stprodimvpwestus2.dfs.core.windows.net/customers/"
+      backend: azure
+    incremental:
+      mode: append
+      
+  - name: customers_silver
+    layer: silver
+    source:
+      type: storage
+      format: delta
+      uri: "abfss://bronze@stprodimvpwestus2.dfs.core.windows.net/customers/"
+      backend: azure
+    transform:
+      sql:
+        - |
+          SELECT 
+            customer_id,
+            UPPER(TRIM(first_name)) as first_name,
+            UPPER(TRIM(last_name)) as last_name,
+            LOWER(TRIM(email)) as email,
+            age,
+            CASE 
+              WHEN age < 18 THEN 'Minor'
+              WHEN age < 65 THEN 'Adult'
+              ELSE 'Senior'
+            END as age_group,
+            ingestion_ts,
+            current_timestamp() AS processed_ts 
+          FROM _src 
+          WHERE customer_id IS NOT NULL AND age > 0
+      validation:
+        expect_not_null: ["customer_id", "email", "first_name", "last_name"]
+        expect_column_values_to_be_between: 
+          column: "age"
+          min_value: 0
+          max_value: 120
+    sink:
+      type: storage
+      format: delta
+      uri: "abfss://silver@stprodimvpwestus2.dfs.core.windows.net/customers/"
+      backend: azure
+    incremental:
+      mode: merge
+      merge_keys: ["customer_id"]
+      
+  - name: customers_gold
+    layer: gold
+    source:
+      type: storage
+      format: delta
+      uri: "abfss://silver@stprodimvpwestus2.dfs.core.windows.net/customers/"
+      backend: azure
+    transform:
+      sql:
+        - |
+          SELECT 
+            age_group,
+            COUNT(*) as customer_count,
+            AVG(age) as avg_age,
+            MIN(age) as min_age,
+            MAX(age) as max_age,
+            MAX(processed_ts) as last_update
+          FROM _src 
+          GROUP BY age_group
+    sink:
+      type: storage
+      format: delta
+      uri: "abfss://gold@stprodimvpwestus2.dfs.core.windows.net/customers_summary/"
+      backend: azure
+    validation:
+      expect_not_null: ["age_group", "customer_count"]
+      expect_column_values_to_be_between:
+        column: "customer_count"
+        min_value: 1
+    incremental:
+      mode: overwrite

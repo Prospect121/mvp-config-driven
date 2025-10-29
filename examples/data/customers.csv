@@ -1,4 +1,21 @@
-id,name,email,country,amount
-1,Ana Gomez,ana@example.com,MX,120.5
-2,Juan Perez,juan@example.com,CO,80.0
-3,Camila Diaz,camila@example.com,CL,95.3
+customer_id,first_name,last_name,email,age
+1,Ana,Gomez,ana.gomez@example.com,28
+2,Juan,Perez,juan.perez@example.com,35
+3,Camila,Diaz,camila.diaz@example.com,22
+4,Carlos,Rodriguez,carlos.rodriguez@example.com,45
+5,Maria,Lopez,maria.lopez@example.com,31
+6,Pedro,Martinez,pedro.martinez@example.com,67
+7,Sofia,Garcia,sofia.garcia@example.com,19
+8,Diego,Hernandez,diego.hernandez@example.com,52
+9,Lucia,Morales,lucia.morales@example.com,29
+10,Roberto,Silva,roberto.silva@example.com,38
+11,Valentina,Torres,valentina.torres@example.com,16
+12,Andres,Vargas,andres.vargas@example.com,41
+13,Isabella,Castro,isabella.castro@example.com,33
+14,Miguel,Ramos,miguel.ramos@example.com,58
+15,Fernanda,Jimenez,fernanda.jimenez@example.com,26
+16,Alejandro,Mendoza,alejandro.mendoza@example.com,72
+17,Natalia,Ruiz,natalia.ruiz@example.com,24
+18,Sebastian,Ortega,sebastian.ortega@example.com,39
+19,Gabriela,Delgado,gabriela.delgado@example.com,47
+20,Daniel,Aguilar,daniel.aguilar@example.com,30
