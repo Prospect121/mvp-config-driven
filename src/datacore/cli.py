@@ -177,7 +177,7 @@ def _execute_layer(layer: str, cfg: Dict[str, Any]) -> Any:
 @app.command()
 def run_layer(
     layer: str = typer.Argument(..., help="Layer to execute"),
-    config: Path = typer.Option(..., "-c", "--config", help="Path to layer configuration"),
+    config: Path = typer.Option(..., "--config", "-c", help="Path to layer configuration"),
     vars_: List[str] = typer.Option([], "--vars", help="Template variables as key=value"),
     dq_fail_on_error: Optional[bool] = typer.Option(
         None,
@@ -197,7 +197,7 @@ def run_layer(
 
 @app.command("run-pipeline")
 def run_pipeline(
-    pipeline: Path = typer.Option(..., "-p", "--pipeline", help="Pipeline declaration file"),
+    pipeline: Path = typer.Option(..., "--pipeline", "-p", help="Pipeline declaration file"),
     vars_: List[str] = typer.Option([], "--vars", help="Template variables as key=value"),
     dq_fail_on_error: Optional[bool] = typer.Option(
         None,
@@ -259,7 +259,7 @@ def run_pipeline(
 
 @app.command()
 def validate(
-    config: Path = typer.Option(..., "-c", "--config", help="Configuration to validate"),
+    config: Path = typer.Option(..., "--config", "-c", help="Configuration to validate"),
     vars_: List[str] = typer.Option([], "--vars", help="Template variables as key=value"),
 ) -> None:
     variables = _parse_vars(vars_)
