@@ -1,0 +1,277 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - feature/**
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  ruff:
+    name: Ruff lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install ruff
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff
+      - name: Run ruff
+        run: |
+          ruff check src tests tools
+
+  black:
+    name: Black format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install black
+        run: |
+          python -m pip install --upgrade pip
+          pip install black
+      - name: Run black --check
+        run: |
+          black --check src tests tools
+
+  pytest:
+    name: Pytest (${{ matrix.python-version }} · ${{ matrix.label }})
+    runs-on: ubuntu-latest
+    needs:
+      - ruff
+      - black
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python-version: "3.10"
+            extras: base
+            extra-spec: ""
+            label: py310-base
+          - python-version: "3.11"
+            extras: base
+            extra-spec: ""
+            label: py311-base
+          - python-version: "3.12"
+            extras: base
+            extra-spec: ""
+            label: py312-base
+          - python-version: "3.10"
+            extras: delta
+            extra-spec: ",delta"
+            label: py310-delta
+          - python-version: "3.11"
+            extras: dq
+            extra-spec: ",dq"
+            label: py311-dq
+          - python-version: "3.12"
+            extras: lineage
+            extra-spec: ",lineage"
+            label: py312-lineage
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip wheel
+          pip install -r requirements.txt
+          pip install -e ".[tests${{ matrix.extra-spec }}]"
+      - name: Run pytest with coverage
+        env:
+          PYTHONWARNINGS: default
+        run: |
+          mkdir -p reports
+          pytest --cov=src --cov-report=xml --cov-report=term --junitxml=reports/junit-${{ matrix.label }}.xml
+          mv coverage.xml reports/coverage-${{ matrix.label }}.xml
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.label }}
+          path: reports/coverage-${{ matrix.label }}.xml
+          if-no-files-found: error
+      - name: Upload junit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-${{ matrix.label }}
+          path: reports/junit-${{ matrix.label }}.xml
+          if-no-files-found: error
+
+  e2e:
+    name: Local E2E examples
+    runs-on: ubuntu-latest
+    needs: pytest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip wheel
+          pip install -r requirements.txt
+          pip install -e ".[dq]"
+      - name: Prepare local raw configuration
+        run: |
+          python - <<'PY'
+          from __future__ import annotations
+
+          import json
+          from pathlib import Path
+
+          import yaml
+
+          base_cfg_path = Path("cfg/raw/example.yml")
+          if not base_cfg_path.exists():
+              raise SystemExit("Missing cfg/raw/example.yml for E2E job")
+
+          cfg = yaml.safe_load(base_cfg_path.read_text(encoding="utf-8")) or {}
+          cfg["dry_run"] = False
+
+          workspace = Path("run/e2e")
+          workspace.mkdir(parents=True, exist_ok=True)
+          output_dir = workspace / "raw-output"
+          dq_dir = workspace / "dq"
+
+          storage = cfg.setdefault("storage", {})
+          project_root = Path.cwd()
+          for key in ("dataset_config", "environment_config", "database_config"):
+              value = storage.get(key)
+              if value:
+                  storage[key] = str((project_root / value).resolve())
+
+          source = storage.setdefault("source", {})
+          for key in ("dataset_config", "environment_config"):
+              value = source.get(key) or storage.get(key)
+              if value:
+                  source[key] = str((project_root / value).resolve())
+          source["use_local_fallback"] = True
+
+          sink = storage.setdefault("sink", {})
+          sink["type"] = "files"
+          sink["uri"] = output_dir.resolve().as_uri()
+          sink["format"] = "parquet"
+          sink["mode"] = "overwrite"
+
+          quality = cfg.setdefault("quality", {})
+          expectations = quality.setdefault("expectations", {})
+          expectations.setdefault("min_row_count", 1)
+          checks = expectations.get("checks")
+          if isinstance(checks, list):
+              normalized_checks = [dict(check) for check in checks]
+          elif checks:
+              normalized_checks = [dict(checks)]
+          else:
+              normalized_checks = []
+          normalized_checks.append({"type": "not_null", "column": "customer_id"})
+          expectations["checks"] = normalized_checks
+
+          report_cfg = quality.setdefault("report", {})
+          report_cfg["path"] = str((dq_dir / "report").resolve())
+
+          config_path = workspace / "raw-local.yml"
+          config_path.write_text(yaml.safe_dump(cfg, sort_keys=False), encoding="utf-8")
+          PY
+      - name: Run raw example through CLI
+        env:
+          PRODI_FORCE_DRY_RUN: "0"
+        run: |
+          python -m datacore.cli run-layer raw --config run/e2e/raw-local.yml
+      - name: Generate pipeline plan JSON
+        run: |
+          python - <<'PY'
+          from __future__ import annotations
+
+          import json
+          from pathlib import Path
+
+          from datacore.cli import (
+              _load_config,
+              _render_template,
+              _resolve_extends,
+              _validate_pipeline_config,
+          )
+
+          pipeline_path = Path("cfg/pipelines/finance_transactions.yml").resolve()
+          raw_cfg = _load_config(pipeline_path)
+          resolved = _resolve_extends(raw_cfg, pipeline_path, {})
+
+          if isinstance(resolved, dict) and isinstance(resolved.get("pipeline"), dict):
+              pipeline_block = _validate_pipeline_config(resolved, pipeline_path)
+          else:
+              pipeline_block = {
+                  "name": pipeline_path.stem,
+                  "steps": resolved if isinstance(resolved, list) else [],
+                  "vars": {},
+                  "environment": None,
+              }
+
+          base_vars = {
+              str(k): str(v) for k, v in (pipeline_block.get("vars") or {}).items()
+          }
+          steps = pipeline_block.get("steps") or []
+
+          plan_steps = []
+          for index, step in enumerate(steps, start=1):
+              if not isinstance(step, dict):
+                  continue
+              layer = str(step.get("layer", "")).strip()
+              config_value = str(step.get("config", "")).strip()
+              step_vars_raw = step.get("vars") if isinstance(step.get("vars"), dict) else {}
+              step_vars = {str(k): str(v) for k, v in step_vars_raw.items()}
+              merged_vars = dict(base_vars)
+              merged_vars.update(step_vars)
+              rendered_config = _render_template(config_value, merged_vars) if config_value else ""
+              if rendered_config and not Path(rendered_config).is_absolute():
+                  rendered_config = str((pipeline_path.parent / rendered_config).resolve())
+              plan_steps.append(
+                  {
+                      "index": index,
+                      "layer": layer,
+                      "config": rendered_config,
+                      "vars": merged_vars,
+                  }
+              )
+
+          plan = {
+              "name": pipeline_block.get("name"),
+              "environment": pipeline_block.get("environment"),
+              "vars": base_vars,
+              "steps": plan_steps,
+          }
+
+          output_path = Path("run/e2e/plan.json")
+          output_path.parent.mkdir(parents=True, exist_ok=True)
+          output_path.write_text(json.dumps(plan, indent=2, sort_keys=True), encoding="utf-8")
+          PY
+      - name: Upload data-quality report
+        uses: actions/upload-artifact@v4
+        with:
+          name: dq-report
+          path: |
+            run/e2e/dq/report.json
+            run/e2e/dq/report.md
+          if-no-files-found: error
+      - name: Upload pipeline plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: pipeline-plan
+          path: run/e2e/plan.json
+          if-no-files-found: error

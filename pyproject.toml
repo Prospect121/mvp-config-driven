@@ -12,6 +12,29 @@ dependencies = [
 ]
 scripts = { prodi = "datacore.cli:main" }
 
+[project.optional-dependencies]
+tests = [
+    "pytest>=8.3.3",
+    "pytest-cov>=4.1.0",
+    "pandas>=2.0.0",
+    "pyarrow>=14.0.0",
+]
+dq = [
+    "great-expectations>=0.18.12",
+]
+delta = [
+    "delta-spark>=3.2.0; python_version < \"3.12\"",
+]
+lineage = [
+    "openlineage-python>=1.27.0",
+]
+dev = [
+    "black>=24.10.0",
+    "ruff>=0.6.9",
+    "mypy>=1.13.0",
+    "pre-commit>=4.0.1",
+]
+
 [tool.black]
 line-length = 100
 skip-string-normalization = true
