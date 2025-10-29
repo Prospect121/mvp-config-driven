@@ -1,0 +1,26 @@
+project: mvp-config-driven
+environment: dev
+platform: azure
+layer: silver
+spark:
+  shuffle_partitions: 4
+datasets:
+  - name: customers_silver
+    layer: silver
+    source:
+      type: storage
+      format: parquet
+      uri: "abfss://bronze@example.dfs.core.windows.net/customers/"
+      backend: azure
+    transform:
+      sql:
+        - "SELECT id, name, email, country, CAST(amount AS DOUBLE) AS amount, current_date() AS ingestion_date FROM _src"
+      validation:
+        expect_not_null: ["id", "email"]
+    sink:
+      type: storage
+      format: parquet
+      uri: "abfss://silver@example.dfs.core.windows.net/customers/"
+      backend: azure
+    incremental:
+      mode: append

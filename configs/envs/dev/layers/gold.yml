@@ -1,0 +1,26 @@
+project: mvp-config-driven
+environment: dev
+platform: azure
+layer: gold
+spark:
+  shuffle_partitions: 4
+datasets:
+  - name: customers_gold
+    layer: gold
+    source:
+      type: storage
+      format: parquet
+      uri: "abfss://silver@example.dfs.core.windows.net/customers/"
+      backend: azure
+    transform:
+      sql:
+        - "SELECT country, COUNT(DISTINCT id) AS customers, ROUND(SUM(amount), 2) AS total_amount FROM _src GROUP BY country"
+    sink:
+      type: warehouse
+      engine: synapse
+      url: "jdbc:sqlserver://synapse.sql.azuresynapse.net:1433;database=analytics"
+      table: analytics.customers_gold
+      mode: overwrite
+      options:
+        user: "${SYNAPSE_USER}"
+        password: "${SYNAPSE_PASSWORD}"

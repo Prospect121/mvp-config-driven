@@ -1,0 +1,22 @@
+project: mvp-config-driven
+environment: prod
+platform: gcp
+layer: gold
+datasets:
+  - name: customers_gold
+    layer: gold
+    source:
+      type: storage
+      format: parquet
+      uri: "gs://mvp-silver/customers/"
+      backend: gcp
+    transform:
+      sql:
+        - "SELECT country, COUNT(DISTINCT id) AS customers, ROUND(SUM(amount), 2) AS total_amount FROM _src GROUP BY country"
+    sink:
+      type: warehouse
+      engine: bigquery
+      table: "analytics.customers_gold"
+      mode: overwrite
+      options:
+        temporaryGcsBucket: "mvp-temp"
