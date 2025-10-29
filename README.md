@@ -72,3 +72,24 @@ movida a `docs/legacy/` para consulta histórica.
 
 Ejecuta `pytest` y `prodi validate -c templates/azure/dbfs/cfg/<layer>.yml`
 antes de integrar cambios para respetar el contrato de configuración.
+
+## CI rápido (validación de YAML)
+
+El workflow [`CI — Validate & Lint`](.github/workflows/ci-validate.yml) recorre
+los `cfg/*.yml` del repositorio y valida su estructura con `prodi`. No ejecuta
+Spark ni toca almacenamiento cloud porque forza `PRODI_FORCE_DRY_RUN=1`; solo
+garantiza que el contrato de configuración es consistente. Además ejecuta
+`ruff check` sobre `lib/datacore` como retroalimentación opcional (no bloquea el
+merge).
+
+Para replicar la validación localmente:
+
+```bash
+pip install -e lib/datacore
+pip install pyyaml typer "pydantic==2.*" fsspec adlfs gcsfs s3fs ruamel.yaml
+PRODI_FORCE_DRY_RUN=1 prodi validate -c cfg/<layer>/<archivo>.yml
+```
+
+Cuando necesites pruebas integradas con Spark/Delta utiliza un workflow
+independiente que monte datasets locales y `sink.uris.local`; evita manejar
+secretos en CI.
