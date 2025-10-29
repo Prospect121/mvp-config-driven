@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Mapping, Tuple
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
 from datacore.context import PipelineContext, build_context, ensure_spark, stop_spark
 from datacore.io import build_storage_adapter, read_df, write_df
@@ -18,6 +18,11 @@ try:  # pragma: no cover - optional dependency when using pandas fallbacks
     import pandas as _pd  # type: ignore
 except Exception:  # pragma: no cover - pandas optional
     _pd = None  # type: ignore
+
+try:  # pragma: no cover - delta optional for non-Spark environments
+    from delta.tables import DeltaTable  # type: ignore
+except Exception:  # pragma: no cover - delta optional
+    DeltaTable = None  # type: ignore
 
 
 def _deep_merge(base: Mapping[str, Any] | None, extra: Mapping[str, Any] | None) -> Dict[str, Any]:
@@ -451,8 +456,22 @@ def _write_sink(
     mode = str(sink_cfg.get("mode") or "overwrite")
     fmt = sink_cfg.get("format") or sink_cfg.get("type") or "parquet"
     options = sink_cfg.get("options") or {}
+    merge_cfg = sink_cfg.get("merge") if isinstance(sink_cfg.get("merge"), Mapping) else None
+    fmt_normalized = str(fmt).strip().lower() if fmt else ""
 
     if table:
+        if merge_cfg and fmt_normalized == "delta":
+            if spark is None:
+                raise ValueError("Delta merge requires a Spark session")
+            _perform_delta_merge(
+                spark,
+                df,
+                merge_cfg,
+                mode=mode,
+                writer_options=options,
+                table=str(table),
+            )
+            return df
         if spark is None:
             raise ValueError("Table sinks require a Spark session")
         writer = df.write
@@ -469,6 +488,19 @@ def _write_sink(
     coalesce = sink_cfg.get("coalesce")
     repartition = sink_cfg.get("repartition")
 
+    if merge_cfg and fmt_normalized == "delta":
+        if spark is None:
+            raise ValueError("Delta merge requires a Spark session")
+        _perform_delta_merge(
+            spark,
+            df,
+            merge_cfg,
+            mode=mode,
+            writer_options=adapter.merge_writer_options(options),
+            adapter=adapter,
+        )
+        return df
+
     write_df(
         df,
         adapter.uri,
@@ -482,6 +514,213 @@ def _write_sink(
         writer_options=adapter.merge_writer_options(options),
     )
     return df
+
+
+def _perform_delta_merge(
+    spark: Any,
+    df: Any,
+    merge_cfg: Mapping[str, Any],
+    *,
+    mode: str,
+    writer_options: Mapping[str, Any],
+    adapter: Any | None = None,
+    table: str | None = None,
+) -> None:
+    if DeltaTable is None:
+        raise RuntimeError("delta-spark is required to execute Delta Lake merges")
+
+    source_alias = str(merge_cfg.get("source_alias") or "source")
+    target_alias = str(merge_cfg.get("target_alias") or "target")
+    condition_value = merge_cfg.get("condition")
+
+    key_columns_value = merge_cfg.get("key_columns")
+    if not condition_value:
+        if isinstance(key_columns_value, (list, tuple, set)) and key_columns_value:
+            keys = [str(col) for col in key_columns_value]
+            condition_value = " AND ".join(
+                f"{target_alias}.{col} = {source_alias}.{col}" for col in keys
+            )
+        elif isinstance(key_columns_value, Sequence) and not isinstance(
+            key_columns_value, (str, bytes)
+        ):
+            keys = [str(col) for col in key_columns_value if col]
+            if keys:
+                condition_value = " AND ".join(
+                    f"{target_alias}.{col} = {source_alias}.{col}" for col in keys
+                )
+        else:
+            raise ValueError("Delta merge requires 'condition' or 'key_columns'")
+
+    delta_table, created = _resolve_delta_table(
+        spark,
+        df,
+        mode=mode,
+        writer_options=writer_options,
+        adapter=adapter,
+        table=table,
+    )
+
+    if created:
+        return
+
+    builder = delta_table.alias(target_alias).merge(df.alias(source_alias), str(condition_value))
+    builder = _apply_when_matched(builder, merge_cfg.get("when_matched"), source_alias)
+    builder = _apply_when_not_matched(
+        builder, merge_cfg.get("when_not_matched"), source_alias
+    )
+    builder = _apply_when_not_matched_by_source(
+        builder, merge_cfg.get("when_not_matched_by_source")
+    )
+    builder.execute()
+
+
+def _resolve_delta_table(
+    spark: Any,
+    df: Any,
+    *,
+    mode: str,
+    writer_options: Mapping[str, Any],
+    adapter: Any | None,
+    table: str | None,
+):
+    writer_opts = dict(writer_options or {})
+    created = False
+
+    if table:
+        table_name = str(table)
+        table_exists = False
+        catalog = getattr(getattr(spark, "catalog", None), "tableExists", None)
+        if callable(catalog):
+            try:
+                table_exists = bool(catalog(table_name))
+            except Exception:
+                table_exists = False
+        if not table_exists:
+            writer = df.write.format("delta")
+            if writer_opts:
+                writer = writer.options(**writer_opts)
+            writer.mode(mode).saveAsTable(table_name)
+            created = True
+        return DeltaTable.forName(spark, table_name), created
+
+    if adapter is None:
+        raise ValueError("adapter is required for path-based Delta merges")
+
+    path = getattr(adapter, "uri", None)
+    if not path:
+        raise ValueError("Delta merge requires a target path")
+
+    path_str = str(path)
+    exists = False
+    try:
+        exists = bool(DeltaTable.isDeltaTable(spark, path_str))
+    except Exception:
+        exists = False
+    if not exists:
+        writer = df.write.format("delta")
+        if writer_opts:
+            writer = writer.options(**writer_opts)
+        writer.mode(mode).save(path_str)
+        created = True
+    return DeltaTable.forPath(spark, path_str), created
+
+
+def _prepare_assignments(spec: Any, source_alias: str) -> Optional[Dict[str, str]]:
+    if spec is None:
+        return None
+    if isinstance(spec, Mapping):
+        return {str(key): str(value) for key, value in spec.items()}
+    if isinstance(spec, Sequence) and not isinstance(spec, (str, bytes)):
+        return {str(col): f"{source_alias}.{col}" for col in spec}
+    return None
+
+
+def _apply_when_matched(builder: Any, cfg: Any, source_alias: str) -> Any:
+    if cfg is None:
+        return builder.whenMatchedUpdateAll()
+    if isinstance(cfg, bool):
+        return builder.whenMatchedUpdateAll() if cfg else builder
+    if isinstance(cfg, str):
+        if cfg.strip().lower() == "delete":
+            return builder.whenMatchedDelete()
+        return builder.whenMatchedUpdateAll()
+    if not isinstance(cfg, Mapping):
+        return builder.whenMatchedUpdateAll()
+
+    condition = cfg.get("condition")
+    if cfg.get("delete"):
+        if condition:
+            return builder.whenMatchedDelete(condition=str(condition))
+        return builder.whenMatchedDelete()
+
+    assignments = _prepare_assignments(
+        cfg.get("update")
+        or cfg.get("set")
+        or cfg.get("assignments")
+        or cfg.get("columns"),
+        source_alias,
+    )
+
+    if assignments:
+        if condition:
+            return builder.whenMatchedUpdate(condition=str(condition), set=assignments)
+        return builder.whenMatchedUpdate(set=assignments)
+
+    if condition:
+        return builder.whenMatchedUpdateAll(condition=str(condition))
+    return builder.whenMatchedUpdateAll()
+
+
+def _apply_when_not_matched(builder: Any, cfg: Any, source_alias: str) -> Any:
+    if cfg is None:
+        return builder.whenNotMatchedInsertAll()
+    if isinstance(cfg, bool):
+        return builder.whenNotMatchedInsertAll() if cfg else builder
+    if isinstance(cfg, str):
+        normalized = cfg.strip().lower()
+        if normalized in {"skip", "ignore"}:
+            return builder
+        if normalized in {"insert", "insert_all"}:
+            return builder.whenNotMatchedInsertAll()
+    if not isinstance(cfg, Mapping):
+        return builder.whenNotMatchedInsertAll()
+
+    condition = cfg.get("condition")
+    assignments = _prepare_assignments(
+        cfg.get("insert") or cfg.get("values") or cfg.get("columns"),
+        source_alias,
+    )
+
+    if assignments:
+        if condition:
+            return builder.whenNotMatchedInsert(condition=str(condition), values=assignments)
+        return builder.whenNotMatchedInsert(values=assignments)
+
+    if condition:
+        return builder.whenNotMatchedInsertAll(condition=str(condition))
+    return builder.whenNotMatchedInsertAll()
+
+
+def _apply_when_not_matched_by_source(builder: Any, cfg: Any) -> Any:
+    if not cfg:
+        return builder
+    if isinstance(cfg, bool):
+        return builder.whenNotMatchedBySourceDelete() if cfg else builder
+    if isinstance(cfg, str):
+        if cfg.strip().lower() == "delete":
+            return builder.whenNotMatchedBySourceDelete()
+        return builder
+    if isinstance(cfg, Mapping):
+        condition = cfg.get("condition")
+        delete_flag = cfg.get("delete")
+        action = str(cfg.get("action") or "").strip().lower()
+        if delete_flag is False or action in {"skip", "ignore"}:
+            return builder
+        if delete_flag or action == "delete":
+            if condition:
+                return builder.whenNotMatchedBySourceDelete(condition=str(condition))
+            return builder.whenNotMatchedBySourceDelete()
+    return builder
 
 
 def execute(context: PipelineContext, engine: Any) -> Any:
