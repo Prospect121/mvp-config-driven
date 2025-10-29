@@ -8,7 +8,7 @@ from typing import Any, Dict, Optional
 
 import yaml
 
-from ..adapters.local import build_default_adapters
+from ..adapters import build_adapters
 from ..ports import JobBackendPort, SecretsPort, StoragePort, StreamingPort, TablesPort
 from .config import DatasetConfigModel, LayerConfig, migrate_dataset_config
 
@@ -62,14 +62,25 @@ def build_context(
 ) -> PipelineContext:
     """Construct a :class:`PipelineContext` from a raw layer configuration."""
 
-    defaults = build_default_adapters()
+    layer_config = LayerConfig.from_dict(raw_config)
+
+    platform_cfg = layer_config.compute.get("platform_config") if layer_config.compute else {}
+    if not isinstance(platform_cfg, dict):
+        platform_cfg = {}
+    platform = None
+    if layer_config.compute:
+        platform = layer_config.compute.get("platform")  # type: ignore[assignment]
+    if not platform and layer_config.storage:
+        platform = layer_config.storage.get("platform")  # type: ignore[assignment]
+
+    defaults = build_adapters(
+        platform=platform if isinstance(platform, str) else None, config=platform_cfg
+    )
     storage_port = storage or defaults["storage"]  # type: ignore[assignment]
     tables_port = tables or defaults["tables"]  # type: ignore[assignment]
     secrets_port = secrets or defaults["secrets"]  # type: ignore[assignment]
     job_backend_port = job_backend or defaults["job_backend"]  # type: ignore[assignment]
     streaming_port = streaming or defaults["streaming"]  # type: ignore[assignment]
-
-    layer_config = LayerConfig.from_dict(raw_config)
 
     dataset_cfg: Dict[str, Any] = {}
     env_cfg: Dict[str, Any] = {}
