@@ -1,20 +1,19 @@
-layer: bronze
-environment: development
+# yamllint disable rule:line-length
+---
 dry_run: false
+environment: development
+environment_config: /dbfs/configs/datacore/env.yml
+compute:
+  engine: spark
 io:
   source:
     dataset_config: /dbfs/configs/datacore/datasets/toy_customers.yml
-    environment_config: /dbfs/configs/datacore/cfg/env.yml
-    format: delta
-    path: abfss://landing@contosodatalake.dfs.core.windows.net/raw/toy_customers/landing/
+    format: parquet
+    path: abfss://landing@<ACCOUNT>.dfs.core.windows.net/raw/toy/customers/
   sink:
-    kind: spark
-    format: delta
-    mode: overwrite
-    path: abfss://bronze@contosodatalake.dfs.core.windows.net/bronze/toy_customers/
     uris:
-      abfss: abfss://bronze@contosodatalake.dfs.core.windows.net/bronze/toy_customers/
+      abfss: abfss://landing@<ACCOUNT>.dfs.core.windows.net/bronze/customers/
     options:
-      checkpointLocation: abfss://bronze@contosodatalake.dfs.core.windows.net/bronze/checkpoints/toy_customers/
-compute:
-  engine: spark
+      checkpointLocation: abfss://landing@<ACCOUNT>.dfs.core.windows.net/_checkpoints/bronze/customers/
+    mode: overwrite
+    coalesce: 1

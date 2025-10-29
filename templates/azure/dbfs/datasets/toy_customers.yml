@@ -1,5 +1,7 @@
+# yamllint disable rule:line-length
+---
 id: toy_customers
-description: Toy customer sample configured for DBFS templates.
+description: Toy customer sample configured for Azure Databricks.
 layers:
   raw:
     compute:
@@ -12,12 +14,13 @@ layers:
         options:
           header: true
         uris:
-          abfss: abfss://landing@contosodatalake.dfs.core.windows.net/raw/toy_customers/input/
+          abfss: abfss://landing@<ACCOUNT>.dfs.core.windows.net/raw/toy/customers/source/
+        local_fallback: file:/tmp/raw/toy_customers/source/
       sink:
         format: delta
         mode: overwrite
         uris:
-          abfss: abfss://landing@contosodatalake.dfs.core.windows.net/raw/toy_customers/landing/
+          abfss: abfss://landing@<ACCOUNT>.dfs.core.windows.net/raw/toy/customers/
   bronze:
     compute:
       engine: spark
@@ -26,9 +29,9 @@ layers:
         format: delta
         mode: overwrite
         options:
-          checkpointLocation: abfss://bronze@contosodatalake.dfs.core.windows.net/bronze/checkpoints/toy_customers/
+          checkpointLocation: abfss://landing@<ACCOUNT>.dfs.core.windows.net/_checkpoints/bronze/customers/
         uris:
-          abfss: abfss://bronze@contosodatalake.dfs.core.windows.net/bronze/toy_customers/
+          abfss: abfss://landing@<ACCOUNT>.dfs.core.windows.net/bronze/customers/
   silver:
     compute:
       engine: spark
@@ -40,9 +43,9 @@ layers:
         format: delta
         mode: overwrite
         options:
-          checkpointLocation: abfss://silver@contosodatalake.dfs.core.windows.net/silver/checkpoints/toy_customers/
+          checkpointLocation: abfss://landing@<ACCOUNT>.dfs.core.windows.net/_checkpoints/silver/customers/
         uris:
-          abfss: abfss://silver@contosodatalake.dfs.core.windows.net/silver/toy_customers/
+          abfss: abfss://landing@<ACCOUNT>.dfs.core.windows.net/silver/customers/
   gold:
     compute:
       engine: spark
@@ -51,4 +54,4 @@ layers:
         format: delta
         mode: overwrite
         uris:
-          abfss: abfss://gold@contosodatalake.dfs.core.windows.net/gold/toy_customers/
+          abfss: abfss://landing@<ACCOUNT>.dfs.core.windows.net/gold/customers/

@@ -1,56 +1,67 @@
 # Ejecución por capas en Azure Databricks
 
 La siguiente guía ofrece bloques "copy-paste" para ejecutar `prodi` sobre un
-cluster de Azure Databricks almacenando configuraciones en DBFS y leyendo/escribiendo
-datos en ABFSS. Todos los ejemplos se basan en las plantillas
-`templates/azure/dbfs/` del repositorio.
+cluster de Azure Databricks almacenando configuraciones en DBFS y
+leyendo/escribiendo datos en ABFSS. Todos los ejemplos usan las plantillas de
+`templates/azure/dbfs/` y una única cuenta `<ACCOUNT>` con el contenedor
+`landing` para las capas `raw`, `bronze`, `silver` y `gold`.
 
 > **Requisitos previos**
 >
-> - Workspace de Databricks conectado a un Data Lake Gen2 con el contenedor de
->   ejemplo (`landing`, `bronze`, `silver`, `gold`).
-> - Acceso a la cuenta de Git donde vive este repositorio.
-> - Un cluster con Databricks Runtime 13.3+ (incluye Python 3.10 y PySpark).
+> - Workspace de Databricks conectado a un Data Lake Gen2.
+> - Secret Scope (`kv-scope` en el ejemplo) con la llave de la cuenta `<ACCOUNT>`.
+> - Un cluster con Databricks Runtime 13.3+ (Python 3.10 y PySpark 3.4+).
+> - Acceso al repositorio `Prospect121/mvp-config-driven` o a tu fork.
 
-## 1. Instalar `prodi` desde el repositorio
+## 1. Sincronizar el repositorio
 
-Ejecuta el siguiente comando en un notebook (célula `%pip`). Sustituye
-`<REPO_URL>` por la URL HTTPS de tu fork o mirror y verifica que el subdirectorio
-`lib/datacore` exista en el repositorio remoto.
+Desde la barra lateral de Databricks selecciona **Repos → Add Repo** y apunta al
+repositorio. Una vez clonado, abre un notebook en la ruta
+`Repos/<user>/mvp-config-driven`.
+
+## 2. Instalar `prodi`
+
+En una celda `%pip`, instala el paquete editable ubicado en `lib/datacore`:
 
 ```python
-%pip install "git+<REPO_URL>#subdirectory=lib/datacore"
+%pip install -e lib/datacore
 ```
 
-Reinicia el cluster cuando Databricks lo solicite para que el entrypoint
-`prodi` quede disponible en `%sh`.
+Reinicia el cluster cuando Databricks lo solicite para que el entrypoint `prodi`
+quede disponible en celdas `%sh` y en `python`.
 
-## 2. Configurar credenciales ABFSS
+## 3. Configurar credenciales ABFSS
 
-Asumiendo que la cuenta de almacenamiento es `contosodatalake` y dispones de la
-llave en un Secret Scope, ejecuta:
+Recupera la llave de almacenamiento desde el Secret Scope y propágala tanto a
+Spark como a variables de entorno. Sustituye `<ACCOUNT>` por el nombre real de
+la cuenta (por ejemplo, `contosodatalake`).
 
 ```python
-import os
+account = "<ACCOUNT>"
+scope = "kv-scope"
+key = "abfss-key"
 
-account_key = dbutils.secrets.get(scope="datalake", key="contosodatalake-key")
-os.environ["DATABRICKS_ABFSS_KEY"] = account_key
+secret = dbutils.secrets.get(scope=scope, key=key)
 
 spark.conf.set(
-    "fs.azure.account.key.contosodatalake.dfs.core.windows.net",
-    account_key,
+    f"fs.azure.account.key.{account}.dfs.core.windows.net",
+    secret,
 )
+
+import os
+os.environ["AZURE_STORAGE_ACCOUNT_NAME"] = account
+os.environ["AZURE_STORAGE_ACCOUNT_KEY"] = secret
 ```
 
-> **Nota:** Si utilizas Service Principal, sustituye la sección anterior por las
-> claves `tenant_id`, `client_id` y `client_secret` y define los environment
-> variables `AZURE_STORAGE_ACCOUNT_NAME`, `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` y
-> `AZURE_CLIENT_SECRET`. El YAML `env.yml` acepta `credentials.client_id_env`,
-> `client_secret_env` y `tenant_id_env` para ese escenario.
+> **Service Principal:** si en lugar de account key utilizas un principal,
+> define los secretos `client_id`, `client_secret` y `tenant_id`, asigna sus
+> valores a `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`, `AZURE_TENANT_ID` y
+> mantén `AZURE_STORAGE_ACCOUNT_NAME` con el nombre de la cuenta. El YAML de
+> entorno acepta esas variables sin cambios adicionales.
 
-## 3. Publicar configuraciones en DBFS
+## 4. Publicar configuraciones en DBFS
 
-Crea la estructura `/configs/datacore/` en DBFS y copia las plantillas.
+Crea la estructura `/configs/datacore/` y publica las plantillas.
 
 ```python
 base_dir = "dbfs:/configs/datacore"
@@ -59,32 +70,36 @@ dbutils.fs.mkdirs(f"{base_dir}/cfg")
 dbutils.fs.mkdirs(f"{base_dir}/datasets")
 ```
 
-### 3.1 Configuración de entorno
+### 4.1 Configuración de entorno
 
 ```python
 dbutils.fs.put(
-    f"{base_dir}/cfg/env.yml",
-    """timezone: UTC
+    f"{base_dir}/env.yml",
+    """timezone: America/Bogota
 storage:
   abfss:
     credentials:
-      account_name: contosodatalake
-      account_key_env: DATABRICKS_ABFSS_KEY
-    storage_options:
-      use_ssl: true
-      azure_cloud: AzurePublicCloud
+      account_name_env: AZURE_STORAGE_ACCOUNT_NAME
+      account_key_env: AZURE_STORAGE_ACCOUNT_KEY
+    storage_options: {}
+  s3:
+    credentials: {}
+    storage_options: {}
+  gs:
+    credentials: {}
+    storage_options: {}
 """,
     overwrite=True,
 )
 ```
 
-### 3.2 Dataset `toy_customers`
+### 4.2 Dataset `toy_customers`
 
 ```python
 dbutils.fs.put(
     f"{base_dir}/datasets/toy_customers.yml",
     """id: toy_customers
-description: Toy customer sample configured for DBFS templates.
+description: Toy customer sample configured for Azure Databricks.
 layers:
   raw:
     compute:
@@ -97,12 +112,13 @@ layers:
         options:
           header: true
         uris:
-          abfss: abfss://landing@contosodatalake.dfs.core.windows.net/raw/toy_customers/input/
+          abfss: abfss://landing@<ACCOUNT>.dfs.core.windows.net/raw/toy/customers/source/
+        local_fallback: file:/tmp/raw/toy_customers/source/
       sink:
         format: delta
         mode: overwrite
         uris:
-          abfss: abfss://landing@contosodatalake.dfs.core.windows.net/raw/toy_customers/landing/
+          abfss: abfss://landing@<ACCOUNT>.dfs.core.windows.net/raw/toy/customers/
   bronze:
     compute:
       engine: spark
@@ -111,9 +127,9 @@ layers:
         format: delta
         mode: overwrite
         options:
-          checkpointLocation: abfss://bronze@contosodatalake.dfs.core.windows.net/bronze/checkpoints/toy_customers/
+          checkpointLocation: abfss://landing@<ACCOUNT>.dfs.core.windows.net/_checkpoints/bronze/customers/
         uris:
-          abfss: abfss://bronze@contosodatalake.dfs.core.windows.net/bronze/toy_customers/
+          abfss: abfss://landing@<ACCOUNT>.dfs.core.windows.net/bronze/customers/
   silver:
     compute:
       engine: spark
@@ -125,9 +141,9 @@ layers:
         format: delta
         mode: overwrite
         options:
-          checkpointLocation: abfss://silver@contosodatalake.dfs.core.windows.net/silver/checkpoints/toy_customers/
+          checkpointLocation: abfss://landing@<ACCOUNT>.dfs.core.windows.net/_checkpoints/silver/customers/
         uris:
-          abfss: abfss://silver@contosodatalake.dfs.core.windows.net/silver/toy_customers/
+          abfss: abfss://landing@<ACCOUNT>.dfs.core.windows.net/silver/customers/
   gold:
     compute:
       engine: spark
@@ -136,128 +152,94 @@ layers:
         format: delta
         mode: overwrite
         uris:
-          abfss: abfss://gold@contosodatalake.dfs.core.windows.net/gold/toy_customers/
+          abfss: abfss://landing@<ACCOUNT>.dfs.core.windows.net/gold/customers/
 """,
     overwrite=True,
 )
 ```
 
-### 3.3 Configuraciones por capa
+### 4.3 Configuraciones por capa
 
 ```python
 layer_cfgs = {
-    "raw": """layer: raw
+    "raw": """dry_run: false
 environment: development
-dry_run: false
+environment_config: /dbfs/configs/datacore/env.yml
+compute:
+  engine: spark
 io:
   source:
     dataset_config: /dbfs/configs/datacore/datasets/toy_customers.yml
-    environment_config: /dbfs/configs/datacore/cfg/env.yml
-    preferred_protocol: abfss
   sink:
-    kind: spark
-    format: delta
-    mode: overwrite
     uris:
-      abfss: abfss://landing@contosodatalake.dfs.core.windows.net/raw/toy_customers/landing/
-storage:
-  abfss:
-    default_uri: abfss://landing@contosodatalake.dfs.core.windows.net/raw/toy_customers/
+      abfss: abfss://landing@<ACCOUNT>.dfs.core.windows.net/raw/toy/customers/
+    mode: overwrite
 """,
-    "bronze": """layer: bronze
+    "bronze": """dry_run: false
 environment: development
-dry_run: false
+environment_config: /dbfs/configs/datacore/env.yml
+compute:
+  engine: spark
 io:
   source:
     dataset_config: /dbfs/configs/datacore/datasets/toy_customers.yml
-    environment_config: /dbfs/configs/datacore/cfg/env.yml
-    format: delta
-    path: abfss://landing@contosodatalake.dfs.core.windows.net/raw/toy_customers/landing/
+    format: parquet
+    path: abfss://landing@<ACCOUNT>.dfs.core.windows.net/raw/toy/customers/
   sink:
-    kind: spark
-    format: delta
-    mode: overwrite
-    path: abfss://bronze@contosodatalake.dfs.core.windows.net/bronze/toy_customers/
     uris:
-      abfss: abfss://bronze@contosodatalake.dfs.core.windows.net/bronze/toy_customers/
+      abfss: abfss://landing@<ACCOUNT>.dfs.core.windows.net/bronze/customers/
     options:
-      checkpointLocation: abfss://bronze@contosodatalake.dfs.core.windows.net/bronze/checkpoints/toy_customers/
+      checkpointLocation: abfss://landing@<ACCOUNT>.dfs.core.windows.net/_checkpoints/bronze/customers/
+    mode: overwrite
+    coalesce: 1
+""",
+    "silver": """dry_run: false
+environment: development
+environment_config: /dbfs/configs/datacore/env.yml
 compute:
   engine: spark
-""",
-    "silver": """layer: silver
-environment: development
-dry_run: false
 io:
   source:
     dataset_config: /dbfs/configs/datacore/datasets/toy_customers.yml
-    environment_config: /dbfs/configs/datacore/cfg/env.yml
     format: delta
-    path: abfss://bronze@contosodatalake.dfs.core.windows.net/bronze/toy_customers/
+    path: abfss://landing@<ACCOUNT>.dfs.core.windows.net/bronze/customers/
   sink:
-    kind: spark
-    format: delta
-    mode: overwrite
-    path: abfss://silver@contosodatalake.dfs.core.windows.net/silver/toy_customers/
     uris:
-      abfss: abfss://silver@contosodatalake.dfs.core.windows.net/silver/toy_customers/
+      abfss: abfss://landing@<ACCOUNT>.dfs.core.windows.net/silver/customers/
     options:
-      checkpointLocation: abfss://silver@contosodatalake.dfs.core.windows.net/silver/checkpoints/toy_customers/
+      checkpointLocation: abfss://landing@<ACCOUNT>.dfs.core.windows.net/_checkpoints/silver/customers/
+    mode: overwrite
+""",
+    "gold": """dry_run: false
+environment: development
+environment_config: /dbfs/configs/datacore/env.yml
 compute:
   engine: spark
-dq:
-  fail_on_error: true
-  expectations:
-    - type: expect_column_to_exist
-      column: customer_id
-    - type: expect_column_to_exist
-      column: signup_ts
-""",
-    "gold": """layer: gold
-environment: development
-dry_run: false
 io:
   source:
     dataset_config: /dbfs/configs/datacore/datasets/toy_customers.yml
-    environment_config: /dbfs/configs/datacore/cfg/env.yml
     format: delta
-    path: abfss://silver@contosodatalake.dfs.core.windows.net/silver/toy_customers/
+    path: abfss://landing@<ACCOUNT>.dfs.core.windows.net/silver/customers/
   sink:
-    kind: spark
-    format: delta
-    mode: overwrite
-    path: abfss://gold@contosodatalake.dfs.core.windows.net/gold/toy_customers/
     uris:
-      abfss: abfss://gold@contosodatalake.dfs.core.windows.net/gold/toy_customers/
-compute:
-  engine: spark
+      abfss: abfss://landing@<ACCOUNT>.dfs.core.windows.net/gold/customers/
+    mode: overwrite
 """,
 }
 
-for name, content in layer_cfgs.items():
-    dbutils.fs.put(f"{base_dir}/cfg/{name}.yml", content, overwrite=True)
+for name, payload in layer_cfgs.items():
+    dbutils.fs.put(
+        f"{base_dir}/cfg/{name}.yml",
+        payload,
+        overwrite=True,
+    )
 ```
 
-## 4. Sembrar datos de entrada
+## 5. Validar y ejecutar las capas
 
-Carga un CSV mínimo en el contenedor `landing` para que la capa Raw tenga datos
-de origen.
-
-```python
-input_path = "abfss://landing@contosodatalake.dfs.core.windows.net/raw/toy_customers/input/"
-
-spark.createDataFrame(
-    [
-        ("CUST-001", "Retail", "active", "2024-01-01T08:00:00Z"),
-        ("CUST-002", "SMB", "inactive", "2024-01-05T12:30:00Z"),
-    ],
-    ["CUSTOMER_ID", "SEGMENT", "STATUS", "SIGNUP_TS"],
-).coalesce(1).write.mode("overwrite").option("header", True).csv(input_path)
-```
-
-## 5. Validar y ejecutar cada capa
-
-Utiliza `%sh` para invocar la CLI sobre los archivos almacenados en `/dbfs`.
+Usa celdas `%sh` para invocar `prodi` directamente desde el driver. Cada comando
+trabaja con rutas `/dbfs/...` que apuntan a los archivos publicados en el paso
+anterior.
 
 ```bash
 %sh
@@ -276,24 +258,49 @@ prodi run-layer gold -c /dbfs/configs/datacore/cfg/gold.yml
 ```
 
 Cada ejecución valida automáticamente el YAML, carga el dataset y procesa los
-sinks definidos en ABFSS.
+Delta en la cuenta `<ACCOUNT>`.
 
-## 6. Verificar la salida Delta
+## 6. Verificar la salida Gold
 
-Después de ejecutar `silver` o `gold`, inspecciona las tablas Delta resultantes
-con Spark para confirmar que la canalización generó datos.
+Con las cuatro capas finalizadas, lee y muestra el Delta consolidado:
 
 ```python
-silver_df = spark.read.format("delta").load(
-    "abfss://silver@contosodatalake.dfs.core.windows.net/silver/toy_customers/"
-)
-silver_df.show()
-
-gold_df = spark.read.format("delta").load(
-    "abfss://gold@contosodatalake.dfs.core.windows.net/gold/toy_customers/"
-)
-gold_df.show()
+gold_path = "abfss://landing@<ACCOUNT>.dfs.core.windows.net/gold/customers/"
+df = spark.read.format("delta").load(gold_path)
+display(df)
+print(f"Total de registros: {df.count()}")
 ```
 
-Las rutas coinciden con los `uris.abfss` declarados en el dataset y las
-configuraciones por capa, garantizando coherencia entre documentación y código.
+## 7. Smoke test resumido
+
+Coloca las celdas siguientes al final del notebook para realizar un smoke test
+rápido después de un cambio en configuraciones o plantillas.
+
+```python
+# %pip install -e lib/datacore
+# dbutils.fs.put(...)
+# spark.conf.set(...)
+```
+
+```bash
+%sh
+prodi validate -c /dbfs/configs/datacore/cfg/raw.yml
+prodi validate -c /dbfs/configs/datacore/cfg/bronze.yml
+prodi validate -c /dbfs/configs/datacore/cfg/silver.yml
+prodi validate -c /dbfs/configs/datacore/cfg/gold.yml
+prodi run-layer raw -c /dbfs/configs/datacore/cfg/raw.yml
+prodi run-layer bronze -c /dbfs/configs/datacore/cfg/bronze.yml
+prodi run-layer silver -c /dbfs/configs/datacore/cfg/silver.yml
+prodi run-layer gold -c /dbfs/configs/datacore/cfg/gold.yml
+```
+
+```python
+df = spark.read.format("delta").load(
+    "abfss://landing@<ACCOUNT>.dfs.core.windows.net/gold/customers/"
+)
+display(df)
+df.count()
+```
+
+Si todos los comandos se ejecutan sin errores y `df.count()` devuelve un valor
+mayor a cero, el flujo por capas quedó correctamente configurado en Databricks.

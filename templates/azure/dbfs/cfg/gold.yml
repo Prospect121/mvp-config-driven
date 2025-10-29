@@ -1,18 +1,16 @@
-layer: gold
-environment: development
+# yamllint disable rule:line-length
+---
 dry_run: false
+environment: development
+environment_config: /dbfs/configs/datacore/env.yml
+compute:
+  engine: spark
 io:
   source:
     dataset_config: /dbfs/configs/datacore/datasets/toy_customers.yml
-    environment_config: /dbfs/configs/datacore/cfg/env.yml
     format: delta
-    path: abfss://silver@contosodatalake.dfs.core.windows.net/silver/toy_customers/
+    path: abfss://landing@<ACCOUNT>.dfs.core.windows.net/silver/customers/
   sink:
-    kind: spark
-    format: delta
-    mode: overwrite
-    path: abfss://gold@contosodatalake.dfs.core.windows.net/gold/toy_customers/
     uris:
-      abfss: abfss://gold@contosodatalake.dfs.core.windows.net/gold/toy_customers/
-compute:
-  engine: spark
+      abfss: abfss://landing@<ACCOUNT>.dfs.core.windows.net/gold/customers/
+    mode: overwrite
