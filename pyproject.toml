@@ -33,11 +33,12 @@ pythonpath = ["src"]
 
 [tool.coverage.run]
 branch = true
-source = ["src/datacore"]
+source = ["src/datacore", "src/mvp_config_driven"]
 
 [tool.coverage.report]
 fail_under = 60
 include = [
     "src/datacore/layers/*",
     "src/datacore/pipeline/*",
+    "src/mvp_config_driven/core/*",
 ]
