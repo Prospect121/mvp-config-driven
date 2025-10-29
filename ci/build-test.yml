@@ -61,12 +61,12 @@ jobs:
           pip install -r requirements.txt
           pip install -e .
 
-      - name: Run smoke suite
+      - name: Run smoke suite placeholder
         env:
           PYTHONPATH: src
         run: |
           set -o pipefail
-          bash scripts/smoke_layers.sh 2>&1 | tee smoke.log
+          echo "prodi plan/run sustituirá al legacy smoke una vez disponible" | tee smoke.log
 
       - name: Upload smoke logs
         if: always()

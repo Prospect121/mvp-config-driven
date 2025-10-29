@@ -26,4 +26,4 @@ with open("samples/toy_customers.csv", "w", newline="", encoding="utf-8") as han
 PY
 ```
 
-El dataset se referencia desde `cfg/<layer>/example.yml` para mantener las ejecuciones en modo `dry_run` sin dependencias externas.
+El dataset se integrará en los planes generados por `prodi plan/run`; mientras tanto, los `cfg/<layer>/example.yml` lo referencian en modo `dry_run` para pruebas manuales controladas.

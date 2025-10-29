@@ -778,11 +778,10 @@ Ejemplos de uso:
         else:
             logger.info("1. Copiar archivos a MinIO/S3:")
             logger.info("   mc cp --recursive data/casos-uso/ local/raw/casos-uso/")
-        logger.info("2. Ejecutar capas con el CLI:")
-        logger.info("   prodi run-layer raw    -c cfg/raw/example.yml")
-        logger.info("   prodi run-layer bronze -c cfg/bronze/example.yml")
-        logger.info("   prodi run-layer silver -c cfg/silver/example.yml")
-        logger.info("   prodi run-layer gold   -c cfg/gold/example.yml")
+        logger.info("2. Preparar plan de ejecución con la futura CLI:")
+        logger.info("   prodi plan <pipeline> --output <ruta>    # pendiente de GA")
+        logger.info("   prodi run <pipeline.plan.yml>            # reemplazará al flujo legacy")
+        logger.info("   (opcional) prodi run-layer <layer> -c cfg/<layer>/example.yml  # fallback temporal")
         logger.info("3. Validar resultados y métricas de rendimiento")
         
     except KeyboardInterrupt:

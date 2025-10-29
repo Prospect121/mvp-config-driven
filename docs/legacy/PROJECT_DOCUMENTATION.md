@@ -1,5 +1,7 @@
 # Documentación Técnica del MVP Config-Driven
 
+> ⚠️ Documento legacy. Será sustituido por la CLI `prodi plan/run`; conserva referencias a `cfg/<layer>/example.yml`, `cfg/pipelines/example.yml` y `scripts/smoke_layers.sh`.
+
 Este documento resume la arquitectura vigente tras la eliminación del monolito pipelines legacy y el retiro definitivo de artefactos Docker. Todo el flujo se opera mediante la CLI `prodi` y configuraciones declarativas por capa.
 
 ## Arquitectura por capas

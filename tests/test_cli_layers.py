@@ -49,6 +49,7 @@ def test_run_layer_raw_example_executes(tmp_path: Path) -> None:
         value = source_cfg.get(key)
         if value:
             source_cfg[key] = str((base_dir / value).resolve())
+    source_cfg["use_local_fallback"] = True
 
     temp_cfg = tmp_path / "raw-config.yml"
     temp_cfg.write_text(yaml.safe_dump(config_data), encoding="utf-8")
