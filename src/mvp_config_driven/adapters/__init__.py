@@ -35,6 +35,13 @@ def _ensure_defaults() -> None:
     else:
         register_adapter_factory("aws", _build_aws)
 
+    try:  # Optional dependency guard - Azure adapters require azure SDKs
+        from .azure import build_default_adapters as _build_azure
+    except ImportError:  # pragma: no cover - azure optional in some deployments
+        pass
+    else:
+        register_adapter_factory("azure", _build_azure)
+
     _INITIALIZED = True
 
 
