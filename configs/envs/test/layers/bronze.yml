@@ -1,0 +1,22 @@
+project: mvp-config-driven
+environment: test
+platform: aws
+layer: bronze
+datasets:
+  - name: customers_bronze
+    layer: bronze
+    source:
+      type: storage
+      format: parquet
+      uri: "s3://mvp-raw/customers/_landing/"
+      backend: aws
+    transform:
+      sql:
+        - "SELECT *, current_timestamp() AS _ingestion_ts FROM _src"
+    sink:
+      type: storage
+      format: parquet
+      uri: "s3://mvp-bronze/customers/"
+      backend: aws
+    incremental:
+      mode: append

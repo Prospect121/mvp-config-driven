@@ -1,0 +1,6 @@
+platform: azure
+checkpoint_base: "abfss://checkpoints@example.dfs.core.windows.net/datacore"
+extra_conf:
+  spark.hadoop.fs.azure.account.auth.type.example.dfs.core.windows.net: OAuth
+  spark.hadoop.fs.azure.account.oauth.provider.type.example.dfs.core.windows.net: org.apache.hadoop.fs.azurebfs.oauth2.ClientCredsTokenProvider
+  spark.hadoop.fs.azure.account.oauth2.client.id.example.dfs.core.windows.net: ${AZURE_CLIENT_ID}

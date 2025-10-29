@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["project", "environment", "platform", "datasets"],
+  "properties": {
+    "project": {"type": "string"},
+    "environment": {"enum": ["dev", "test", "prod"]},
+    "platform": {"enum": ["azure", "aws", "gcp"]},
+    "spark": {
+      "type": "object",
+      "properties": {
+        "shuffle_partitions": {"type": "integer"},
+        "extra_conf": {"type": "object", "additionalProperties": {"type": ["string", "number", "boolean"]}}
+      },
+      "additionalProperties": false
+    },
+    "datasets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "layer", "source", "sink"],
+        "properties": {
+          "name": {"type": "string"},
+          "layer": {"enum": ["raw", "bronze", "silver", "gold"]},
+          "source": {"type": "object"},
+          "transform": {"type": "object"},
+          "sink": {"type": "object"},
+          "incremental": {
+            "type": "object",
+            "properties": {
+              "mode": {"enum": ["append", "merge"]},
+              "keys": {"type": "array", "items": {"type": "string"}},
+              "watermark_column": {"type": "string"}
+            },
+            "additionalProperties": false
+          },
+          "streaming": {
+            "type": "object",
+            "properties": {
+              "enabled": {"type": "boolean"},
+              "trigger": {"type": "string"}
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": false
+}

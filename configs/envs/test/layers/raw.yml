@@ -1,0 +1,20 @@
+project: mvp-config-driven
+environment: test
+platform: aws
+layer: raw
+datasets:
+  - name: customers_raw
+    layer: raw
+    source:
+      type: storage
+      format: csv
+      uri: "s3://mvp-raw/customers/customers.csv"
+      options:
+        header: "true"
+    sink:
+      type: storage
+      format: parquet
+      uri: "s3://mvp-raw/customers/_landing/"
+      backend: aws
+    incremental:
+      mode: append

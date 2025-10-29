@@ -1,0 +1,4 @@
+platform: aws
+checkpoint_base: "s3://mvp-checkpoints/datacore"
+extra_conf:
+  spark.hadoop.fs.s3a.aws.credentials.provider: com.amazonaws.auth.DefaultAWSCredentialsProviderChain

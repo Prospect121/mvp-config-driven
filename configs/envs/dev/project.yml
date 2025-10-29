@@ -1,0 +1,79 @@
+project: mvp-config-driven
+environment: dev
+platform: local
+spark:
+  shuffle_partitions: 1
+datasets:
+  - name: customers_raw
+    layer: raw
+    source:
+      type: storage
+      format: csv
+      uri: "examples/data/customers.csv"
+      options:
+        header: "true"
+        inferSchema: "true"
+    sink:
+      type: storage
+      format: parquet
+      uri: "./data/dev/raw/customers"
+      backend: local
+    incremental:
+      mode: append
+  - name: customers_bronze
+    layer: bronze
+    source:
+      type: storage
+      format: parquet
+      uri: "./data/dev/raw/customers"
+      backend: local
+    transform:
+      sql:
+        - "SELECT id, name, email, country, amount, current_timestamp() AS ingestion_ts FROM _src"
+      validation:
+        expect_not_null: ["id", "email"]
+    sink:
+      type: storage
+      format: parquet
+      uri: "./data/dev/bronze/customers"
+      backend: local
+    incremental:
+      mode: append
+  - name: customers_silver
+    layer: silver
+    source:
+      type: storage
+      format: parquet
+      uri: "./data/dev/bronze/customers"
+      backend: local
+    transform:
+      sql:
+        - "SELECT id, name, email, country, CAST(amount AS DOUBLE) AS amount, date(current_timestamp()) AS ingestion_date FROM _src"
+      validation:
+        expect_not_null: ["id", "email"]
+    sink:
+      type: storage
+      format: parquet
+      uri: "./data/dev/silver/customers"
+      backend: local
+    incremental:
+      mode: append
+  - name: customers_gold
+    layer: gold
+    source:
+      type: storage
+      format: parquet
+      uri: "./data/dev/silver/customers"
+      backend: local
+    transform:
+      sql:
+        - "SELECT country, COUNT(DISTINCT id) AS customers, ROUND(SUM(amount), 2) AS total_amount FROM _src GROUP BY country"
+      validation:
+        expect_not_null: ["country"]
+    sink:
+      type: storage
+      format: parquet
+      uri: "./data/dev/gold/customers"
+      backend: local
+    incremental:
+      mode: overwrite

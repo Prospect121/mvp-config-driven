@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "datacore"
+version = "1.0.0"
+description = "Multicloud config-driven ETL/ELT framework"
+authors = [{name = "Prospect121"}]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "pyspark>=3.4.0",
+  "pyyaml>=6.0",
+  "jsonschema>=4.20",
+  "requests>=2.31",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.4",
+  "pytest-cov>=4.1",
+  "ruff>=0.4",
+  "black>=24.3",
+]
+
+[project.scripts]
+prodi = "datacore.cli.main:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["datacore*"]
+
+[tool.black]
+line-length = 100
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = [
+  "tests",
+]
+addopts = "-ra --strict-markers"
+markers = [
+  "integration: pruebas que requieren Spark + MinIO",
+]
