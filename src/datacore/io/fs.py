@@ -54,8 +54,17 @@ class _StagedData:
 def _normalize_protocol(protocol: Optional[str]) -> str:
     if not protocol:
         return "file"
-    if protocol == "s3a":
+    if protocol in {"s3a"}:
         return "s3"
+    # Azure Data Lake
+    if protocol in {"abfs", "abfss"}:
+        return "abfss"
+    # GCS
+    if protocol in {"gs", "gcs"}:
+        return "gcs"
+    # Databricks Filesystem (no nativo en fsspec)
+    if protocol == "dbfs":
+        return "dbfs"
     return protocol
 
 
@@ -208,6 +217,12 @@ def storage_options_from_env(uri: str, env_cfg: Optional[Dict[str, Any]] = None)
             opts["tenant_id"] = tenant_id
             opts["client_id"] = client_id
             opts["client_secret"] = client_secret
+        # Validación clara: requiere al menos una credencial viable
+        if not (opts.get("account_key") or opts.get("sas_token") or (opts.get("tenant_id") and opts.get("client_id") and opts.get("client_secret"))):
+            raise ValueError(
+                "ABFSS requiere 'account_key' o 'sas_token' o credenciales OAuth (tenant_id/client_id/client_secret). "
+                "Verifica tu env.yml → storage.abfss.credentials.* y variables de entorno."
+            )
 
     elif protocol == "gs":
         token = credentials_cfg.get("token")
@@ -235,7 +250,11 @@ def storage_options_from_env(uri: str, env_cfg: Optional[Dict[str, Any]] = None)
 
 
 def _filesystem(uri: str, storage_options: Optional[Dict[str, Any]] = None):
-    protocol, path = _split_uri(uri)
+    # Mapear DBFS a filesystem local /dbfs (permitido en Databricks)
+    if protocol == "dbfs":
+        fs = fsspec.filesystem("file")
+        local_path = f"/dbfs/{path.lstrip('/')}"
+        return fs, local_path
     fs = fsspec.filesystem(protocol, **(storage_options or {}))
     return fs, path
 
