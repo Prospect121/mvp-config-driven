@@ -42,6 +42,13 @@ def _ensure_defaults() -> None:
     else:
         register_adapter_factory("azure", _build_azure)
 
+    try:  # Optional dependency guard - GCP adapters require google SDKs
+        from .gcp import build_default_adapters as _build_gcp
+    except ImportError:  # pragma: no cover - google cloud optional in some deployments
+        pass
+    else:
+        register_adapter_factory("gcp", _build_gcp)
+
     _INITIALIZED = True
 
 
