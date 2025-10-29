@@ -1,9 +1,0 @@
-steps:
-  - layer: raw
-    config: ../raw/example.yml
-  - layer: bronze
-    config: ../bronze/example.yml
-  - layer: silver
-    config: ../silver/example.yml
-  - layer: gold
-    config: ../gold/example.yml
