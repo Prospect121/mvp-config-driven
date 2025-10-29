@@ -5,19 +5,10 @@ paths:
   dataset: config/datasets/examples/toy_customers.yml
   environment: config/env.yml
   database: config/database.yml
-transform:
-  steps:
-    - name: sanitize_phone_numbers
-      params:
-        country: CO
-    - name: compute_churn_flags
-      params:
-        window_days: 30
-dq:
-  expectations:
-    require_not_null:
-      - customer_id
-      - signup_ts
+compute:
+  engine: spark
+  options:
+    spark.sql.session.timeZone: UTC
 io:
   source:
     dataset_config: config/datasets/examples/toy_customers.yml
@@ -25,3 +16,14 @@ io:
     format: delta
     options:
       path: s3://example-silver/tables/customers/
+transform:
+  steps:
+    - name: normalize_columns
+      params:
+        mappings:
+          CUSTOMER_ID: customer_id
+          SEGMENT: segment
+          STATUS: status
+          SIGNUP_TS: signup_ts
+  sql:
+    - SELECT * FROM __THIS__

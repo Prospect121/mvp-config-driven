@@ -1,0 +1,32 @@
+{
+  "name": "prodi-smoke",
+  "max_concurrent_runs": 1,
+  "max_retries": 1,
+  "timeout_seconds": 1800,
+  "job_clusters": [
+    {
+      "job_cluster_key": "prodi-smoke-cluster",
+      "new_cluster": {
+        "spark_version": "14.3.x-scala2.12",
+        "node_type_id": "Standard_DS3_v2",
+        "num_workers": 1,
+        "spark_env_vars": {
+          "AZURE_STORAGE_ACCOUNT_NAME": "{{secrets/prodi-scope/AZURE_STORAGE_ACCOUNT_NAME}}",
+          "AZURE_STORAGE_ACCOUNT_KEY": "{{secrets/prodi-scope/AZURE_STORAGE_ACCOUNT_KEY}}",
+          "TZ": "America/Bogota"
+        }
+      }
+    }
+  ],
+  "tasks": [
+    {
+      "task_key": "prodi-smoke-notebook",
+      "description": "Execute RAW→BRONZE→SILVER smoke validation",
+      "notebook_task": {
+        "notebook_path": "/Shared/prodi_smoke_test"
+      },
+      "job_cluster_key": "prodi-smoke-cluster",
+      "timeout_seconds": 1800
+    }
+  ]
+}

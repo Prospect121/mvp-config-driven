@@ -1,0 +1,32 @@
+dry_run: false
+environment: development
+environment_config: dbfs:/FileStore/prodi/cfg/env.yml
+compute:
+  engine: spark
+io:
+  source:
+    path: abfss://bronze@__ACCOUNT__.dfs.core.windows.net/tables/customers_raw/
+    format: delta
+  sink:
+    format: delta
+    uris:
+      abfss: abfss://silver@__ACCOUNT__.dfs.core.windows.net/tables/customers/
+transform:
+  steps:
+    - name: normalize_columns
+      params:
+        mappings:
+          CUSTOMER_ID: customer_id
+          SEGMENT: segment
+          STATUS: status
+  standardization:
+    timestamp_columns:
+      - signup_ts
+dq:
+  expectations:
+    min_row_count: 1
+    expect_columns_to_exist:
+      - customer_id
+      - segment
+      - status
+  fail_on_error: true

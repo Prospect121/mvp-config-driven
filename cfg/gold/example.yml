@@ -8,7 +8,7 @@ paths:
 compute:
   engine: spark
   options:
-    spark.sql.sources.partitionOverwriteMode: dynamic
+    spark.sql.session.timeZone: UTC
 io:
   source:
     dataset_config: config/datasets/examples/toy_customers.yml
@@ -16,5 +16,6 @@ io:
     format: delta
     options:
       path: s3://example-gold/marts/customers/
-    catalog:
-      database: analytics
+transform:
+  sql:
+    - SELECT * FROM __THIS__
