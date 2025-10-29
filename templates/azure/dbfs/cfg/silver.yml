@@ -1,0 +1,27 @@
+layer: silver
+environment: development
+dry_run: false
+io:
+  source:
+    dataset_config: /dbfs/configs/datacore/datasets/toy_customers.yml
+    environment_config: /dbfs/configs/datacore/cfg/env.yml
+    format: delta
+    path: abfss://bronze@contosodatalake.dfs.core.windows.net/bronze/toy_customers/
+  sink:
+    kind: spark
+    format: delta
+    mode: overwrite
+    path: abfss://silver@contosodatalake.dfs.core.windows.net/silver/toy_customers/
+    uris:
+      abfss: abfss://silver@contosodatalake.dfs.core.windows.net/silver/toy_customers/
+    options:
+      checkpointLocation: abfss://silver@contosodatalake.dfs.core.windows.net/silver/checkpoints/toy_customers/
+compute:
+  engine: spark
+dq:
+  fail_on_error: true
+  expectations:
+    - type: expect_column_to_exist
+      column: customer_id
+    - type: expect_column_to_exist
+      column: signup_ts

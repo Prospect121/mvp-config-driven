@@ -1,0 +1,20 @@
+layer: bronze
+environment: development
+dry_run: false
+io:
+  source:
+    dataset_config: /dbfs/configs/datacore/datasets/toy_customers.yml
+    environment_config: /dbfs/configs/datacore/cfg/env.yml
+    format: delta
+    path: abfss://landing@contosodatalake.dfs.core.windows.net/raw/toy_customers/landing/
+  sink:
+    kind: spark
+    format: delta
+    mode: overwrite
+    path: abfss://bronze@contosodatalake.dfs.core.windows.net/bronze/toy_customers/
+    uris:
+      abfss: abfss://bronze@contosodatalake.dfs.core.windows.net/bronze/toy_customers/
+    options:
+      checkpointLocation: abfss://bronze@contosodatalake.dfs.core.windows.net/bronze/checkpoints/toy_customers/
+compute:
+  engine: spark

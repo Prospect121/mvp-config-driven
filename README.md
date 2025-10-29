@@ -1,76 +1,85 @@
 # MVP Config-Driven Pipeline
 
-Plataforma modular de ingesta y transformación basada en configuración. Expone una CLI única (`prodi`) para ejecutar capas Raw → Bronze → Silver → Gold sin dependencias de orquestadores monolíticos.
+Plataforma modular para ejecutar pipelines Spark por capas (`raw` → `bronze` →
+`silver` → `gold`) declarados en YAML. La CLI `prodi` normaliza las
+configuraciones con `LayerRuntimeConfigModel` y aplica el contrato real definido
+por `LayerConfig.from_dict` y `build_context`.
 
-## Inicio rápido
+## Contrato de configuración
 
-1. **Requisitos**
-   - Python 3.10+ (probado en 3.10–3.12)
-   - Java y PySpark disponibles en el `PATH`
-2. **Entorno**
-   - Windows: `python -m venv .venv && .\.venv\Scripts\activate`
-   - Linux/macOS: `python -m venv .venv && source .venv/bin/activate`
-   - `pip install -r requirements.txt`
-3. **Prueba de humo local**
-   - `prodi run-layer raw -c cfg/raw/example.yml`
-   - Repetir con `bronze`, `silver` y `gold` para validar el flujo completo usando los datasets sintéticos de `samples/`.
-   - El ejemplo de Raw escribe `parquet` en `data/raw/toy_customers/`; las capas superiores permanecen en `dry_run` para evitar side-effects.
+Cuando una capa se ejecuta con `dry_run: false` la configuración **debe**
+incluir referencias absolutas a los artefactos publicados en almacenamiento
+compartido:
 
-## Validación de configuraciones y estado incremental
+- `dataset_config`: ruta YAML con la definición de dataset. Se resuelve desde
+  `io.source.dataset_config` o `io.source.dataset`.
+- `environment_config`: ruta YAML con la configuración de entorno. Se busca en
+  `io.source.environment_config`, `io.source.environment`, o en la raíz como
+  `environment_config`/`env_config`.
+- `database_config`: obligatorio sólo cuando la capa `gold` publica metadatos en
+  bases de datos. Se ubica en `io.sink.database_config` o `io.sink.database`.
 
-- `prodi validate -c cfg/finance/raw/transactions_http.yml` ejecuta únicamente la validación de esquema sobre un YAML.
-- Todos los comandos aceptan `--dq-fail-on-error/--dq-no-fail-on-error` para sobreescribir la severidad efectiva de los checks.
-- Los watermarks incrementales se persisten automáticamente en `data/_state/<state_id>.json`; basta con declarar `incremental.watermark.state_id` en cada fuente para reutilizar el último valor exitoso.
+Durante la construcción del contexto, `build_context` valida que las rutas
+apuntan a archivos reales, migra el dataset con `DatasetConfigModel` y habilita
+el administrador de base de datos cuando procede. Si falta alguno de los
+artículos anteriores la ejecución falla antes de tocar datos.
 
-### Autenticación soportada
+## Plantillas para Azure Databricks
 
-| Bloque (`io.source`) | Tipo (`auth.type`)         | Uso previsto                                                         |
-| -------------------- | -------------------------- | -------------------------------------------------------------------- |
-| HTTP                 | `bearer_env`               | Inserta `Authorization: Bearer <token>` leyendo la variable `env`.    |
-|                      | `api_key_header`           | Configura el header indicado con el valor tomado del entorno.        |
-|                      | `basic_env`                | Resuelve `username_env`/`password_env` sin escribir secretos en YAML. |
-|                      | `oauth2_client_credentials`| Ejecuta el flujo client-credentials (`token_url`, `scope`, timeout).  |
-| JDBC                 | `managed_identity`         | Enciende `azure.identity.auth.type=ManagedIdentity`.                  |
-|                      | `basic_env`                | Usa credenciales almacenadas en variables de entorno.                |
+El directorio `templates/azure/dbfs/` contiene una versión "copy-paste" de los
+archivos necesarios para correr la cadena de capas sobre Databricks y ABFSS:
 
-## Política de no-Docker
+- `cfg/env.yml`: variables de entorno y credenciales `abfss` leídas desde
+  Databricks (`DATABRICKS_ABFSS_KEY`).
+- `datasets/toy_customers.yml`: dataset mínimo con rutas `abfss://` por capa y
+  checkpoints declarados donde aplica.
+- `cfg/raw.yml`, `cfg/bronze.yml`, `cfg/silver.yml`, `cfg/gold.yml`: ejemplos de
+  configuración por capa usando `/dbfs/configs/datacore/...` para las rutas
+  `dataset_config`/`environment_config` y `abfss://` para entradas y salidas.
 
-El repositorio ya no contiene archivos de build Docker ni manifests docker compose. CI falla si reaparecen artefactos bajo `docker/`, `.docker/` o manifests de build/compose. Las ejecuciones deben empaquetarse como wheel (`python -m build`) y desplegarse en la plataforma de elección.
+Todos los sinks usan `uris.abfss` y `checkpointLocation` cuando corresponde para
+eliminar dependencias en `options.path`. Las rutas de datos emplean la misma
+cuenta y contenedores (`landing`, `bronze`, `silver`, `gold`) para facilitar el
+cableado en entornos reales.
 
-## Credenciales por identidad
+## Ejecución guiada
 
-- **AWS**: los YAML `cfg/*/aws.prod.yml` asumen que los jobs corren con un rol IAM asociado a la instancia/servicio. El archivo `config/env.aws.prod.yml` habilita TLS (`use_ssl: true`) y firma SigV4 sin exponer llaves.
-- **Azure**: las variantes `cfg/*/azure.prod.yml` se autentican mediante Managed Identity; `config/env.azure.prod.yml` sólo declara `auth: managed_identity` y opciones TLS.
-- **GCP**: las configuraciones `cfg/*/gcp.prod.yml` dependen de cuentas de servicio sin llaves gracias a Workload Identity (`config/env.gcp.prod.yml`).
+La guía detallada en [`docs/azure-databricks.md`](docs/azure-databricks.md)
+explica cómo:
 
-## Ejecución por capa con CLI
+1. Instalar `prodi` desde el subdirectorio `lib/datacore` del repositorio usando
+   `%pip install` en un notebook de Databricks.
+2. Publicar las plantillas anteriores en DBFS con `dbutils.fs.put`.
+3. Configurar el acceso a ABFSS con account key (y alternativa con Service
+   Principal).
+4. Validar cada capa con `prodi validate -c /dbfs/...` y ejecutar `prodi
+   run-layer` apuntando a los YAML en DBFS.
+5. Leer los Delta resultantes desde Spark para verificar la salida.
 
-- Las configuraciones `cfg/<layer>/example.yml` apuntan al dataset de humo `samples/toy_customers.csv`. Raw ya ejecuta la ingesta real (puede cambiarse a Spark ajustando `compute.kind`), mientras que Bronze/Silver/Gold mantienen `dry_run` por defecto.
-- `prodi run-layer <layer>` valida esquema, reglas de calidad y escritura de cada capa de forma aislada.
-- El pipeline declarativo `cfg/pipelines/example.yml` encadena los mismos YAML y puede ejecutarse con `prodi run-pipeline -p cfg/pipelines/example.yml`.
-- Para orquestación externa, ver `docs/run/` (Databricks, AWS Glue/EMR, Dataproc, Azure Synapse/ADF). Los manifiestos en `docs/run/jobs/` muestran cómo invocar el wheel con argumentos `prodi run-layer`.
-- Forzar `PRODI_FORCE_DRY_RUN=1` permite validar configuraciones productivas (`cfg/*/*.prod.yml`) sin ejecutar escrituras reales; este mismo override se usa en CI (`smoke-prod`).
+El tutorial incluye fragmentos listos para copiar/pegar que sincronizan las
+rutas de configuración con los ejemplos del repositorio.
 
-## Documentación clave
+## Utilidades de la CLI
 
-- `docs/PROJECT_DOCUMENTATION.md`: arquitectura, contratos y troubleshooting.
-- `docs/STABILIZATION_REPORT.md`: estado de salud y guardas vigentes.
-- Notebooks en `docs/` para exploración rápida del modelo de capas.
+- `prodi validate -c <cfg>` valida un YAML según los modelos de Pydantic sin
+  ejecutar la capa.
+- `prodi run-layer <layer> -c <cfg>` normaliza, aplica overrides de calidad y
+  ejecuta la capa solicitada.
+- `prodi run-pipeline -p <pipeline.yml>` encadena varias capas reutilizando el
+  contrato anterior.
 
-## Módulos relevantes
+## Estado del repositorio
 
-- `src/datacore/cli.py`: comandos `prodi run-layer` y utilidades de orquestación.
-- `src/datacore/io/*`: adaptadores y lecturas multi-protocolo (fsspec/pandas/polars/spark).
-- `src/datacore/quality/*`: reglas y cuarentena declarativa.
-- `src/datacore/catalog/*`: normalización de metadatos entre capas.
-- `tools/list_io.py`, `tools/check_cross_layer.py`: verificaciones automáticas de I/O y aislamiento.
+- `src/datacore/` concentra los módulos de la CLI y la lógica por capa.
+- `templates/azure/dbfs/` es la fuente de verdad para ejecuciones en Databricks
+  + ABFSS.
+- `docs/azure-databricks.md` sustituye la documentación legacy basada en
+  monolitos o rutas locales.
+- La política de **no Docker** se mantiene: cualquier manifest heredado debe
+  eliminarse.
 
-## Seguridad y cumplimiento
+## Pruebas y CI
 
-- `tests/test_security_invariants.py` bloquea intentos de deshabilitar TLS o registrar secretos.
-- `tools/audit_cleanup.py --check` falla si aparecen rutas prohibidas (legacy, pipelines heredados, Docker) o referencias a cuarentenas eliminadas.
-- `tools/list_io.py --json` genera un inventario reproducible de accesos a almacenamiento.
-
-## Limpieza continua
-
-No existe carpeta `legacy`; cualquier activo obsoleto se elimina definitivamente. Los pasos de CI (`ci/lint.yml`, `ci/build-test.yml`) ejecutan `tools/audit_cleanup.py --check` y validaciones adicionales para asegurar que la base permanezca libre de monolitos y artefactos Docker.
+`pytest` cubre los invariantes de esquema y que los ejemplos mantienen `dry_run`
+donde corresponde. Ejecuta `pytest` y `prodi validate` sobre tus configuraciones
+antes de integrar cambios.

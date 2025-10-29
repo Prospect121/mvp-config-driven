@@ -1,0 +1,17 @@
+layer: raw
+environment: development
+dry_run: false
+io:
+  source:
+    dataset_config: /dbfs/configs/datacore/datasets/toy_customers.yml
+    environment_config: /dbfs/configs/datacore/cfg/env.yml
+    preferred_protocol: abfss
+  sink:
+    kind: spark
+    format: delta
+    mode: overwrite
+    uris:
+      abfss: abfss://landing@contosodatalake.dfs.core.windows.net/raw/toy_customers/landing/
+storage:
+  abfss:
+    default_uri: abfss://landing@contosodatalake.dfs.core.windows.net/raw/toy_customers/

@@ -1,0 +1,54 @@
+id: toy_customers
+description: Toy customer sample configured for DBFS templates.
+layers:
+  raw:
+    compute:
+      engine: spark
+      options:
+        spark.sql.shuffle.partitions: 1
+    io:
+      source:
+        format: csv
+        options:
+          header: true
+        uris:
+          abfss: abfss://landing@contosodatalake.dfs.core.windows.net/raw/toy_customers/input/
+      sink:
+        format: delta
+        mode: overwrite
+        uris:
+          abfss: abfss://landing@contosodatalake.dfs.core.windows.net/raw/toy_customers/landing/
+  bronze:
+    compute:
+      engine: spark
+    io:
+      sink:
+        format: delta
+        mode: overwrite
+        options:
+          checkpointLocation: abfss://bronze@contosodatalake.dfs.core.windows.net/bronze/checkpoints/toy_customers/
+        uris:
+          abfss: abfss://bronze@contosodatalake.dfs.core.windows.net/bronze/toy_customers/
+  silver:
+    compute:
+      engine: spark
+    dq:
+      expectations:
+        min_row_count: 1
+    io:
+      sink:
+        format: delta
+        mode: overwrite
+        options:
+          checkpointLocation: abfss://silver@contosodatalake.dfs.core.windows.net/silver/checkpoints/toy_customers/
+        uris:
+          abfss: abfss://silver@contosodatalake.dfs.core.windows.net/silver/toy_customers/
+  gold:
+    compute:
+      engine: spark
+    io:
+      sink:
+        format: delta
+        mode: overwrite
+        uris:
+          abfss: abfss://gold@contosodatalake.dfs.core.windows.net/gold/toy_customers/
