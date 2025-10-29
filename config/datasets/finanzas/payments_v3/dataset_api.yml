@@ -1,8 +1,8 @@
 # Dataset API de ejemplo: payments_v3
 # Organización: este archivo comparte carpeta con schema.yml y transforms.yml
 #
-# Uso: ejecutar el job con este dataset_api.yml
-#   prodi run-layer raw -c cfg/raw/example.yml
+# Uso: este dataset se empaquetará vía `prodi plan/run`; hasta entonces puede
+#   ejercitarse con `cfg/raw/example.yml` en modo `dry_run`.
 
 id: payments_v3
 description: "Pagos - v3 vía API con staging JSONL"

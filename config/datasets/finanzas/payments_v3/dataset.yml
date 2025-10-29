@@ -2,8 +2,8 @@
 # Organización: este archivo, junto con schema.yml y transforms.yml,
 # vive en la carpeta dedicada config/datasets/finanzas/payments_v3/.
 #
-# Uso: se referencia este dataset.yml al ejecutar el job:
-#   prodi run-layer raw -c cfg/raw/example.yml
+# Uso: el roadmap traslada este dataset a los planes generados por `prodi plan/run`.
+#   Mientras tanto puede ejercitarse con `cfg/raw/example.yml` en modo `dry_run`.
 
 id: payments_v3
 description: "Pagos - versión v3. Estructura organizada en carpeta dedicada."

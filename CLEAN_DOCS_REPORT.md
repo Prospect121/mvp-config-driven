@@ -9,4 +9,4 @@
 | `docs/STABILIZATION_REPORT.md` | Movido a `docs/legacy/STABILIZATION_REPORT.md` | Referenciaba datasets locales (`config/datasets/examples/...`) y rutas `data/raw/...` como camino productivo; se conserva como histórico bajo `docs/legacy/`. |
 | `.docker/*` | Sin hallazgos | Se verificó que no existen artefactos `.docker` o manifest de Docker en el repositorio. |
 
-Los archivos retirados o movidos se sustituyen por `templates/azure/dbfs/`, `docs/azure-databricks.md` y el README actualizado, que documentan el flujo soportado por la CLI `prodi`.
+Los archivos retirados o movidos se sustituyen por el README actualizado y la nueva ruta `docs/azure-databricks.md`, que remite al historial en `docs/legacy/` mientras se entrega la CLI `prodi plan/run`.

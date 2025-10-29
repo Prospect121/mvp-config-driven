@@ -13,10 +13,9 @@ io:
   source:
     dataset_config: config/datasets/examples/toy_customers.yml
     environment_config: config/env.yml
-    use_local_fallback: true
   sink:
     format: parquet
-    uri: file://./data/raw/toy_customers/
+    uri: s3://example-raw/toy/customers/
     mode: overwrite
     options:
       compression: snappy
