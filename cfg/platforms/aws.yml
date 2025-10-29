@@ -1,0 +1,7 @@
+platform:
+  name: aws
+  job_backend:
+    type: glue
+  storage:
+    sink:
+      path_prefix: "s3://datalake"

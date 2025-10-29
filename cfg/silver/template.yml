@@ -1,21 +1,18 @@
 # Example configuration for the Silver layer.
 # Set `dry_run: false` and provide real config paths to execute the pipeline.
-dry_run: true
 layer: silver
-paths:
-  dataset: config/datasets/example.yml
-  environment: config/env.yml
-  database: config/database.yml
+dry_run: true
 environment: development
-
-# storage:
-#   s3:
-#     storage_options:
-#       client_kwargs:
-#         endpoint_url: http://minio:9000
-#   abfss:
-#     storage_options:
-#       tenant_id: "<azure-tenant>"
-#   gs:
-#     storage_options:
-#       project: "my-gcp-project"
+platform:
+  name: local
+storage:
+  dataset_config: config/datasets/example.yml
+  environment_config: config/env.yml
+  database_config: config/database.yml
+  source: {}
+  sink:
+    type: files
+    uri: s3://example-silver/path/
+transformations: {}
+quality: {}
+lineage: {}

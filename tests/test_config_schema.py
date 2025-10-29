@@ -22,7 +22,14 @@ def _load_yaml(path: Path) -> Dict[str, object]:
 
 
 def _iter_layer_config_files() -> Iterable[Path]:
-    return sorted(Path("cfg").rglob("*.yml"))
+    for path in sorted(Path("cfg").rglob("*.yml")):
+        if "schemas" in path.parts:
+            continue
+        if "platforms" in path.parts:
+            continue
+        if path.name == "defaults.yml":
+            continue
+        yield path
 
 
 def _iter_dataset_config_files() -> Iterable[Path]:

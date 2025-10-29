@@ -1,11 +1,13 @@
 layer: raw
-compute:
-  engine: spark
-  spark:
-    app_name: "raw_fin_transactions_http"
-    options:
-      spark.sql.session.timeZone: "UTC"
-io:
+environment: production
+platform:
+  name: azure
+  compute:
+    spark:
+      app_name: "raw_fin_transactions_http"
+storage:
+  dataset_config: config/datasets/finanzas/payments_v3/dataset_api.yml
+  environment_config: config/env.azure.prod.yml
   source:
     type: http
     url: "https://api.finbank.com/v1/transactions"
@@ -21,24 +23,25 @@ io:
       max_pages: 2000
     rate_limit:
       requests_per_minute: 60
-    incremental:
-      watermark:
-        field: updated_at
-        state_id: raw_fin_transactions_http
-        default: "1970-01-01T00:00:00Z"
   sink:
     type: files
-    format: parquet
-    path: "s3://datalake/raw/finance/transactions/date={{ds}}/"
-transform:
+    path: "abfss://finance@prodstorage.dfs.core.windows.net/raw/transactions/date={{ds}}/"
+transformations:
   pre:
     - rename:
         from: txn_id
         to: transaction_id
-dq:
+incremental:
+  watermark:
+    field: updated_at
+    state_id: raw_fin_transactions_http
+    default: "1970-01-01T00:00:00Z"
+quality:
   expectations:
     - type: not_null
       column: transaction_id
     - type: valid_values
       column: currency
       values: ["USD", "EUR", "COP"]
+lineage:
+  dataset: finance.transactions.raw

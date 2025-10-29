@@ -1,0 +1,34 @@
+layer: gold
+environment: development
+dry_run: true
+platform:
+  name: aws
+  compute:
+    spark:
+      app_name: "gold_fin_kpis_dev"
+storage:
+  dataset_config: config/datasets/finanzas/payments_v3/dataset.yml
+  environment_config: config/env.yml
+  source:
+    type: files
+    path: "s3://datalake-dev/silver/finance/fact_transactions/"
+    format: parquet
+  sink:
+    type: files
+    path: "s3://datalake-dev/gold/finance/kpis/"
+    format: parquet
+transformations:
+  sql: |
+    SELECT
+      posted_date,
+      currency,
+      SUM(amount) AS total_amount,
+      SUM(CASE WHEN is_reversal = 1 THEN amount ELSE 0 END) AS total_reversals
+    FROM __INPUT__
+    GROUP BY posted_date, currency
+quality:
+  expectations:
+    - type: not_null
+      column: posted_date
+lineage:
+  dataset: finance.transactions.gold.dev

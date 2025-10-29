@@ -6,6 +6,20 @@ from typing import Annotated, Any, Dict, List, Literal, Optional, Union
 from pydantic import BaseModel, ConfigDict, Field
 
 
+def _merge_dicts(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
+    result: Dict[str, Any] = dict(base)
+    for key, value in override.items():
+        if (
+            key in result
+            and isinstance(result[key], dict)
+            and isinstance(value, dict)
+        ):
+            result[key] = _merge_dicts(result[key], value)
+        else:
+            result[key] = deepcopy(value)
+    return result
+
+
 class FlexibleModel(BaseModel):
     """Base class that allows unknown keys while preserving them when dumped."""
 
@@ -416,9 +430,102 @@ def migrate_layer_config(raw: Dict[str, Any]) -> Dict[str, Any]:
 
     if isinstance(cfg.get("io"), dict) and (
         "source" in cfg["io"] or "sink" in cfg["io"]
-    ):
+    ) and "transformations" not in cfg:
         cfg.setdefault("_legacy_aliases", {})
         return cfg
+
+    if any(key in cfg for key in ("transformations", "quality", "platform", "storage", "incremental")):
+        platform_block = cfg.get("platform")
+        if isinstance(platform_block, str):
+            platform_block = {"name": platform_block}
+        elif not isinstance(platform_block, dict):
+            platform_block = {}
+
+        compute_block = platform_block.get("compute")
+        if isinstance(compute_block, dict):
+            existing_compute = cfg.get("compute")
+            if isinstance(existing_compute, dict):
+                cfg["compute"] = _merge_dicts(compute_block, existing_compute)
+            else:
+                cfg["compute"] = compute_block
+
+        storage_defaults = platform_block.get("storage")
+        storage_block = cfg.get("storage")
+        if isinstance(storage_defaults, dict):
+            if isinstance(storage_block, dict):
+                storage_block = _merge_dicts(storage_defaults, storage_block)
+            else:
+                storage_block = storage_defaults
+            cfg["storage"] = storage_block
+        elif not isinstance(storage_block, dict):
+            storage_block = {}
+            cfg["storage"] = storage_block
+
+        io_block: Dict[str, Any] = {}
+        if isinstance(storage_block, dict):
+            dataset_path = storage_block.get("dataset_config") or storage_block.get("dataset")
+            env_path = (
+                storage_block.get("environment_config")
+                or storage_block.get("environment")
+                or storage_block.get("env_config")
+            )
+            database_path = storage_block.get("database_config") or storage_block.get("database")
+
+            if dataset_path:
+                cfg["dataset_config"] = dataset_path
+            if env_path:
+                cfg["environment_config"] = env_path
+                cfg["env_config"] = env_path
+            if database_path:
+                cfg["database_config"] = database_path
+
+            source_from_storage = storage_block.get("source")
+            sink_from_storage = storage_block.get("sink")
+
+            if isinstance(source_from_storage, dict):
+                io_block["source"] = deepcopy(source_from_storage)
+            if isinstance(sink_from_storage, dict):
+                io_block.setdefault("sink", {})
+                io_block["sink"] = deepcopy(sink_from_storage)
+
+        if isinstance(cfg.get("io"), dict):
+            io_block = _merge_dicts(io_block, cfg["io"])
+        if io_block:
+            cfg["io"] = io_block
+
+        transformations = cfg.pop("transformations", None)
+        if isinstance(transformations, dict):
+            existing_transform = cfg.get("transform")
+            merged_transform = (
+                _merge_dicts(transformations, existing_transform)
+                if isinstance(existing_transform, dict)
+                else transformations
+            )
+            cfg["transform"] = merged_transform
+
+        quality_block = cfg.pop("quality", None)
+        if isinstance(quality_block, dict):
+            existing_dq = cfg.get("dq")
+            merged_dq = (
+                _merge_dicts(quality_block, existing_dq)
+                if isinstance(existing_dq, dict)
+                else quality_block
+            )
+            cfg["dq"] = merged_dq
+
+        incremental_block = cfg.pop("incremental", None)
+        if isinstance(incremental_block, dict) and incremental_block:
+            io_section = cfg.setdefault("io", {})
+            source_section = io_section.setdefault("source", {})
+            existing_incremental = source_section.get("incremental")
+            if isinstance(existing_incremental, dict):
+                source_section["incremental"] = _merge_dicts(
+                    incremental_block, existing_incremental
+                )
+            else:
+                source_section["incremental"] = incremental_block
+
+        cfg.setdefault("_legacy_aliases", {})
 
     paths = cfg.pop("paths", {}) or {}
     dataset_path = cfg.pop("dataset_config", None) or paths.get("dataset")

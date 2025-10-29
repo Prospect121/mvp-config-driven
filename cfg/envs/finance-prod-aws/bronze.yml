@@ -1,0 +1,45 @@
+layer: bronze
+environment: production
+platform:
+  name: aws
+  compute:
+    spark:
+      app_name: "bronze_fin_transactions"
+storage:
+  dataset_config: config/datasets/finanzas/payments_v3/dataset.yml
+  environment_config: config/env.aws.prod.yml
+  source:
+    type: files
+    path: "s3://finance-prod/raw/transactions/"
+    format: parquet
+  sink:
+    type: files
+    path: "s3://finance-prod/bronze/transactions/"
+    format: parquet
+transformations:
+  sql: |
+    WITH base AS (
+      SELECT
+        CAST(transaction_id AS STRING) AS transaction_id,
+        CAST(amount AS DECIMAL(18,2)) AS amount,
+        UPPER(currency) AS currency,
+        to_timestamp(updated_at) AS updated_at,
+        to_date(posted_at) AS posted_date,
+        *
+      FROM __INPUT__
+    )
+    SELECT * FROM (
+      SELECT *,
+        ROW_NUMBER() OVER (PARTITION BY transaction_id ORDER BY updated_at DESC) AS rn
+      FROM base
+    ) WHERE rn = 1
+quality:
+  expectations:
+    - type: unique
+      column: transaction_id
+    - type: range
+      column: amount
+      min: -100000000
+      max: 100000000
+lineage:
+  dataset: finance.transactions.bronze

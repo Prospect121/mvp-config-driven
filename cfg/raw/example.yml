@@ -1,36 +1,28 @@
 layer: raw
 dry_run: false
 environment: development
-paths:
-  dataset: config/datasets/examples/toy_customers.yml
-  environment: config/env.yml
-  database: config/database.yml
-
-compute:
-  kind: stub  # Cambia a "spark" para ejecutar contra un cluster real.
-
-io:
+platform:
+  name: local
+  compute:
+    kind: stub
+storage:
+  dataset_config: config/datasets/examples/toy_customers.yml
+  environment_config: config/env.yml
+  database_config: config/database.yml
   source:
     dataset_config: config/datasets/examples/toy_customers.yml
     environment_config: config/env.yml
   sink:
-    format: parquet
+    type: files
     uri: s3://example-raw/toy/customers/
     mode: overwrite
+    format: parquet
     options:
       compression: snappy
-
-transform:
+transformations:
   sql: []
-
-dq:
+quality:
   expectations:
     min_row_count: 1
-
-storage:
-  s3:
-    default_uri: s3://example-raw/toy/
-  abfss:
-    default_uri: abfss://example@contoso.dfs.core.windows.net/raw/toy/
-  gs:
-    default_uri: gs://example-raw/toy/
+lineage:
+  dataset: examples.toy_customers.raw

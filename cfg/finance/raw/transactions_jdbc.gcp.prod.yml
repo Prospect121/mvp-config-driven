@@ -1,9 +1,0 @@
-layer: raw
-extends: "./transactions_jdbc.yml"
-environment: production
-io:
-  source:
-    auth:
-      mode: managed_identity
-  sink:
-    path: "gs://finance-prod/raw/transactions/date={{ds}}/"

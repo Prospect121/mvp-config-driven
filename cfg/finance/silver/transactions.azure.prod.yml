@@ -1,8 +1,0 @@
-layer: silver
-extends: "./transactions.yml"
-environment: production
-io:
-  source:
-    path: "abfss://finance@prodstorage.dfs.core.windows.net/bronze/transactions/"
-  sink:
-    path: "abfss://finance@prodstorage.dfs.core.windows.net/silver/fact_transactions/"

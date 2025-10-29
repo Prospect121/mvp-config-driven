@@ -1,8 +1,0 @@
-layer: silver
-extends: "./transactions.yml"
-environment: production
-io:
-  source:
-    path: "s3://finance-prod/bronze/transactions/"
-  sink:
-    path: "s3://finance-prod/silver/fact_transactions/"

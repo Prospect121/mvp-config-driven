@@ -1,0 +1,7 @@
+platform:
+  name: azure
+  job_backend:
+    type: synapse
+  storage:
+    sink:
+      path_prefix: "abfss://finance@prodstorage.dfs.core.windows.net"
