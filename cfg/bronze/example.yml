@@ -1,20 +1,27 @@
 layer: bronze
 dry_run: true
 environment: development
-paths:
-  dataset: config/datasets/examples/toy_customers.yml
-  environment: config/env.yml
-  database: config/database.yml
-compute:
-  engine: spark
-  options:
-    spark.sql.session.timeZone: UTC
-io:
+platform:
+  name: local
+  compute:
+    engine: spark
+    spark:
+      options:
+        spark.sql.session.timeZone: UTC
+storage:
+  dataset_config: config/datasets/examples/toy_customers.yml
+  environment_config: config/env.yml
+  database_config: config/database.yml
   source:
     dataset_config: config/datasets/examples/toy_customers.yml
   sink:
-    format: delta
+    type: delta
     options:
       path: s3://example-bronze/tables/customers/
     compliance:
       encryption: server-side
+transformations:
+  sql: []
+quality: {}
+lineage:
+  dataset: examples.toy_customers.bronze

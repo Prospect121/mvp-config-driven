@@ -1,0 +1,18 @@
+platform:
+  name: local
+  compute:
+    engine: spark
+    spark:
+      options:
+        spark.sql.session.timeZone: "UTC"
+storage:
+  sink:
+    format: parquet
+transformations:
+  pre: []
+  post: []
+incremental: {}
+quality:
+  expectations: []
+  fail_on_error: true
+lineage: {}

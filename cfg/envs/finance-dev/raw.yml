@@ -1,0 +1,48 @@
+layer: raw
+environment: development
+dry_run: true
+platform:
+  name: aws
+  compute:
+    spark:
+      app_name: "raw_fin_transactions_http_dev"
+storage:
+  dataset_config: config/datasets/finanzas/payments_v3/dataset_api.yml
+  environment_config: config/env.yml
+  source:
+    type: http
+    url: "https://api.finbank.com/v1/transactions"
+    method: GET
+    headers:
+      Accept: "application/json"
+    auth:
+      type: bearer_env
+      env: FINBANK_TOKEN
+    pagination:
+      strategy: param_increment
+      param: page
+      max_pages: 2000
+    rate_limit:
+      requests_per_minute: 60
+  sink:
+    type: files
+    path: "s3://datalake-dev/raw/finance/transactions/date={{ds}}/"
+transformations:
+  pre:
+    - rename:
+        from: txn_id
+        to: transaction_id
+incremental:
+  watermark:
+    field: updated_at
+    state_id: raw_fin_transactions_http_dev
+    default: "1970-01-01T00:00:00Z"
+quality:
+  expectations:
+    - type: not_null
+      column: transaction_id
+    - type: valid_values
+      column: currency
+      values: ["USD", "EUR", "COP"]
+lineage:
+  dataset: finance.transactions.raw.dev

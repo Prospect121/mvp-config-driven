@@ -16,6 +16,9 @@ from datacore.layers.silver import main as silver_main
 from datacore.layers.gold import main as gold_main
 
 from datacore.config.schema import LayerRuntimeConfigModel, migrate_layer_config
+from jsonschema import Draft202012Validator
+
+from mvp_config_driven.core.resolver import resolve_hierarchical_layer_config
 
 app = typer.Typer(help="DataCore orchestration commands")
 
@@ -29,6 +32,9 @@ _LAYER_RUNNERS: Dict[str, Any] = {
 
 
 _FORCE_DRY_RUN_ENV = "PRODI_FORCE_DRY_RUN"
+
+_PIPELINE_SCHEMA_PATH = Path("cfg/schemas/pipeline.schema.json")
+_PIPELINE_VALIDATOR: Draft202012Validator | None = None
 
 
 def _should_force_dry_run() -> bool:
@@ -117,6 +123,12 @@ def _normalize_layer_name(layer: str) -> str:
     return normalized
 
 
+def _resolve_hierarchy(cfg: Any) -> Any:
+    if not isinstance(cfg, dict):
+        return cfg
+    return resolve_hierarchical_layer_config(cfg)
+
+
 def _validate_normalized_cfg(
     cfg: Any, expected_layer: str, dq_fail_override: Optional[bool] = None
 ) -> Dict[str, Any]:
@@ -165,6 +177,40 @@ def _validate_normalized_cfg(
     return runtime_dict
 
 
+def _ensure_pipeline_validator() -> Draft202012Validator:
+    global _PIPELINE_VALIDATOR
+    if _PIPELINE_VALIDATOR is not None:
+        return _PIPELINE_VALIDATOR
+    if not _PIPELINE_SCHEMA_PATH.exists():
+        raise typer.BadParameter(
+            f"Pipeline schema not found: {_PIPELINE_SCHEMA_PATH}"
+        )
+    schema_data = yaml.safe_load(_PIPELINE_SCHEMA_PATH.read_text(encoding="utf-8"))
+    if not isinstance(schema_data, dict):
+        raise typer.BadParameter("Pipeline schema must be a JSON object")
+    _PIPELINE_VALIDATOR = Draft202012Validator(schema_data)
+    return _PIPELINE_VALIDATOR
+
+
+def _validate_pipeline_config(cfg: Any, config_path: Path) -> Dict[str, Any]:
+    if not isinstance(cfg, dict):
+        raise typer.BadParameter("Pipeline configuration must be a mapping")
+    pipeline_block = cfg.get("pipeline")
+    if not isinstance(pipeline_block, dict):
+        raise typer.BadParameter("Missing 'pipeline' section in configuration")
+    validator = _ensure_pipeline_validator()
+    errors = sorted(validator.iter_errors(cfg), key=lambda err: list(err.path))
+    if errors:
+        messages = [
+            f"{list(error.path)}: {error.message}" if error.path else error.message
+            for error in errors
+        ]
+        raise typer.BadParameter(
+            f"Pipeline configuration {config_path} is invalid:\n" + "\n".join(messages)
+        )
+    return pipeline_block
+
+
 def _execute_layer(layer: str, cfg: Dict[str, Any]) -> Any:
     if cfg.get("dry_run"):
         typer.echo(f"[{layer}] Dry run requested - skipping execution")
@@ -189,8 +235,9 @@ def run_layer(
     layer_name = _normalize_layer_name(layer)
     variables = _parse_vars(vars_)
     raw_config = _resolve_extends(_load_config(config, variables), config, variables)
+    resolved_config = _resolve_hierarchy(raw_config)
     normalized_cfg = _validate_normalized_cfg(
-        raw_config, layer_name, dq_fail_override=dq_fail_on_error
+        resolved_config, layer_name, dq_fail_override=dq_fail_on_error
     )
     _execute_layer(layer_name, normalized_cfg)
 
@@ -209,22 +256,22 @@ def run_pipeline(
     variables = _parse_vars(vars_)
     raw_pipeline_cfg = _load_config(pipeline, variables)
 
+    pipeline_vars: Dict[str, str] = {}
+    steps: Any = raw_pipeline_cfg
+
     if isinstance(raw_pipeline_cfg, dict):
-        steps: Any = raw_pipeline_cfg.get("steps")
-        if steps is None:
-            steps = raw_pipeline_cfg.get("pipeline")
-        if steps is None and len(raw_pipeline_cfg) == 1:
-            # Allow top-level alias: {"pipeline": [...]} or {"steps": [...]}
-            # was handled above. If both keys absent but the only value is a list,
-            # treat it as the pipeline steps for backwards compatibility.
-            only_value = next(iter(raw_pipeline_cfg.values()))
-            if isinstance(only_value, list):
-                steps = only_value
-    else:
-        steps = raw_pipeline_cfg
+        if isinstance(raw_pipeline_cfg.get("pipeline"), dict):
+            pipeline_block = _validate_pipeline_config(raw_pipeline_cfg, pipeline)
+            steps = pipeline_block.get("steps")
+            pipeline_vars_raw = pipeline_block.get("vars") or {}
+            if not isinstance(pipeline_vars_raw, dict):
+                raise typer.BadParameter("Pipeline 'vars' must be a mapping of strings")
+            pipeline_vars = {str(k): str(v) for k, v in pipeline_vars_raw.items()}
+        else:
+            steps = raw_pipeline_cfg.get("steps") or raw_pipeline_cfg.get("pipeline")
 
     if not isinstance(steps, list):
-        raise typer.BadParameter("Pipeline configuration must be a list of steps")
+        raise typer.BadParameter("Pipeline configuration must define a list of steps")
 
     if not steps:
         typer.echo("No steps defined in pipeline. Nothing to execute.")
@@ -250,9 +297,23 @@ def run_pipeline(
         if not config_path.is_absolute():
             config_path = (pipeline.parent / config_path).resolve()
 
-        layer_cfg = _resolve_extends(_load_config(config_path, variables), config_path, variables)
+        step_vars_raw = step.get("vars") or {}
+        if not isinstance(step_vars_raw, dict):
+            raise typer.BadParameter(
+                f"Pipeline step '{layer_name}' vars must be a mapping of strings"
+            )
+
+        merged_vars: Dict[str, str] = {}
+        merged_vars.update(pipeline_vars)
+        merged_vars.update({str(k): str(v) for k, v in step_vars_raw.items()})
+        merged_vars.update(variables)
+
+        layer_cfg = _resolve_extends(
+            _load_config(config_path, merged_vars), config_path, merged_vars
+        )
+        resolved_cfg = _resolve_hierarchy(layer_cfg)
         normalized_cfg = _validate_normalized_cfg(
-            layer_cfg, layer_name, dq_fail_override=dq_fail_on_error
+            resolved_cfg, layer_name, dq_fail_override=dq_fail_on_error
         )
         _execute_layer(layer_name, normalized_cfg)
 
@@ -264,11 +325,18 @@ def validate(
 ) -> None:
     variables = _parse_vars(vars_)
     raw_cfg = _resolve_extends(_load_config(config, variables), config, variables)
-    layer_value = raw_cfg.get("layer") if isinstance(raw_cfg, dict) else None
+
+    if isinstance(raw_cfg, dict) and isinstance(raw_cfg.get("pipeline"), dict):
+        _validate_pipeline_config(raw_cfg, config)
+        typer.echo(f"[pipeline] {config} is valid")
+        return
+
+    resolved_cfg = _resolve_hierarchy(raw_cfg)
+    layer_value = resolved_cfg.get("layer") if isinstance(resolved_cfg, dict) else None
     if not layer_value:
         layer_value = "raw"
     layer_name = _normalize_layer_name(str(layer_value))
-    _validate_normalized_cfg(raw_cfg, layer_name)
+    _validate_normalized_cfg(resolved_cfg, layer_name)
     typer.echo(f"[{layer_name}] {config} is valid")
 
 

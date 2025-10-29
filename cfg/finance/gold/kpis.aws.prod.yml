@@ -1,8 +1,0 @@
-layer: gold
-extends: "./kpis.yml"
-environment: production
-io:
-  source:
-    path: "s3://finance-prod/silver/fact_transactions/"
-  sink:
-    path: "s3://finance-prod/gold/kpis/"

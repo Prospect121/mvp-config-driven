@@ -34,17 +34,18 @@ def test_run_layer_raw_example_executes(tmp_path: Path) -> None:
 
     config_data = yaml.safe_load(config_path.read_text(encoding="utf-8"))
     output_dir = tmp_path / "raw-output"
-    config_data.setdefault("io", {}).setdefault("sink", {})["uri"] = output_dir.as_uri()
+
+    storage_cfg = config_data.setdefault("storage", {})
+    sink_cfg = storage_cfg.setdefault("sink", {})
+    sink_cfg["uri"] = output_dir.as_uri()
 
     base_dir = Path(__file__).resolve().parents[1]
-    paths_cfg = config_data.setdefault("paths", {})
-    for key in ("dataset", "environment", "database"):
-        value = paths_cfg.get(key)
+    for key in ("dataset_config", "environment_config", "database_config"):
+        value = storage_cfg.get(key)
         if value:
-            absolute = (base_dir / value).resolve()
-            paths_cfg[key] = str(absolute)
+            storage_cfg[key] = str((base_dir / value).resolve())
 
-    source_cfg = config_data.setdefault("io", {}).setdefault("source", {})
+    source_cfg = storage_cfg.setdefault("source", {})
     for key in ("dataset_config", "environment_config"):
         value = source_cfg.get(key)
         if value:
@@ -71,14 +72,19 @@ def test_validate_command(tmp_path: Path) -> None:
             {
                 "layer": "raw",
                 "dry_run": True,
-                "io": {
+                "storage": {
                     "source": {
                         "type": "http",
                         "url": "https://api.example.com",
                         "pagination": {"strategy": "none"},
-                        "incremental": {"watermark": {"field": "updated_at", "state_id": "demo"}},
                     },
-                    "sink": {"type": "files", "uri": str((tmp_path / "out").as_posix())},
+                    "sink": {
+                        "type": "files",
+                        "uri": str((tmp_path / "out").as_posix()),
+                    },
+                },
+                "incremental": {
+                    "watermark": {"field": "updated_at", "state_id": "demo"}
                 },
             }
         ),

@@ -1,0 +1,33 @@
+layer: gold
+environment: production
+platform:
+  name: azure
+  compute:
+    spark:
+      app_name: "gold_fin_kpis"
+storage:
+  dataset_config: config/datasets/finanzas/payments_v3/dataset.yml
+  environment_config: config/env.azure.prod.yml
+  source:
+    type: files
+    path: "abfss://finance@prodstorage.dfs.core.windows.net/silver/fact_transactions/"
+    format: parquet
+  sink:
+    type: files
+    path: "abfss://finance@prodstorage.dfs.core.windows.net/gold/kpis/"
+    format: parquet
+transformations:
+  sql: |
+    SELECT
+      posted_date,
+      currency,
+      SUM(amount) AS total_amount,
+      SUM(CASE WHEN is_reversal = 1 THEN amount ELSE 0 END) AS total_reversals
+    FROM __INPUT__
+    GROUP BY posted_date, currency
+quality:
+  expectations:
+    - type: not_null
+      column: posted_date
+lineage:
+  dataset: finance.transactions.gold

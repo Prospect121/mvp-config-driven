@@ -1,20 +1,26 @@
 layer: gold
 dry_run: true
 environment: development
-paths:
-  dataset: config/datasets/examples/toy_customers.yml
-  environment: config/env.yml
-  database: config/database.yml
-compute:
-  engine: spark
-  options:
-    spark.sql.sources.partitionOverwriteMode: dynamic
-io:
+platform:
+  name: local
+  compute:
+    engine: spark
+    options:
+      spark.sql.sources.partitionOverwriteMode: dynamic
+storage:
+  dataset_config: config/datasets/examples/toy_customers.yml
+  environment_config: config/env.yml
+  database_config: config/database.yml
   source:
     dataset_config: config/datasets/examples/toy_customers.yml
   sink:
-    format: delta
+    type: delta
     options:
       path: s3://example-gold/marts/customers/
     catalog:
       database: analytics
+transformations:
+  sql: []
+quality: {}
+lineage:
+  dataset: examples.toy_customers.gold

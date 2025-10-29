@@ -1,0 +1,7 @@
+platform:
+  name: gcp
+  job_backend:
+    type: dataproc
+  storage:
+    sink:
+      path_prefix: "gs://finance-data"

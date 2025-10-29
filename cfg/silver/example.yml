@@ -1,11 +1,21 @@
 layer: silver
 dry_run: true
 environment: development
-paths:
-  dataset: config/datasets/examples/toy_customers.yml
-  environment: config/env.yml
-  database: config/database.yml
-transform:
+platform:
+  name: local
+  compute:
+    engine: spark
+storage:
+  dataset_config: config/datasets/examples/toy_customers.yml
+  environment_config: config/env.yml
+  database_config: config/database.yml
+  source:
+    dataset_config: config/datasets/examples/toy_customers.yml
+  sink:
+    type: delta
+    options:
+      path: s3://example-silver/tables/customers/
+transformations:
   steps:
     - name: sanitize_phone_numbers
       params:
@@ -13,15 +23,10 @@ transform:
     - name: compute_churn_flags
       params:
         window_days: 30
-dq:
+quality:
   expectations:
     require_not_null:
       - customer_id
       - signup_ts
-io:
-  source:
-    dataset_config: config/datasets/examples/toy_customers.yml
-  sink:
-    format: delta
-    options:
-      path: s3://example-silver/tables/customers/
+lineage:
+  dataset: examples.toy_customers.silver

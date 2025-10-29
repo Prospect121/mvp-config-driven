@@ -1,20 +1,22 @@
 layer: bronze
-compute:
-  engine: spark
-  spark:
-    app_name: "bronze_fin_transactions"
-    options:
-      spark.sql.session.timeZone: "UTC"
-io:
+environment: production
+platform:
+  name: azure
+  compute:
+    spark:
+      app_name: "bronze_fin_transactions"
+storage:
+  dataset_config: config/datasets/finanzas/payments_v3/dataset.yml
+  environment_config: config/env.azure.prod.yml
   source:
     type: files
-    path: "s3://datalake/raw/finance/transactions/"
+    path: "abfss://finance@prodstorage.dfs.core.windows.net/raw/transactions/"
     format: parquet
   sink:
     type: files
+    path: "abfss://finance@prodstorage.dfs.core.windows.net/bronze/transactions/"
     format: parquet
-    path: "s3://datalake/bronze/finance/transactions/"
-transform:
+transformations:
   sql: |
     WITH base AS (
       SELECT
@@ -31,7 +33,7 @@ transform:
         ROW_NUMBER() OVER (PARTITION BY transaction_id ORDER BY updated_at DESC) AS rn
       FROM base
     ) WHERE rn = 1
-dq:
+quality:
   expectations:
     - type: unique
       column: transaction_id
@@ -39,3 +41,5 @@ dq:
       column: amount
       min: -100000000
       max: 100000000
+lineage:
+  dataset: finance.transactions.bronze

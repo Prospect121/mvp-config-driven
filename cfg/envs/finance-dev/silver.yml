@@ -1,0 +1,38 @@
+layer: silver
+environment: development
+dry_run: true
+platform:
+  name: aws
+  compute:
+    spark:
+      app_name: "silver_fin_dev"
+storage:
+  dataset_config: config/datasets/finanzas/payments_v3/dataset.yml
+  environment_config: config/env.yml
+  source:
+    type: files
+    path: "s3://datalake-dev/bronze/finance/transactions/"
+    format: parquet
+  sink:
+    type: files
+    path: "s3://datalake-dev/silver/finance/fact_transactions/"
+    format: parquet
+transformations:
+  sql: |
+    SELECT
+      transaction_id,
+      account_id,
+      merchant_id,
+      amount,
+      currency,
+      posted_date,
+      CASE WHEN amount < 0 THEN 1 ELSE 0 END AS is_reversal
+    FROM __INPUT__
+quality:
+  expectations:
+    - type: not_null
+      column: account_id
+    - type: condition
+      expr: "currency in ('USD','EUR','COP')"
+lineage:
+  dataset: finance.transactions.silver.dev
