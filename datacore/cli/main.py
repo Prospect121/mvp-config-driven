@@ -44,7 +44,11 @@ def cmd_run(args: argparse.Namespace) -> None:
         fail_fast=args.fail_fast,
     )
     if args.dry_run:
-        payload = {"run_id": results["run_id"], "plan": results["datasets"]}
+        payload = {
+            "run_id": results["run_id"],
+            "layer": args.layer,
+            "datasets": results["datasets"],
+        }
         print(json.dumps(payload, indent=2, default=str))
     else:
         LOGGER.info("Resultados de ejecución: %s", results)
@@ -54,8 +58,7 @@ def cmd_plan(args: argparse.Namespace) -> None:
     data = _load_config(args.config)
     validate_config(data)
     layers = sorted({d.get("layer") for d in data.get("datasets", [])})
-    plans: list[dict[str, Any]] = []
-    run_ids: dict[str, str] = {}
+    layer_plans: list[dict[str, Any]] = []
     for layer in layers:
         plan_result = run_layer_plan(
             layer=layer,
@@ -64,9 +67,14 @@ def cmd_plan(args: argparse.Namespace) -> None:
             environment=args.env,
             dry_run=True,
         )
-        run_ids[layer] = plan_result["run_id"]
-        plans.extend(plan_result["datasets"])
-    print(json.dumps({"run_ids": run_ids, "datasets": plans}, indent=2, default=str))
+        layer_plans.append(
+            {
+                "layer": layer,
+                "run_id": plan_result["run_id"],
+                "datasets": plan_result["datasets"],
+            }
+        )
+    print(json.dumps({"layers": layer_plans}, indent=2, default=str))
 
 
 def build_parser() -> argparse.ArgumentParser:

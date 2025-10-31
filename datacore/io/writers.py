@@ -79,7 +79,7 @@ def write_batch(df: DataFrame, platform: PlatformBase, sink: dict[str, Any]) -> 
     partition_by = sink.get("partition_by")
     merge_schema = _merge_schema_flag(sink)
     prepared_df = _apply_partitioning(df, sink)
-    file_size = sink.get("file_size_mb")
+    file_size = sink.get("target_file_size_mb", sink.get("file_size_mb"))
     if file_size is not None:
         options.setdefault("maxRecordsPerFile", int(file_size) * 1024 * 1024)
 
@@ -107,10 +107,12 @@ def write_batch(df: DataFrame, platform: PlatformBase, sink: dict[str, Any]) -> 
             writer = prepared_df.write.format("bigquery").mode(mode)
             for key, value in options.items():
                 writer = writer.option(key, value)
-            if sink.get("temporaryGcsBucket"):
-                writer = writer.option("temporaryGcsBucket", sink["temporaryGcsBucket"])
-            if sink.get("intermediateFormat"):
-                writer = writer.option("intermediateFormat", sink["intermediateFormat"])
+            temp_bucket = sink.get("temporary_gcs_bucket") or sink.get("temporaryGcsBucket")
+            if temp_bucket:
+                writer = writer.option("temporaryGcsBucket", temp_bucket)
+            intermediate = sink.get("intermediate_format") or sink.get("intermediateFormat")
+            if intermediate:
+                writer = writer.option("intermediateFormat", intermediate)
             writer.save(sink["table"])
             return
         raise ValueError(f"Motor de warehouse no soportado: {engine}")
@@ -252,14 +254,14 @@ def write_metrics(
     layer: str,
     dataset: str,
     environment: str,
+    run_id: str,
     metrics: dict[str, Any],
 ) -> None:
     if "uri" not in sink:
         LOGGER.warning("No se pueden almacenar métricas para un sink sin URI explícita")
         return
-    timestamp = datetime.utcnow().strftime("%Y%m%d-%H%M")
     base_uri = sink["uri"].rstrip("/")
-    metrics_uri = f"{base_uri}/_metrics/{timestamp}.json"
+    metrics_uri = f"{base_uri}/_metrics/{run_id}.json"
     backend = sink.get("backend", platform.name)
     connector = _storage_connector(backend)
     metrics_json = json.dumps(metrics, ensure_ascii=False)

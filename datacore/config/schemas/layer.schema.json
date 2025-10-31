@@ -103,7 +103,7 @@
         "uri": {"type": "string"},
         "engine": {"type": "string"},
         "table": {"type": "string"},
-        "mode": {"type": "string"},
+        "mode": {"type": "string", "enum": ["append", "overwrite", "overwrite_partitions", "merge"]},
         "partition_by": {"$ref": "#/definitions/string_array"},
         "merge_schema": {"type": "boolean"},
         "options": {"$ref": "#/definitions/string_map"},
@@ -117,11 +117,18 @@
             {"type": "object"}
           ]
         },
+        "target_file_size_mb": {"type": "integer", "minimum": 1},
         "file_size_mb": {"type": "integer", "minimum": 1},
         "atomic": {"type": "boolean"},
         "temporary_gcs_bucket": {"type": "string"},
         "intermediate_format": {"type": "string"},
-        "checkpoint_location": {"type": "string"}
+        "checkpoint_location": {"type": "string"},
+        "reject_options": {"$ref": "#/definitions/string_map"},
+        "metrics_compression": {"type": "string"},
+        "batch_size": {"type": "integer", "minimum": 1},
+        "truncate_safe": {"type": "boolean"},
+        "isolation_level": {"type": "string"},
+        "create_table_options": {"type": "string"}
       }
     },
     "validation": {
@@ -140,7 +147,7 @@
               "severity": {"enum": ["error", "warn"]},
               "threshold": {"type": "number", "minimum": 0, "maximum": 1},
               "params": {"type": "object"},
-              "on_fail": {"type": "string"}
+              "on_fail": {"type": "string", "enum": ["quarantine", "reject", "none"]}
             },
             "additionalProperties": true
           }
@@ -172,7 +179,17 @@
       "properties": {
         "enabled": {"type": "boolean"},
         "trigger": {"type": "string"},
-        "checkpoint": {"type": "string"}
+        "checkpoint": {"type": "string"},
+        "checkpoint_location": {"type": "string"},
+        "watermark": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "column": {"type": "string"},
+            "delay_threshold": {"type": "string"}
+          },
+          "required": ["column"]
+        }
       }
     },
     "dataset": {
@@ -216,6 +233,7 @@
             "validation": {"$ref": "#/definitions/validation"}
           }
         },
+        "validation": {"$ref": "#/definitions/validation"},
         "sink": {"$ref": "#/definitions/sink"},
         "incremental": {"$ref": "#/definitions/incremental"},
         "streaming": {"$ref": "#/definitions/streaming"},

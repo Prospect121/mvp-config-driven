@@ -6,7 +6,7 @@ source:
     bootstrapServers: "${KAFKA_BOOTSTRAP}"
     subscribe: "orders"
     startingOffsets: "latest"
-    format: json
+  payload_format: json
 transform:
   ops:
     - cast:
@@ -20,5 +20,4 @@ incremental:
 sink:
   type: nosql
   engine: cosmosdb
-  options:
-    checkpointLocation: "abfss://chk@storage.dfs.core.windows.net/orders_stream/_chk/"
+  checkpoint_location: "abfss://chk@storage.dfs.core.windows.net/orders_stream/_chk/"

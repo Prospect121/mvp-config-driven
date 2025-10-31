@@ -17,12 +17,12 @@ La configuración se organiza por entorno (`configs/envs/<env>`), capa (`layers/
 - Los parámetros sensibles (tokens, cadenas de conexión) deben declararse usando estas referencias.
 
 ## Estructura de datasets
-- `source`: puede ser un objeto o una lista de fuentes. Cada fuente define `type`, `uri`/`options`/`read_options`, `format`, `infer_schema`, `record_path`, `flatten`, autenticación (para `endpoint`) y paginación.
-- `transform`: admite `sql`, `udf`, `ops` (operaciones declarativas) y `add_ingestion_ts` (`true` por defecto).
+- `source`: puede ser un objeto o una lista de fuentes. Cada fuente define `type`, `uri`/`options`/`read_options`, `format`, `infer_schema`, `record_path`, `flatten`, autenticación (para `endpoint`/`api_rest`) y paginación. Para streaming (`kafka`, `event_hubs`) declara el `payload_format`.
+- `transform`: admite `sql`, `udf`, `ops` (operaciones declarativas aplicadas en orden determinístico) y `add_ingestion_ts` (`true` por defecto).
 - `merge_strategy`: combina múltiples fuentes usando `keys`, `prefer` (`newest|left|coalesce`) y `order_by`.
-- `sink`: soporta `storage`, `warehouse`, `nosql`, `kafka`, `event_hubs` con opciones específicas (particionado, `mergeSchema`, etc.).
-- `incremental`: controla `mode` (`full|append|merge`), `keys`, `order_by`, `watermark_column` y banderas específicas por sink.
-- `streaming`: `enabled`, `trigger`, `checkpoint`, `watermark_column`.
+- `sink`: soporta `storage`, `warehouse`, `nosql`, `kafka`, `event_hubs` con opciones específicas (particionado vía `partition_by`, `merge_schema`, `target_file_size_mb`, `compression`, `checkpoint_location`, `batch_size`, etc.).
+- `incremental`: controla `mode` (`full|append|merge`), `keys`, `order_by`, `watermark` (`{column, delay_threshold}`) y banderas específicas por sink.
+- `streaming`: `enabled`, `trigger` (valor de `processingTime`), `checkpoint_location` y `watermark` (`{column, delay_threshold}`).
 
 ## Ejemplo completo (capa silver)
 ```yaml
@@ -45,12 +45,11 @@ datasets:
           header: true
           delimiter: ";"
       - type: api_rest
-        options:
-          endpoint: https://api.example.com/v1/orders
-          method: GET
-          params:
-            status: completed
-          flatten: true
+        url: https://api.example.com/v1/orders
+        method: GET
+        params:
+          status: completed
+        flatten: true
     merge_strategy:
       keys: [order_id]
       prefer: newest
@@ -78,11 +77,11 @@ datasets:
           columns: [order_id, order_date]
         - check: expect_unique
           columns: [order_id]
-        - check: range
+        - check: expect_range
           column: total_amount
           min: 0
           max: 100000
-        - check: regex
+        - check: expect_regex
           column: customer_email
           pattern: "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"
       quarantine_sink:
@@ -92,17 +91,18 @@ datasets:
       mode: merge
       keys: [order_id]
       order_by: ["order_date DESC", "_ingestion_ts DESC"]
-      watermark_column: order_date
+      watermark:
+        column: order_date
+        delay_threshold: "1 day"
     sink:
       type: warehouse
       engine: synapse
       table: analytics.orders_silver
       partition_by: [order_date]
-      options:
-        batchsize: 10000
-        truncate: false
-        isolationLevel: READ_COMMITTED
-        createTableOptions: "DISTRIBUTION = HASH(order_id)"
+      merge_schema: true
+      batch_size: 10000
+      isolation_level: READ_COMMITTED
+      create_table_options: "DISTRIBUTION = HASH(order_id)"
 ```
 
 Consulta la carpeta `/examples` para ver variantes por plataforma y streaming.

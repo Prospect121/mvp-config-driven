@@ -203,11 +203,24 @@ def _build_plan(dataset: dict[str, Any]) -> dict[str, Any]:
         "table": sink_conf.get("table"),
         "mode": sink_conf.get("mode", "append"),
         "partition_by": sink_conf.get("partition_by"),
-        "merge_schema": sink_conf.get("mergeSchema") or sink_conf.get("merge_schema"),
+        "merge_schema": sink_conf.get("merge_schema") or sink_conf.get("mergeSchema"),
+        "compression": sink_conf.get("compression"),
+        "coalesce": sink_conf.get("coalesce"),
+        "repartition": sink_conf.get("repartition"),
+        "target_file_size_mb": sink_conf.get("target_file_size_mb") or sink_conf.get("file_size_mb"),
+        "checkpoint_location": sink_conf.get("checkpoint_location"),
         "options": _sanitize_options(sink_conf.get("options")),
     }
     if sink_conf.get("write_options"):
         sink_summary["write_options"] = _sanitize_options(sink_conf.get("write_options"))
+    if sink_conf.get("temporary_gcs_bucket") or sink_conf.get("temporaryGcsBucket"):
+        sink_summary["temporary_gcs_bucket"] = sink_conf.get("temporary_gcs_bucket") or sink_conf.get(
+            "temporaryGcsBucket"
+        )
+    if sink_conf.get("intermediate_format") or sink_conf.get("intermediateFormat"):
+        sink_summary["intermediate_format"] = sink_conf.get("intermediate_format") or sink_conf.get(
+            "intermediateFormat"
+        )
 
     transform_cfg = dataset.get("transform", {})
     transform_summary = {
@@ -217,15 +230,29 @@ def _build_plan(dataset: dict[str, Any]) -> dict[str, Any]:
         "add_ingestion_ts": transform_cfg.get("add_ingestion_ts", True),
     }
 
+    validation_cfg = dataset.get("validation") or transform_cfg.get("validation", {})
+    streaming_cfg = dataset.get("streaming", {})
+    incremental_cfg = dataset.get("incremental", {})
+
     plan = {
         "name": dataset["name"],
         "layer": dataset.get("layer"),
-        "sources": source_summaries,
-        "sink": sink_summary,
-        "transform": transform_summary,
-        "validation": transform_cfg.get("validation", {}),
-        "incremental": dataset.get("incremental", {}),
-        "streaming": dataset.get("streaming", {}),
+        "source_plan": {
+            "sources": source_summaries,
+            "merge_strategy": dataset.get("merge_strategy"),
+        },
+        "transform_plan": transform_summary,
+        "validation_plan": validation_cfg,
+        "incremental_plan": incremental_cfg,
+        "streaming_plan": {
+            "enabled": streaming_cfg.get("enabled", False),
+            "trigger": streaming_cfg.get("trigger"),
+            "checkpoint_location": streaming_cfg.get("checkpoint_location")
+            or streaming_cfg.get("checkpoint"),
+            "watermark": streaming_cfg.get("watermark")
+            or incremental_cfg.get("watermark"),
+        },
+        "sink_plan": sink_summary,
     }
     plan["issues"] = _detect_dataset_issues(dataset)
     return plan
@@ -233,13 +260,17 @@ def _build_plan(dataset: dict[str, Any]) -> dict[str, Any]:
 
 def _apply_streaming_options(df: DataFrame, dataset: dict[str, Any]) -> DataFrame:
     streaming_cfg = dataset.get("streaming", {})
-    watermark_column = (
-        streaming_cfg.get("watermark_column")
-        or dataset.get("incremental", {}).get("watermark_column")
-    )
-    watermark = streaming_cfg.get("watermark")
-    if watermark_column and watermark:
-        df = df.withWatermark(watermark_column, watermark)
+    watermark_cfg = streaming_cfg.get("watermark")
+    incremental_cfg = dataset.get("incremental", {})
+    if not watermark_cfg and incremental_cfg.get("watermark"):
+        watermark_cfg = incremental_cfg["watermark"]
+    if not watermark_cfg:
+        column = streaming_cfg.get("watermark_column") or incremental_cfg.get("watermark_column")
+        delay = streaming_cfg.get("watermark") or incremental_cfg.get("watermark")
+        if column and delay:
+            watermark_cfg = {"column": column, "delay_threshold": delay}
+    if watermark_cfg and watermark_cfg.get("column") and watermark_cfg.get("delay_threshold"):
+        df = df.withWatermark(watermark_cfg["column"], watermark_cfg["delay_threshold"])
     return df
 
 
@@ -306,6 +337,7 @@ def _handle_batch_dataset(
         layer=layer,
         dataset=dataset["name"],
         environment=environment,
+        run_id=run_id,
         metrics=metrics,
     )
 
@@ -335,12 +367,16 @@ def _handle_streaming_dataset(
     )
     df_stream = _apply_streaming_options(df_stream, dataset)
     transformed = _apply_transformations(df_stream, dataset.get("transform", {}))
-    checkpoint = dataset.get("streaming", {}).get(
-        "checkpoint",
-        platform.checkpoint_dir(layer, dataset["name"], environment),
+    streaming_cfg = dataset.get("streaming", {})
+    sink_cfg = dataset.get("sink", {})
+    checkpoint = (
+        streaming_cfg.get("checkpoint_location")
+        or streaming_cfg.get("checkpoint")
+        or sink_cfg.get("checkpoint_location")
+        or platform.checkpoint_dir(layer, dataset["name"], environment)
     )
-    trigger = dataset.get("streaming", {}).get("trigger")
-    writers.write_stream(transformed, platform, dataset["sink"], checkpoint, trigger=trigger)
+    trigger = streaming_cfg.get("trigger")
+    writers.write_stream(transformed, platform, sink_cfg, checkpoint, trigger=trigger)
     return {"name": dataset["name"], "status": "streaming", "run_id": run_id}
 
 

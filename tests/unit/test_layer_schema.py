@@ -84,3 +84,32 @@ def test_schema_supports_sink_type_enum():
     }
 
     VALIDATOR.validate(_base_config(dataset))
+
+
+def test_schema_rejects_invalid_sink_mode():
+    dataset = {
+        "name": "invalid_mode",
+        "layer": "silver",
+        "source": {"type": "storage", "uri": "s3://bucket/path"},
+        "sink": {"type": "storage", "uri": "s3://bucket/out", "mode": "unsupported"},
+    }
+
+    with pytest.raises(ValidationError):
+        VALIDATOR.validate(_base_config(dataset))
+
+
+def test_schema_accepts_streaming_configuration():
+    dataset = {
+        "name": "orders_stream",
+        "layer": "bronze",
+        "source": {"type": "kafka", "options": {"subscribe": "orders"}},
+        "sink": {"type": "storage", "uri": "s3://bronze/orders/"},
+        "streaming": {
+            "enabled": True,
+            "trigger": "5 minutes",
+            "checkpoint_location": "/tmp/chk",
+            "watermark": {"column": "created_at", "delay_threshold": "10 minutes"},
+        },
+    }
+
+    VALIDATOR.validate(_base_config(dataset))

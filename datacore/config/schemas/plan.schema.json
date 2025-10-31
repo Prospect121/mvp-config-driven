@@ -1,0 +1,103 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["run_id", "datasets"],
+  "properties": {
+    "run_id": {"type": "string"},
+    "datasets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "layer",
+          "status",
+          "run_id",
+          "source_plan",
+          "transform_plan",
+          "validation_plan",
+          "incremental_plan",
+          "streaming_plan",
+          "sink_plan",
+          "issues"
+        ],
+        "additionalProperties": true,
+        "properties": {
+          "name": {"type": "string"},
+          "layer": {"type": "string", "enum": ["raw", "bronze", "silver", "gold"]},
+          "status": {"type": "string"},
+          "run_id": {"type": "string"},
+          "issues": {"type": "array", "items": {"type": "string"}},
+          "source_plan": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "sources": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "type": {"type": "string"},
+                    "format": {"type": ["string", "null"]},
+                    "uri": {"type": ["string", "null"]},
+                    "table": {"type": ["string", "null"]},
+                    "url": {"type": ["string", "null"]},
+                    "options": {"type": "object"},
+                    "read_options": {"type": "object"},
+                    "partitioning": {"type": "object"}
+                  }
+                }
+              },
+              "merge_strategy": {"type": ["object", "null"]}
+            }
+          },
+          "transform_plan": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "sql": {"type": "array"},
+              "ops": {"type": "array"},
+              "udf": {"type": "array"},
+              "add_ingestion_ts": {"type": "boolean"}
+            }
+          },
+          "validation_plan": {"type": "object"},
+          "incremental_plan": {"type": "object"},
+          "streaming_plan": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "enabled": {"type": "boolean"},
+              "trigger": {"type": ["string", "null"]},
+              "checkpoint_location": {"type": ["string", "null"]},
+              "watermark": {"type": ["object", "null"]}
+            }
+          },
+          "sink_plan": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "type": {"type": "string"},
+              "format": {"type": ["string", "null"]},
+              "uri": {"type": ["string", "null"]},
+              "engine": {"type": ["string", "null"]},
+              "table": {"type": ["string", "null"]},
+              "mode": {"type": ["string", "null"]},
+              "partition_by": {"type": ["array", "null"]},
+              "merge_schema": {"type": ["boolean", "null"]},
+              "compression": {"type": ["string", "null"]},
+              "coalesce": {"type": ["integer", "null"]},
+              "repartition": {},
+              "target_file_size_mb": {"type": ["integer", "null"]},
+              "checkpoint_location": {"type": ["string", "null"]},
+              "options": {"type": "object"},
+              "write_options": {"type": "object"}
+            }
+          }
+        }
+      }
+    }
+  }
+}

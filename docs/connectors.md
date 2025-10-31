@@ -16,14 +16,13 @@ source:
   format: parquet
   uri: s3://landing/sales/
   options:
-    mergeSchema: true
+  merge_schema: true
 sink:
   type: storage
   format: parquet
   uri: abfs://silver/sales/
   partition_by: [year, month]
-  options:
-    compression: snappy
+  compression: snappy
 ```
 
 ## APIs y endpoints HTTP
@@ -38,7 +37,7 @@ source:
   method: GET
   auth:
     type: bearer
-    token: ${API_TOKEN}
+    token_env: API_TOKEN
   pagination:
     strategy: cursor
     param: cursor
@@ -48,19 +47,17 @@ source:
 ```
 
 ## Bases de datos y warehouses
-- **JDBC** (`datacore.connectors.db.jdbc`): Postgres, SQL Server/Synapse, MySQL, Redshift. Soporta `pushdown`, lectura por particiones (`partitionColumn`, `lowerBound`, `upperBound`, `numPartitions`) y upserts en modo `merge`.
-- **Warehouse** (`datacore.io.writers`): escritura JDBC con `batchsize`, `isolationLevel`, `truncate` seguro y `createTableOptions`.
-- **BigQuery** (`datacore.connectors.db.bigquery`): escritura batch con `temporaryGcsBucket` e `intermediateFormat`.
+- **JDBC** (`datacore.connectors.db.jdbc`): Postgres, SQL Server/Synapse, MySQL, Redshift. Soporta `pushdown`, lectura por particiones (`partitionColumn`, `lowerBound`, `upperBound`, `numPartitions`, `fetchsize`) y upserts en modo `merge`.
+- **Warehouse** (`datacore.io.writers`): escritura JDBC con `batch_size`, `isolation_level`, `truncate_safe` y `create_table_options`.
+- **BigQuery** (`datacore.io.writers`): escritura batch con `temporary_gcs_bucket` e `intermediate_format`.
 
 ```yaml
 sink:
   type: warehouse
   engine: postgres
   table: analytics.orders
-  options:
-    batchsize: 5000
-    truncate: false
-    isolationLevel: READ_COMMITTED
+  batch_size: 5000
+  isolation_level: READ_COMMITTED
 ```
 
 ## NoSQL
@@ -79,7 +76,7 @@ sink:
 ```
 
 ## Streaming (Kafka / Event Hubs)
-Los lectores y escritores streaming utilizan `readStream`/`writeStream`. El payload puede ser JSON o CSV y se especifica mediante `options.format`. Se soportan `watermark_column`, `trigger`, `checkpointLocation` y `topic` / `eventHubs.connectionString`.
+Los lectores y escritores streaming utilizan `readStream`/`writeStream`. El payload puede ser JSON o CSV y se especifica mediante `payload_format`. Se soportan `watermark` (`{column, delay_threshold}`), `trigger`, `checkpoint_location` y `topic` / `eventHubs.connectionString`.
 
 ```yaml
 source:
@@ -87,12 +84,16 @@ source:
   options:
     subscribe: orders
     startingOffsets: earliest
-    format: json
-    watermark_column: event_time
+  payload_format: json
+streaming:
+  enabled: true
+  watermark:
+    column: event_time
+    delay_threshold: "10 minutes"
 sink:
   type: event_hubs
   options:
     eventHubs.connectionString: ${SECRET:EH_CONN}
     topic: orders_enriched
-    checkpointLocation: abfs://checkpoints/orders
+  checkpoint_location: abfs://checkpoints/orders
 ```

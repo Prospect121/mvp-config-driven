@@ -76,3 +76,49 @@ def test_jdbc_read_supports_partitioning_block_aliases():
     assert result["numPartitions"] == 2
     assert result["fetchsize"] == 5_000
     assert result["pushDownPredicate"] == "false"
+
+
+def test_jdbc_write_honours_snake_case_options():
+    captured = {}
+
+    class _Writer:
+        def __init__(self):
+            self.opts = {}
+
+        def option(self, key, value):
+            self.opts[key] = value
+            return self
+
+        def mode(self, mode):
+            captured["mode"] = mode
+            return self
+
+        def format(self, fmt):
+            assert fmt == "jdbc"
+            return self
+
+        def save(self):
+            captured["options"] = dict(self.opts)
+
+    class _FakeDf:
+        def __init__(self):
+            self.write = _Writer()
+
+    jdbc.write(
+        _FakeDf(),
+        {
+            "url": "jdbc:postgresql://host/db",
+            "table": "public.orders",
+            "batch_size": 500,
+            "isolation_level": "READ_COMMITTED",
+            "create_table_options": "WITH (FILLFACTOR=80)",
+            "truncate_safe": True,
+        },
+    )
+
+    assert captured["mode"] == "overwrite"
+    opts = captured["options"]
+    assert opts["batchsize"] == 500
+    assert opts["isolationLevel"] == "READ_COMMITTED"
+    assert opts["createTableOptions"].startswith("WITH")
+    assert opts["truncate"] == "true"

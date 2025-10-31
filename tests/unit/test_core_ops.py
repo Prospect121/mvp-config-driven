@@ -11,9 +11,9 @@ def test_apply_ops_transformations(spark):
     result = ops.apply_ops(
         df,
         [
-            {"trim": ["name"]},
-            {"uppercase": ["name"]},
             {"rename": {"name": "NAME"}},
+            {"trim": ["NAME"]},
+            {"uppercase": ["NAME"]},
             {"drop_columns": ["payload"]},
         ],
     )
@@ -42,3 +42,34 @@ def test_deduplicate_and_flatten(spark):
     row = result.collect()[0]
     assert row.id == 1
     assert row.flatdata_info_value == "B"
+
+
+def test_ops_respect_canonical_order(spark):
+    df = spark.createDataFrame([(" 10.5 ", "tmp")], ["amount_raw", "dummy"])
+
+    transformed = ops.apply_ops(
+        df,
+        [
+            {"cast": {"amount": "double"}},
+            {"rename": {"amount_raw": "amount"}},
+            {"exclude": ["dummy"]},
+        ],
+    )
+
+    row = transformed.collect()[0]
+    assert "dummy" not in transformed.columns
+    assert row.amount == 10.5
+
+
+def test_ops_sql_stage_runs_last(spark):
+    df = spark.createDataFrame([(1, "mx"), (2, "us")], ["id", "country"])
+
+    result = ops.apply_ops(
+        df,
+        [
+            {"sql": "SELECT id FROM __dc_ops WHERE country = 'mx'"},
+        ],
+    )
+
+    rows = result.collect()
+    assert rows[0]["id"] == 1

@@ -18,7 +18,9 @@ ALIAS_MAP = {
     "expect_column_values_to_be_unique": "expect_unique",
     "expect_domain": "values_in_set",
     "expect_set": "values_in_set",
+    "expect_values_in_set": "values_in_set",
     "expect_between": "range",
+    "expect_range": "range",
     "expect_regex": "regex",
 }
 
@@ -324,6 +326,7 @@ def apply_validation(df: DataFrame, rules: dict[str, Any]) -> ValidationResult:
         action = (rule.on_fail or "").lower() if rule.on_fail else None
         rule_metrics[rule.identifier] = {
             "invalid_rows": int(invalid_count),
+            "valid_rows": int(input_rows - invalid_count),
             "ratio": ratio,
             "threshold": rule.threshold,
             "failed": bool(failed),
@@ -333,7 +336,7 @@ def apply_validation(df: DataFrame, rules: dict[str, Any]) -> ValidationResult:
 
         if failed and action == "quarantine":
             quarantine_frames.append(
-                enriched.filter(~F.col(column)).withColumn("_quarantine_reason", F.lit(rule.identifier))
+                enriched.filter(~F.col(column)).withColumn("_reject_reason", F.lit(rule.identifier))
             )
 
         should_reject = failed and rule.severity == "error"
@@ -377,7 +380,9 @@ def apply_validation(df: DataFrame, rules: dict[str, Any]) -> ValidationResult:
         "input_rows": input_rows,
         "valid_rows": valid_rows,
         "invalid_rows": invalid_rows,
+        "by_rule": rule_metrics,
         "rules": rule_metrics,
+        "quarantine_rows": 0,
     }
 
     LOGGER.info("Validación completada. métricas=%s", metrics)

@@ -89,13 +89,17 @@ def write(df: DataFrame, config: dict[str, Any]) -> None:
         "url": config["url"],
         "dbtable": config["table"],
     }
-    if config.get("batchsize"):
-        options["batchsize"] = config["batchsize"]
-    if config.get("isolationLevel"):
-        options["isolationLevel"] = config["isolationLevel"]
-    if config.get("createTableOptions"):
-        options["createTableOptions"] = config["createTableOptions"]
-    if config.get("truncate"):
+    batch_size = config.get("batch_size") or config.get("batchsize")
+    if batch_size:
+        options["batchsize"] = batch_size
+    isolation = config.get("isolation_level") or config.get("isolationLevel")
+    if isolation:
+        options["isolationLevel"] = isolation
+    create_opts = config.get("create_table_options") or config.get("createTableOptions")
+    if create_opts:
+        options["createTableOptions"] = create_opts
+    truncate_flag = config.get("truncate_safe") or config.get("truncate")
+    if truncate_flag:
         mode = "overwrite"
         options["truncate"] = "true"
     writer = df.write.format("jdbc").mode(mode)

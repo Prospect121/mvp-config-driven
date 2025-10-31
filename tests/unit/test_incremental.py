@@ -1,3 +1,5 @@
+import pytest
+
 from datacore.core.incremental import prepare_incremental
 
 
@@ -34,3 +36,73 @@ def test_handle_incremental_non_merge_returns_false(spark):
     )
     assert handled is False
     assert sink.get("mode", "append") == "append"
+
+
+def test_prepare_incremental_full_overwrite(spark):
+    df = spark.createDataFrame([(1, "A")], ["id", "value"])
+    result_df, sink, handled = prepare_incremental(
+        df,
+        {"type": "storage", "uri": "/tmp/x"},
+        {"mode": "full"},
+    )
+    assert handled is False
+    assert sink["mode"] == "overwrite"
+    assert result_df is df
+
+
+class _FakePlatform:
+    def merge_into_warehouse(self, df, sink, keys, order_by):
+        self.called = (df.count(), tuple(keys), tuple(order_by))
+        return True
+
+
+def test_merge_with_platform_short_circuit(spark):
+    df = spark.createDataFrame([(1, "A")], ["id", "value"])
+    platform = _FakePlatform()
+    _, _, handled = prepare_incremental(
+        df,
+        {"type": "warehouse", "engine": "postgres", "url": "jdbc://", "table": "public.t"},
+        {"mode": "merge", "keys": ["id"], "order_by": ["id DESC"]},
+        platform=platform,
+    )
+    assert handled is True
+    assert platform.called[1] == ("id",)
+
+
+def test_merge_jdbc_fallback(monkeypatch, spark):
+    df = spark.createDataFrame([(1, "A")], ["id", "value"])
+    calls = {}
+
+    def fake_read(spark_session, sink_conf):
+        return spark.createDataFrame([(2, "B")], ["id", "value"])
+
+    def fake_write(dataframe, sink_conf):
+        calls["write"] = dataframe.orderBy("id").collect()
+
+    monkeypatch.setattr("datacore.core.incremental.jdbc.read", fake_read)
+    monkeypatch.setattr("datacore.core.incremental.jdbc.write", fake_write)
+
+    _, _, handled = prepare_incremental(
+        df,
+        {"type": "warehouse", "url": "jdbc://", "table": "public.t"},
+        {"mode": "merge", "keys": ["id"], "order_by": ["id DESC"]},
+    )
+
+    assert handled is True
+    assert [row.value for row in calls["write"]] == ["A", "B"]
+
+
+def test_merge_requires_keys(spark):
+    df = spark.createDataFrame([(1, "A")], ["id", "value"])
+    with pytest.raises(ValueError):
+        prepare_incremental(df, {"type": "storage", "uri": "out"}, {"mode": "merge"})
+
+
+def test_merge_invalid_sink(spark):
+    df = spark.createDataFrame([(1, "A")], ["id", "value"])
+    with pytest.raises(ValueError):
+        prepare_incremental(
+            df,
+            {"type": "unknown"},
+            {"mode": "merge", "keys": ["id"]},
+        )

@@ -57,11 +57,11 @@ graph TD
 - Se añade `transform.add_ingestion_ts` (true por defecto) y se soporta `merge_strategy` para múltiples fuentes.
 
 ## Incremental y streaming
-- `incremental.mode` soporta `append` y `merge` genérico para cualquier formato, aprovechando Delta Lake cuando está disponible.
+- `incremental.mode` soporta `full`, `append` y `merge` genérico para cualquier formato, aprovechando Delta Lake cuando está disponible.
 - Para sinks JDBC el motor realiza upserts por etapas (tablas temporales + transacciones) cuando se definen `keys`.
-- Las cargas streaming manejan `watermark_column`, triggers configurables y checkpoints por dataset.
+- Las cargas streaming manejan `watermark` (`column` + `delay_threshold`), triggers configurables y checkpoints por dataset.
 
 ## Observabilidad
-- El motor genera métricas JSON en `<sink>/_metrics/` y archivos `_rejects` con motivos.
-- `prodi plan` y `prodi run --dry-run` devuelven el plan completo (readers, transformaciones, sinks y opciones) sin ejecutar.
+- El motor genera métricas JSON en `<sink>/_metrics/<run_id>.json` y archivos `_rejects` con motivos.
+- `prodi plan` y `prodi run --dry-run` devuelven un contrato JSON estable con `{run_id, datasets: [...]}` incluyendo readers, transformaciones, incremental, streaming y sinks.
 - El flag `--fail-fast` permite abortar al primer error manteniendo logs contextualizados por capa/dataset.

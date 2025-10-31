@@ -52,12 +52,16 @@ datasets:
       rules:
         - check: expect_not_null
           columns: [order_id, order_date]
+          severity: error
         - check: expect_unique
           columns: [order_id]
-        - check: range
+          severity: error
+        - check: expect_range
           column: total_amount
           min: 0
-        - check: regex
+          severity: warn
+          threshold: 0.05
+        - check: expect_regex
           column: customer_email
           pattern: "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"
           severity: warn
@@ -68,17 +72,17 @@ datasets:
       mode: merge
       keys: [order_id]
       order_by: ["order_date DESC", "_ingestion_ts DESC"]
-      watermark_column: order_date
+      watermark:
+        column: order_date
+        delay_threshold: "1 day"
     sink:
       type: storage
       format: parquet
       uri: abfs://silver/retail/orders_silver/
       partition_by: [order_date]
-      options:
-        mergeSchema: true
-        compression: snappy
-      write_options:
-        maxRecordsPerFile: 134217728
+      merge_schema: true
+      compression: snappy
+      target_file_size_mb: 128
   - name: orders_gold
     layer: gold
     source:
@@ -100,13 +104,18 @@ datasets:
             _ingestion_ts
           FROM orders_silver
     validation:
-      expect_not_null: [order_id, order_date, customer_email]
-      expect_regex:
-        col: country_code
-        pattern: "^[A-Z]{2}$"
-      expect_length:
-        col: customer_name
-        min: 3
+      rules:
+        - check: expect_not_null
+          columns: [order_id, order_date, customer_email]
+          severity: error
+        - check: expect_regex
+          column: country_code
+          pattern: "^[A-Z]{2}$"
+          severity: warn
+        - check: expect_length
+          column: customer_name
+          min: 3
+          severity: warn
     incremental:
       mode: merge
       keys: [order_id]
@@ -116,8 +125,8 @@ datasets:
       engine: synapse
       table: analytics.orders_gold
       partition_by: [order_date]
-      options:
-        batchsize: 10000
+      batch_size: 10000
+      isolation_level: READ_COMMITTED
         truncate: false
         isolationLevel: READ_COMMITTED
         createTableOptions: "DISTRIBUTION = HASH(order_id)"

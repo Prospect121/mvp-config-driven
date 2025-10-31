@@ -11,10 +11,9 @@ datasets:
       options:
         subscribe: retail-orders
         startingOffsets: earliest
-        format: json
         kafka.bootstrap.servers: kafka:9092
         failOnDataLoss: false
-      watermark_column: event_time
+      payload_format: json
     transform:
       add_ingestion_ts: true
       ops:
@@ -25,15 +24,19 @@ datasets:
             total_amount: decimal(18,2)
         - uppercase: [currency]
     validation:
-      expect_not_null: [order_id, event_time]
-      expect_between:
-        col: total_amount
-        min: 0
+      rules:
+        - check: expect_not_null
+          columns: [order_id, event_time]
+        - check: expect_range
+          column: total_amount
+          min: 0
     streaming:
       enabled: true
-      trigger: processingTime=1 minute
-      checkpoint: abfs://checkpoints/retail/orders_stream/
-      watermark_column: event_time
+      trigger: "1 minute"
+      checkpoint_location: abfs://checkpoints/retail/orders_stream/
+      watermark:
+        column: event_time
+        delay_threshold: "5 minutes"
     sink:
       type: nosql
       engine: cosmosdb
@@ -42,7 +45,7 @@ datasets:
         masterkey: ${SECRET:COSMOS_KEY}
         database: retail
         collection: orders_stream
-        checkpointLocation: abfs://checkpoints/retail/orders_stream/
         writeThroughput: 400
+      checkpoint_location: abfs://checkpoints/retail/orders_stream/
     incremental:
       mode: append

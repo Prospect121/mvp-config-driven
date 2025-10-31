@@ -10,22 +10,21 @@ datasets:
       - type: storage
         format: parquet
         uri: gs://landing/retail/customers/
-        options:
-          mergeSchema: true
+        merge_schema: true
       - type: api_graphql
-        options:
-          endpoint: https://api.retail.example.com/graphql
-          query: |
-            query Customers($region: String!) {
-              customers(region: $region) {
-                id
-                email
-                loyaltyTier
-                updatedAt
-              }
+        url: https://api.retail.example.com/graphql
+        query: |
+          query Customers($region: String!) {
+            customers(region: $region) {
+              id
+              email
+              loyaltyTier
+              updatedAt
             }
-          variables:
-            region: EU
+          }
+        variables:
+          region: EU
+        record_path: data.customers
     merge_strategy:
       keys: [customer_id]
       prefer: coalesce
@@ -40,11 +39,14 @@ datasets:
         - trim: [email]
         - normalize_whitespace: [full_name]
     validation:
-      expect_not_null: [customer_id, email]
-      expect_email: [email]
-      expect_length:
-        col: loyalty_tier
-        min: 1
+      rules:
+        - check: expect_not_null
+          columns: [customer_id, email]
+        - check: expect_email
+          columns: [email]
+        - check: expect_length
+          column: loyalty_tier
+          min: 1
     incremental:
       mode: merge
       keys: [customer_id]
@@ -53,9 +55,8 @@ datasets:
       type: storage
       format: parquet
       uri: gs://silver/retail/customers/
-      options:
-        mergeSchema: true
-        compression: snappy
+      merge_schema: true
+      compression: snappy
   - name: customers_gold
     layer: gold
     source:
@@ -76,10 +77,12 @@ datasets:
             _ingestion_ts
           FROM customers_silver
     validation:
-      expect_unique: [customer_id]
-      expect_regex:
-        col: loyalty_tier
-        pattern: "^(platinum|gold|silver|bronze)$"
+      rules:
+        - check: expect_unique
+          columns: [customer_id]
+        - check: expect_regex
+          column: loyalty_tier
+          pattern: "^(platinum|gold|silver|bronze)$"
     incremental:
       mode: merge
       keys: [customer_id]
@@ -88,6 +91,5 @@ datasets:
       type: warehouse
       engine: bigquery
       table: analytics.customers_gold
-      options:
-        temporaryGcsBucket: gs://tmp-retail/datacore/
-        intermediateFormat: parquet
+      temporary_gcs_bucket: gs://tmp-retail/datacore/
+      intermediate_format: parquet
