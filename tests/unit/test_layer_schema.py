@@ -108,8 +108,51 @@ def test_schema_accepts_streaming_configuration():
             "enabled": True,
             "trigger": "5 minutes",
             "checkpoint_location": "/tmp/chk",
+        },
+        "incremental": {
+            "mode": "append",
             "watermark": {"column": "created_at", "delay_threshold": "10 minutes"},
         },
+    }
+
+    VALIDATOR.validate(_base_config(dataset))
+
+
+def test_schema_accepts_repartition_object():
+    dataset = {
+        "name": "customers",
+        "layer": "silver",
+        "source": {"type": "storage", "uri": "abfss://bronze/customers/"},
+        "sink": {
+            "type": "storage",
+            "uri": "abfss://silver/customers/",
+            "repartition": {"columns": ["country"], "numPartitions": 4},
+        },
+    }
+
+    VALIDATOR.validate(_base_config(dataset))
+
+
+def test_schema_rejects_transform_validation_block():
+    dataset = {
+        "name": "customers",
+        "layer": "silver",
+        "source": {"type": "storage", "uri": "abfss://bronze/customers/"},
+        "transform": {"validation": {"rules": []}},
+        "sink": {"type": "storage", "uri": "abfss://silver/customers/"},
+    }
+
+    with pytest.raises(ValidationError):
+        VALIDATOR.validate(_base_config(dataset))
+
+
+def test_schema_allows_dataset_validation_block():
+    dataset = {
+        "name": "customers",
+        "layer": "silver",
+        "source": {"type": "storage", "uri": "abfss://bronze/customers/"},
+        "validation": {"rules": [{"check": "expect_not_null", "columns": ["id"]}]},
+        "sink": {"type": "storage", "uri": "abfss://silver/customers/"},
     }
 
     VALIDATOR.validate(_base_config(dataset))

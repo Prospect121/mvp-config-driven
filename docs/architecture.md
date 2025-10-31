@@ -55,6 +55,7 @@ graph TD
   deduplicar, explotar arrays, flatten JSON, etc.).
 - Los pipelines pueden combinar `transform.sql`, `transform.udf` y `transform.ops`, manteniendo compatibilidad hacia atrás.
 - Se añade `transform.add_ingestion_ts` (true por defecto) y se soporta `merge_strategy` para múltiples fuentes.
+- **Breaking change**: el bloque `transform.validation` fue retirado; las reglas deben declararse en `dataset.validation`.
 
 ## Incremental y streaming
 - `incremental.mode` soporta `full`, `append` y `merge` genérico para cualquier formato, aprovechando Delta Lake cuando está disponible.

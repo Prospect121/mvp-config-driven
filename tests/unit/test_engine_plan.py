@@ -59,6 +59,9 @@ def test_plan_streaming_contract(tmp_path):
                     "enabled": True,
                     "trigger": "10 minutes",
                     "checkpoint_location": str(tmp_path / "chk"),
+                },
+                "incremental": {
+                    "mode": "append",
                     "watermark": {"column": "created_at", "delay_threshold": "5 minutes"},
                 },
                 "source": {

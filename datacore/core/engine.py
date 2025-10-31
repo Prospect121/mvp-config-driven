@@ -230,7 +230,7 @@ def _build_plan(dataset: dict[str, Any]) -> dict[str, Any]:
         "add_ingestion_ts": transform_cfg.get("add_ingestion_ts", True),
     }
 
-    validation_cfg = dataset.get("validation") or transform_cfg.get("validation", {})
+    validation_cfg = dataset.get("validation", {})
     streaming_cfg = dataset.get("streaming", {})
     incremental_cfg = dataset.get("incremental", {})
 
@@ -284,7 +284,7 @@ def _handle_batch_dataset(
 ) -> dict[str, Any]:
     df = _read_dataset_source(spark, platform, dataset, layer=layer, environment=environment)
     transformed = _apply_transformations(df, dataset.get("transform", {}))
-    validation_cfg = dataset.get("validation") or dataset.get("transform", {}).get("validation", {})
+    validation_cfg = dataset.get("validation", {})
     validation_result = validation.apply_validation(transformed, validation_cfg)
     metrics = dict(validation_result.metrics)
     metrics.update(

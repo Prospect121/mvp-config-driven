@@ -46,7 +46,6 @@ def cmd_run(args: argparse.Namespace) -> None:
     if args.dry_run:
         payload = {
             "run_id": results["run_id"],
-            "layer": args.layer,
             "datasets": results["datasets"],
         }
         print(json.dumps(payload, indent=2, default=str))

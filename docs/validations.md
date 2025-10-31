@@ -1,6 +1,6 @@
 # Validaciones de datos
 
-Las validaciones se definen dentro de `validation.rules` (o en `transform.validation` para configuraciones heredadas). Cada regla genera métricas, puede marcar registros inválidos y opcionalmente enviarlos a cuarentena.
+Las validaciones se declaran en el bloque `validation` de cada dataset (junto a `source` y `sink`). Cada regla genera métricas, puede marcar registros inválidos y opcionalmente enviarlos a cuarentena.
 
 ## Reglas soportadas
 - `expect_not_null`: asegura que las columnas listadas no contengan nulos.
@@ -35,6 +35,7 @@ validation:
 - Registros inválidos se escriben en `<sink.uri>/_rejects/` con las columnas originales más `_reject_reason`.
 - Las reglas con `on_fail: quarantine` se escriben adicionalmente en `validation.quarantine_sink` (si se configura) con `_reject_reason` y preservando el esquema original.
 - El motor devuelve métricas estructuradas `{input_rows, valid_rows, invalid_rows, by_rule: {...}, quarantine_rows, run_id, ...}` y escribe un JSON por ejecución en `<sink.uri>/_metrics/<run_id>.json`.
+- El bloque histórico `transform.validation` ya no es soportado; migra las reglas al nivel superior `validation`.
 
 ## Buenas prácticas
 - Definir validaciones clave en capas `silver`/`gold` para asegurar contratos aguas arriba.

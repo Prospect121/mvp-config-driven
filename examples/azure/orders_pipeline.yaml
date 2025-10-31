@@ -126,7 +126,6 @@ datasets:
       table: analytics.orders_gold
       partition_by: [order_date]
       batch_size: 10000
+      truncate_safe: false
       isolation_level: READ_COMMITTED
-        truncate: false
-        isolationLevel: READ_COMMITTED
-        createTableOptions: "DISTRIBUTION = HASH(order_id)"
+      create_table_options: "DISTRIBUTION = HASH(order_id)"

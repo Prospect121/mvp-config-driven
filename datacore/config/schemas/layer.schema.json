@@ -77,16 +77,7 @@
         "lower_bound": {"type": ["number", "integer"]},
         "upper_bound": {"type": ["number", "integer"]},
         "num_partitions": {"type": "integer", "minimum": 1},
-        "fetchsize": {"type": "integer", "minimum": 1},
-        "watermark": {
-          "type": "object",
-          "properties": {
-            "column": {"type": "string"},
-            "delay_threshold": {"type": "string"}
-          },
-          "required": ["column"],
-          "additionalProperties": false
-        }
+        "fetchsize": {"type": "integer", "minimum": 1}
       }
     },
     "sink": {
@@ -114,7 +105,15 @@
           "oneOf": [
             {"type": "integer", "minimum": 1},
             {"$ref": "#/definitions/string_array"},
-            {"type": "object"}
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "columns": {"$ref": "#/definitions/string_array"},
+                "numPartitions": {"type": "integer", "minimum": 1}
+              },
+              "required": ["columns"]
+            }
           ]
         },
         "target_file_size_mb": {"type": "integer", "minimum": 1},
@@ -180,16 +179,7 @@
         "enabled": {"type": "boolean"},
         "trigger": {"type": "string"},
         "checkpoint": {"type": "string"},
-        "checkpoint_location": {"type": "string"},
-        "watermark": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "column": {"type": "string"},
-            "delay_threshold": {"type": "string"}
-          },
-          "required": ["column"]
-        }
+        "checkpoint_location": {"type": "string"}
       }
     },
     "dataset": {
@@ -211,7 +201,7 @@
         },
         "transform": {
           "type": "object",
-          "additionalProperties": true,
+          "additionalProperties": false,
           "properties": {
             "sql": {"type": "array", "items": {"type": "string"}},
             "udf": {"type": "array", "items": {"type": "string"}},
@@ -229,8 +219,7 @@
                   }
                 ]
               }
-            },
-            "validation": {"$ref": "#/definitions/validation"}
+            }
           }
         },
         "validation": {"$ref": "#/definitions/validation"},

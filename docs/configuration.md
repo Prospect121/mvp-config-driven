@@ -19,10 +19,11 @@ La configuración se organiza por entorno (`configs/envs/<env>`), capa (`layers/
 ## Estructura de datasets
 - `source`: puede ser un objeto o una lista de fuentes. Cada fuente define `type`, `uri`/`options`/`read_options`, `format`, `infer_schema`, `record_path`, `flatten`, autenticación (para `endpoint`/`api_rest`) y paginación. Para streaming (`kafka`, `event_hubs`) declara el `payload_format`.
 - `transform`: admite `sql`, `udf`, `ops` (operaciones declarativas aplicadas en orden determinístico) y `add_ingestion_ts` (`true` por defecto).
+- `validation`: define reglas de calidad (`rules`), severidad (`error|warn`), `threshold` y `quarantine_sink`.
 - `merge_strategy`: combina múltiples fuentes usando `keys`, `prefer` (`newest|left|coalesce`) y `order_by`.
-- `sink`: soporta `storage`, `warehouse`, `nosql`, `kafka`, `event_hubs` con opciones específicas (particionado vía `partition_by`, `merge_schema`, `target_file_size_mb`, `compression`, `checkpoint_location`, `batch_size`, etc.).
+- `sink`: soporta `storage`, `warehouse`, `nosql`, `kafka`, `event_hubs` con opciones específicas (particionado vía `partition_by`, `merge_schema`, `target_file_size_mb`, `compression`, `checkpoint_location`, `batch_size`, etc.). `repartition` acepta un entero, una lista de columnas o un objeto `{columns: [...], numPartitions: <int>}`.
 - `incremental`: controla `mode` (`full|append|merge`), `keys`, `order_by`, `watermark` (`{column, delay_threshold}`) y banderas específicas por sink.
-- `streaming`: `enabled`, `trigger` (valor de `processingTime`), `checkpoint_location` y `watermark` (`{column, delay_threshold}`).
+- `streaming`: `enabled`, `trigger` (valor de `processingTime`) y `checkpoint_location`. Si se requiere `watermark`, decláralo en `incremental.watermark`.
 
 ## Ejemplo completo (capa silver)
 ```yaml

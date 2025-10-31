@@ -60,7 +60,7 @@ def test_cli_run_dry_run(monkeypatch, sample_config, capsys):
 
     output = json.loads(capsys.readouterr().out)
     assert output["run_id"] == "run-123"
-    assert output["layer"] == "bronze"
+    assert "layer" not in output
     assert output["datasets"][0]["status"] == "planned"
 
 
