@@ -10,6 +10,7 @@ Cada carpeta contiene pipelines de referencia raw→gold para Azure, AWS, GCP y 
 - `aws/products_pipeline.yaml`: normalización JSON → parquet bronze → Redshift merge.
 - `gcp/customers_pipeline.yaml`: unión Parquet + GraphQL → parquet silver → BigQuery gold.
 - `streaming/kafka_cosmos.yaml`: streaming Kafka → CosmosDB con watermark y checkpoint dedicado.
+- `streaming/orders_stream.yaml`: pipeline base para lecturas Kafka particionadas con watermark declarativo.
 
 ## Ejecución local (Spark standalone)
 ```bash
