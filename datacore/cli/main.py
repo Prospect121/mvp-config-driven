@@ -35,19 +35,36 @@ def cmd_run(args: argparse.Namespace) -> None:
     data = _load_config(args.config)
     validate_config(data)
     configure_logging(level=args.log_level)
-    run_layer_plan(
+    results = run_layer_plan(
         layer=args.layer,
         config=data,
         platform_name=args.platform,
         environment=args.env,
         dry_run=args.dry_run,
+        fail_fast=args.fail_fast,
     )
+    if args.dry_run:
+        print(json.dumps({"plan": results}, indent=2, default=str))
+    else:
+        LOGGER.info("Resultados de ejecución: %s", results)
 
 
 def cmd_plan(args: argparse.Namespace) -> None:
     data = _load_config(args.config)
     validate_config(data)
-    print(json.dumps({"datasets": [d.get("name") for d in data.get("datasets", [])]}, indent=2))
+    layers = sorted({d.get("layer") for d in data.get("datasets", [])})
+    plans: list[dict[str, Any]] = []
+    for layer in layers:
+        plans.extend(
+            run_layer_plan(
+                layer=layer,
+                config=data,
+                platform_name=args.platform,
+                environment=args.env,
+                dry_run=True,
+            )
+        )
+    print(json.dumps({"datasets": plans}, indent=2, default=str))
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -76,10 +93,13 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument("--env", required=False, help="Entorno (dev/test/prod)")
     run_parser.add_argument("--log-level", default="INFO", help="Nivel de logging")
     run_parser.add_argument("--dry-run", action="store_true", help="Solo genera el plan")
+    run_parser.add_argument("--fail-fast", action="store_true", help="Detener al primer error")
     run_parser.set_defaults(func=cmd_run)
 
     plan_parser = subparsers.add_parser("plan", help="Muestra el plan de datasets")
     plan_parser.add_argument("--config", required=True, help="Archivo YAML del proyecto")
+    plan_parser.add_argument("--platform", required=False, help="Plataforma cloud (azure/aws/gcp)")
+    plan_parser.add_argument("--env", required=False, help="Entorno (dev/test/prod)")
     plan_parser.set_defaults(func=cmd_plan)
 
     return parser

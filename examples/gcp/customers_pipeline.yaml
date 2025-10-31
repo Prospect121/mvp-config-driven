@@ -1,0 +1,93 @@
+project: retail360
+environment: dev
+platform: gcp
+spark:
+  shuffle_partitions: 4
+datasets:
+  - name: customers_silver
+    layer: silver
+    source:
+      - type: storage
+        format: parquet
+        uri: gs://landing/retail/customers/
+        options:
+          mergeSchema: true
+      - type: api_graphql
+        options:
+          endpoint: https://api.retail.example.com/graphql
+          query: |
+            query Customers($region: String!) {
+              customers(region: $region) {
+                id
+                email
+                loyaltyTier
+                updatedAt
+              }
+            }
+          variables:
+            region: EU
+    merge_strategy:
+      keys: [customer_id]
+      prefer: coalesce
+      order_by: ["_ingestion_ts DESC"]
+    transform:
+      ops:
+        - rename:
+            id: customer_id
+            loyaltyTier: loyalty_tier
+            updatedAt: updated_at
+        - lowercase: [loyalty_tier]
+        - trim: [email]
+        - normalize_whitespace: [full_name]
+    validation:
+      expect_not_null: [customer_id, email]
+      expect_email: [email]
+      expect_length:
+        col: loyalty_tier
+        min: 1
+    incremental:
+      mode: merge
+      keys: [customer_id]
+      order_by: ["updated_at DESC", "_ingestion_ts DESC"]
+    sink:
+      type: storage
+      format: parquet
+      uri: gs://silver/retail/customers/
+      options:
+        mergeSchema: true
+        compression: snappy
+  - name: customers_gold
+    layer: gold
+    source:
+      type: storage
+      format: parquet
+      uri: gs://silver/retail/customers/
+      options:
+        mergeSchema: true
+    transform:
+      sql:
+        - |
+          SELECT
+            customer_id,
+            full_name,
+            email,
+            loyalty_tier,
+            updated_at,
+            _ingestion_ts
+          FROM customers_silver
+    validation:
+      expect_unique: [customer_id]
+      expect_regex:
+        col: loyalty_tier
+        pattern: "^(platinum|gold|silver|bronze)$"
+    incremental:
+      mode: merge
+      keys: [customer_id]
+      order_by: ["updated_at DESC", "_ingestion_ts DESC"]
+    sink:
+      type: warehouse
+      engine: bigquery
+      table: analytics.customers_gold
+      options:
+        temporaryGcsBucket: gs://tmp-retail/datacore/
+        intermediateFormat: parquet

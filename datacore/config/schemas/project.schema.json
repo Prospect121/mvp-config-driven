@@ -22,14 +22,104 @@
         "properties": {
           "name": {"type": "string"},
           "layer": {"enum": ["raw", "bronze", "silver", "gold"]},
-          "source": {"type": "object"},
-          "transform": {"type": "object"},
-          "sink": {"type": "object"},
+          "source": {
+            "oneOf": [
+              {
+                "type": "object",
+                "required": ["type"],
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "storage",
+                      "jdbc",
+                      "api_rest",
+                      "api_graphql",
+                      "kafka",
+                      "event_hubs",
+                      "nosql"
+                    ]
+                  },
+                  "format": {"type": "string"},
+                  "uri": {"type": "string"},
+                  "options": {"type": "object"},
+                  "infer_schema": {"type": "boolean"},
+                  "record_path": {"type": ["string", "array"]},
+                  "flatten": {"type": "boolean"}
+                },
+                "additionalProperties": true
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["type"],
+                  "properties": {
+                    "type": {"type": "string"},
+                    "format": {"type": "string"},
+                    "uri": {"type": "string"},
+                    "options": {"type": "object"},
+                    "infer_schema": {"type": "boolean"},
+                    "record_path": {"type": ["string", "array"]},
+                    "flatten": {"type": "boolean"}
+                  },
+                  "additionalProperties": true
+                }
+              }
+            ]
+          },
+          "transform": {
+            "type": "object",
+            "properties": {
+              "sql": {"type": "array", "items": {"type": "string"}},
+              "udf": {"type": "array", "items": {"type": "string"}},
+              "add_ingestion_ts": {"type": "boolean"},
+              "ops": {
+                "type": "array",
+                "items": {
+                  "oneOf": [
+                    {"type": "string"},
+                    {
+                      "type": "object",
+                      "minProperties": 1,
+                      "maxProperties": 1,
+                      "additionalProperties": true
+                    }
+                  ]
+                }
+              },
+              "validation": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            },
+            "additionalProperties": true
+          },
+          "sink": {
+            "type": "object",
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["storage", "warehouse", "nosql", "kafka", "event_hubs"]
+              },
+              "format": {"type": "string"},
+              "uri": {"type": "string"},
+              "engine": {"type": "string"},
+              "table": {"type": "string"},
+              "mode": {"type": "string"},
+              "partition_by": {"type": "array", "items": {"type": "string"}},
+              "mergeSchema": {"type": "boolean"},
+              "merge_schema": {"type": "boolean"}
+            },
+            "additionalProperties": true
+          },
           "incremental": {
             "type": "object",
             "properties": {
               "mode": {"enum": ["append", "merge"]},
               "keys": {"type": "array", "items": {"type": "string"}},
+              "order_by": {"type": "array", "items": {"type": "string"}},
               "watermark_column": {"type": "string"}
             },
             "additionalProperties": false
@@ -38,7 +128,19 @@
             "type": "object",
             "properties": {
               "enabled": {"type": "boolean"},
-              "trigger": {"type": "string"}
+              "trigger": {"type": "string"},
+              "watermark": {"type": "string"},
+              "watermark_column": {"type": "string"},
+              "checkpoint": {"type": "string"}
+            },
+            "additionalProperties": false
+          },
+          "merge_strategy": {
+            "type": "object",
+            "properties": {
+              "keys": {"type": "array", "items": {"type": "string"}},
+              "prefer": {"enum": ["newest", "left", "coalesce"]},
+              "order_by": {"type": "array", "items": {"type": "string"}}
             },
             "additionalProperties": false
           }

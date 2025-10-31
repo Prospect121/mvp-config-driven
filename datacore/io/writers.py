@@ -1,46 +1,146 @@
-"""Escritores genéricos."""
+"""Escritores genéricos y especializados."""
 
 from __future__ import annotations
 
+import json
+from datetime import datetime
 from typing import Any
+
+import boto3
 
 from pyspark.sql import DataFrame
 
 from datacore.connectors.db import jdbc
 from datacore.connectors.storage import abfs, gcs, local, s3
 from datacore.platforms.base import PlatformBase
+from datacore.utils.logging import get_logger
+
+LOGGER = get_logger(__name__)
+
+
+def _storage_connector(backend: str):
+    connectors = {
+        "aws": s3,
+        "azure": abfs,
+        "gcp": gcs,
+        "local": local,
+    }
+    return connectors.get(backend, local)
+
+
+def _merge_schema_flag(sink: dict[str, Any]) -> bool | None:
+    if "mergeSchema" in sink:
+        return bool(sink["mergeSchema"])
+    if "merge_schema" in sink:
+        return bool(sink["merge_schema"])
+    return None
 
 
 def write_batch(df: DataFrame, platform: PlatformBase, sink: dict[str, Any]) -> None:
     sink_type = sink["type"]
     fmt = sink.get("format", "parquet")
-    options = sink.get("options", {})
     mode = sink.get("mode", "append")
+    options = sink.get("options", {})
+    partition_by = sink.get("partition_by")
+    merge_schema = _merge_schema_flag(sink)
+
     if sink_type == "storage":
         uri = platform.normalize_uri(sink["uri"])
         backend = sink.get("backend", platform.name)
-        if backend == "aws":
-            s3.write(df, uri, fmt, mode, options)
-            return
-        if backend == "azure":
-            abfs.write(df, uri, fmt, mode, options)
-            return
-        if backend == "gcp":
-            gcs.write(df, uri, fmt, mode, options)
-            return
-        local.write(df, uri, fmt, mode, options)
+        connector = _storage_connector(backend)
+        connector.write(
+            df,
+            uri,
+            fmt,
+            mode,
+            options,
+            partition_by=partition_by,
+            merge_schema=merge_schema,
+        )
         return
+
     if sink_type == "warehouse":
-        if sink.get("engine") in {"synapse", "redshift", "postgres", "mysql", "sqlserver"}:
+        engine = sink.get("engine")
+        if engine in {"synapse", "redshift", "postgres", "mysql", "sqlserver"}:
             jdbc.write(df, sink)
             return
-        if sink.get("engine") == "bigquery":
+        if engine == "bigquery":
             writer = df.write.format("bigquery").mode(mode)
             for key, value in options.items():
                 writer = writer.option(key, value)
+            if sink.get("temporaryGcsBucket"):
+                writer = writer.option("temporaryGcsBucket", sink["temporaryGcsBucket"])
+            if sink.get("intermediateFormat"):
+                writer = writer.option("intermediateFormat", sink["intermediateFormat"])
             writer.save(sink["table"])
             return
+        raise ValueError(f"Motor de warehouse no soportado: {engine}")
+
+    if sink_type == "nosql":
+        _write_nosql(df, sink)
+        return
+
     raise ValueError(f"Tipo de destino no soportado: {sink_type}")
+
+
+def _write_nosql(df: DataFrame, sink: dict[str, Any]) -> None:
+    engine = sink.get("engine")
+    options = sink.get("options", {})
+    if engine == "cosmosdb":
+        writer = df.write.format(options.get("format", "cosmos.oltp")).mode(sink.get("mode", "append"))
+        for key, value in options.items():
+            writer = writer.option(key, value)
+        writer.save()
+        return
+    if engine == "dynamodb":
+        _write_dynamodb(df, sink)
+        return
+    raise ValueError(f"Motor NoSQL no soportado: {engine}")
+
+
+def _write_dynamodb(df: DataFrame, sink: dict[str, Any]) -> None:
+    table_name = sink["table"]
+    options = sink.get("options", {})
+    region = options.get("region")
+    resource = boto3.resource("dynamodb", region_name=region)
+    table = resource.Table(table_name)
+    batch_size = int(sink.get("batch_size", 25))
+    if sink.get("glue_catalog"):
+        LOGGER.info(
+            "Actualización de Glue Catalog solicitada para %s, no-op en ejecución local",
+            sink["glue_catalog"],
+        )
+
+    items = (row.asDict(recursive=True) for row in df.toLocalIterator())
+    buffer: list[dict[str, Any]] = []
+    with table.batch_writer(overwrite_by_pkeys=sink.get("keys")) as batch:
+        for item in items:
+            buffer.append(item)
+            if len(buffer) >= batch_size:
+                for chunk in buffer:
+                    batch.put_item(Item=chunk)
+                buffer.clear()
+        for chunk in buffer:
+            batch.put_item(Item=chunk)
+
+
+def _stream_writer_common(
+    df: DataFrame,
+    options: dict[str, Any],
+    fmt: str,
+    mode: str,
+    checkpoint: str,
+    trigger: str | None = None,
+) -> None:
+    stream_options = {k: v for k, v in options.items() if k != "await_termination"}
+    await_termination = bool(options.get("await_termination", False))
+    writer = df.writeStream.format(fmt).outputMode(mode).options(**stream_options).option(
+        "checkpointLocation", checkpoint
+    )
+    if trigger:
+        writer = writer.trigger(processingTime=trigger)
+    query = writer.start()
+    query.awaitTermination(await_termination)
 
 
 def write_stream(
@@ -48,14 +148,88 @@ def write_stream(
     platform: PlatformBase,
     sink: dict[str, Any],
     checkpoint: str,
+    trigger: str | None = None,
 ) -> None:
     sink_type = sink["type"]
-    fmt = sink.get("format", "parquet")
-    options = {**sink.get("options", {}), "checkpointLocation": checkpoint}
     mode = sink.get("mode", "append")
+    options = {**sink.get("options", {})}
+
     if sink_type == "storage":
+        fmt = sink.get("format", "parquet")
         uri = platform.normalize_uri(sink["uri"])
-        query = df.writeStream.outputMode(mode).format(fmt).options(**options).start(uri)
-        query.awaitTermination(sink.get("await_termination", False))
+        options.setdefault("path", uri)
+        _stream_writer_common(df, options, fmt, mode, checkpoint, trigger)
         return
+
+    if sink_type == "kafka":
+        options.setdefault("topic", sink.get("topic"))
+        _stream_writer_common(df, options, "kafka", mode, checkpoint, trigger)
+        return
+
+    if sink_type == "event_hubs":
+        if "eventHubs.connectionString" not in options:
+            options["eventHubs.connectionString"] = sink.get("connectionString")
+        _stream_writer_common(df, options, "eventhubs", mode, checkpoint, trigger)
+        return
+
     raise ValueError(f"Streaming no soportado para {sink_type}")
+
+
+def write_rejects(
+    df: DataFrame,
+    platform: PlatformBase,
+    sink: dict[str, Any],
+    *,
+    layer: str,
+    dataset: str,
+    environment: str,
+    fmt: str = "parquet",
+) -> None:
+    if "uri" not in sink:
+        LOGGER.warning("No se pueden almacenar rejects para un sink sin URI explícita")
+        return
+    base_uri = sink["uri"].rstrip("/")
+    rejects_uri = f"{base_uri}/_rejects"
+    backend = sink.get("backend", platform.name)
+    connector = _storage_connector(backend)
+    options = sink.get("reject_options", {})
+    connector.write(
+        df,
+        platform.normalize_uri(rejects_uri),
+        fmt,
+        "append",
+        options,
+        partition_by=None,
+        merge_schema=True,
+    )
+
+
+def write_metrics(
+    spark,
+    platform: PlatformBase,
+    sink: dict[str, Any],
+    *,
+    layer: str,
+    dataset: str,
+    environment: str,
+    metrics: dict[str, Any],
+) -> None:
+    if "uri" not in sink:
+        LOGGER.warning("No se pueden almacenar métricas para un sink sin URI explícita")
+        return
+    timestamp = datetime.utcnow().strftime("%Y%m%d-%H%M")
+    base_uri = sink["uri"].rstrip("/")
+    metrics_uri = f"{base_uri}/_metrics/{timestamp}.json"
+    backend = sink.get("backend", platform.name)
+    connector = _storage_connector(backend)
+    metrics_json = json.dumps(metrics, ensure_ascii=False)
+    metrics_df = spark.read.json(spark.sparkContext.parallelize([metrics_json]))
+    connector.write(
+        metrics_df,
+        platform.normalize_uri(metrics_uri),
+        "json",
+        "overwrite",
+        {"compression": sink.get("metrics_compression", "none")},
+        partition_by=None,
+        merge_schema=True,
+    )
