@@ -1,0 +1,79 @@
+project: retail360
+environment: dev
+platform: aws
+spark:
+  shuffle_partitions: 4
+  extra_conf:
+    spark.sql.files.maxPartitionBytes: 134217728
+datasets:
+  - name: products_bronze
+    layer: bronze
+    source:
+      type: storage
+      format: json
+      uri: s3://landing/retail/products/
+      infer_schema: true
+      options:
+        multiLine: true
+    transform:
+      add_ingestion_ts: true
+      ops:
+        - flatten_json:
+            depth: 2
+        - lowercase: [category]
+        - trim: [product_name]
+    validation:
+      rules:
+        - check: expect_not_null
+          columns: [product_id, product_name]
+        - check: expect_values_in_set
+          column: status
+          allowed: [active, discontinued]
+    incremental:
+      mode: append
+      watermark:
+        column: updated_at
+        delay_threshold: "30 minutes"
+    sink:
+      type: storage
+      format: parquet
+      uri: s3://bronze/retail/products/
+      merge_schema: true
+      compression: snappy
+  - name: products_gold
+    layer: gold
+    source:
+      type: storage
+      format: parquet
+      uri: s3://bronze/retail/products/
+      options:
+        mergeSchema: true
+    transform:
+      ops:
+        - rename:
+            product_name: name
+            category: category_code
+        - cast:
+            price: decimal(12,2)
+        - deduplicate:
+            keys: [product_id]
+            order_by: ["updated_at DESC", "_ingestion_ts DESC"]
+    validation:
+      rules:
+        - check: expect_unique
+          columns: [product_id]
+        - check: expect_range
+          column: price
+          min: 0
+          max: 9999
+    incremental:
+      mode: merge
+      keys: [product_id]
+      order_by: ["updated_at DESC", "_ingestion_ts DESC"]
+    sink:
+      type: warehouse
+      engine: redshift
+      table: analytics.products_gold
+      batch_size: 5000
+      isolation_level: SERIALIZABLE
+      create_table_options: "DISTSTYLE KEY DISTKEY(product_id) SORTKEY(updated_at)"

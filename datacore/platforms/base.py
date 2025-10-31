@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import abc
+import os
 from typing import Any
 
 from pyspark.sql import SparkSession
@@ -22,9 +23,37 @@ class PlatformBase(abc.ABC):
     def build_spark_session(self, opts: dict[str, Any] | None = None) -> SparkSession:
         """Crea la SparkSession con configuraciones específicas."""
 
-    @abc.abstractmethod
     def resolve_secret(self, name: str) -> str:
-        """Obtiene un secreto desde la plataforma."""
+        """Obtiene un secreto desde la plataforma o variables de entorno."""
+
+        if name.startswith("SECRET:"):
+            resolved = self._resolve_platform_secret(name.split(":", 1)[1])
+            if resolved:
+                return resolved
+        env_value = os.getenv(name)
+        if env_value:
+            return env_value
+        config_value = self.config.get("secrets", {}).get(name)
+        if config_value:
+            return config_value
+        return ""
+
+    @abc.abstractmethod
+    def _resolve_platform_secret(self, name: str) -> str:
+        """Implementado por cada plataforma para resolver secretos nativos."""
+
+    def resolve_secret_reference(self, value: str) -> str:
+        """Resuelve expresiones del tipo ${ENV} o ${SECRET:NAME}."""
+
+        if value.startswith("${") and value.endswith("}"):
+            inner = value[2:-1]
+            return self.resolve_secret(inner)
+        if value.startswith("SECRET:"):
+            return self.resolve_secret(value)
+        env_value = os.getenv(value)
+        if env_value:
+            return env_value
+        return value
 
     def normalize_uri(self, uri: str) -> str:
         return normalize_uri(uri)
@@ -32,6 +61,25 @@ class PlatformBase(abc.ABC):
     def checkpoint_dir(self, layer: str, dataset: str, env: str) -> str:
         base = self.config.get("checkpoint_base", f"/tmp/datacore/{env}")
         return f"{base}/{layer}/{dataset}"
+
+    # Adaptadores opcionales para merges específicos de plataforma.
+    def merge_into_warehouse(
+        self,
+        df,
+        sink: dict[str, Any],
+        keys: list[str],
+        order_by: list[str],
+    ) -> bool:  # pragma: no cover - comportamiento por defecto
+        return False
+
+    def merge_into_nosql(
+        self,
+        df,
+        sink: dict[str, Any],
+        keys: list[str],
+        order_by: list[str],
+    ) -> bool:  # pragma: no cover - comportamiento por defecto
+        return False
 
 
 class LocalPlatform(PlatformBase):
@@ -43,5 +91,5 @@ class LocalPlatform(PlatformBase):
             builder = builder.config(key, value)
         return builder.getOrCreate()
 
-    def resolve_secret(self, name: str) -> str:
+    def _resolve_platform_secret(self, name: str) -> str:
         return self.config.get("secrets", {}).get(name, "")

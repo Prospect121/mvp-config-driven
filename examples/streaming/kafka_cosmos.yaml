@@ -1,0 +1,51 @@
+project: retail360
+environment: dev
+platform: azure
+spark:
+  shuffle_partitions: 2
+datasets:
+  - name: orders_stream
+    layer: bronze
+    source:
+      type: kafka
+      options:
+        subscribe: retail-orders
+        startingOffsets: earliest
+        kafka.bootstrap.servers: kafka:9092
+        failOnDataLoss: false
+      payload_format: json
+    transform:
+      add_ingestion_ts: true
+      ops:
+        - flatten_json:
+            depth: 1
+        - cast:
+            event_time: timestamp
+            total_amount: decimal(18,2)
+        - uppercase: [currency]
+    validation:
+      rules:
+        - check: expect_not_null
+          columns: [order_id, event_time]
+        - check: expect_range
+          column: total_amount
+          min: 0
+    streaming:
+      enabled: true
+      trigger: "1 minute"
+      checkpoint_location: abfs://checkpoints/retail/orders_stream/
+      watermark:
+        column: event_time
+        delay_threshold: "5 minutes"
+    sink:
+      type: nosql
+      engine: cosmosdb
+      options:
+        endpoint: ${SECRET:COSMOS_URI}
+        masterkey: ${SECRET:COSMOS_KEY}
+        database: retail
+        collection: orders_stream
+        writeThroughput: 400
+      checkpoint_location: abfs://checkpoints/retail/orders_stream/
+    incremental:
+      mode: append

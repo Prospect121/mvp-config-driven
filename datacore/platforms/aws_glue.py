@@ -25,8 +25,8 @@ class AwsGluePlatform(PlatformBase):
             builder = builder.config(key, value)
         return builder.getOrCreate()
 
-    def resolve_secret(self, name: str) -> str:
+    def _resolve_platform_secret(self, name: str) -> str:
         secrets = self.config.get("secrets", {})
         if name in secrets:
             return secrets[name]
-        raise KeyError(f"Secreto {name} no disponible en AWS config")
+        return ""

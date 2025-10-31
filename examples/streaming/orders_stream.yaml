@@ -1,0 +1,23 @@
+dataset: orders_stream
+layer: bronze
+source:
+  type: kafka
+  options:
+    bootstrapServers: "${KAFKA_BOOTSTRAP}"
+    subscribe: "orders"
+    startingOffsets: "latest"
+  payload_format: json
+transform:
+  ops:
+    - cast:
+        created_at: timestamp
+        amount: double
+incremental:
+  mode: append
+  watermark:
+    column: created_at
+    delay_threshold: "10 minutes"
+sink:
+  type: nosql
+  engine: cosmosdb
+  checkpoint_location: "abfss://chk@storage.dfs.core.windows.net/orders_stream/_chk/"

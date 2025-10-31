@@ -1,0 +1,158 @@
+import json
+from pathlib import Path
+
+import pytest
+from jsonschema import Draft7Validator, ValidationError
+
+SCHEMA_PATH = Path(__file__).resolve().parents[2] / "datacore" / "config" / "schemas" / "layer.schema.json"
+
+with SCHEMA_PATH.open("r", encoding="utf-8") as handle:
+    SCHEMA = json.load(handle)
+
+VALIDATOR = Draft7Validator(SCHEMA)
+
+
+def _base_config(dataset: dict) -> dict:
+    return {
+        "project": "demo",
+        "environment": "dev",
+        "platform": "azure",
+        "datasets": [dataset],
+    }
+
+
+def test_schema_accepts_single_source_object():
+    dataset = {
+        "name": "customers",
+        "layer": "silver",
+        "source": {
+            "type": "storage",
+            "format": "parquet",
+            "uri": "abfss://bronze@contoso.dfs.core.windows.net/customers/",
+        },
+        "sink": {
+            "type": "storage",
+            "format": "parquet",
+            "uri": "abfss://silver@contoso.dfs.core.windows.net/customers/",
+        },
+    }
+
+    VALIDATOR.validate(_base_config(dataset))
+
+
+def test_schema_accepts_multi_source_list():
+    dataset = {
+        "name": "orders",
+        "layer": "bronze",
+        "source": [
+            {"type": "storage", "format": "csv", "uri": "s3://raw/orders/"},
+            {
+                "type": "api_rest",
+                "url": "https://api.example.com/v1/orders",
+                "record_path": "items",
+            },
+        ],
+        "sink": {
+            "type": "warehouse",
+            "engine": "synapse",
+            "table": "analytics.orders_bronze",
+            "mode": "append",
+        },
+    }
+
+    VALIDATOR.validate(_base_config(dataset))
+
+
+def test_schema_enforces_source_type_enum():
+    dataset = {
+        "name": "bad_dataset",
+        "layer": "raw",
+        "source": {"type": "unsupported"},
+        "sink": {"type": "storage", "uri": "file:///tmp/out"},
+    }
+
+    with pytest.raises(ValidationError):
+        VALIDATOR.validate(_base_config(dataset))
+
+
+def test_schema_supports_sink_type_enum():
+    dataset = {
+        "name": "events",
+        "layer": "bronze",
+        "source": {"type": "kafka", "options": {"subscribe": "events"}},
+        "sink": {"type": "nosql", "engine": "cosmosdb"},
+    }
+
+    VALIDATOR.validate(_base_config(dataset))
+
+
+def test_schema_rejects_invalid_sink_mode():
+    dataset = {
+        "name": "invalid_mode",
+        "layer": "silver",
+        "source": {"type": "storage", "uri": "s3://bucket/path"},
+        "sink": {"type": "storage", "uri": "s3://bucket/out", "mode": "unsupported"},
+    }
+
+    with pytest.raises(ValidationError):
+        VALIDATOR.validate(_base_config(dataset))
+
+
+def test_schema_accepts_streaming_configuration():
+    dataset = {
+        "name": "orders_stream",
+        "layer": "bronze",
+        "source": {"type": "kafka", "options": {"subscribe": "orders"}},
+        "sink": {"type": "storage", "uri": "s3://bronze/orders/"},
+        "streaming": {
+            "enabled": True,
+            "trigger": "5 minutes",
+            "checkpoint_location": "/tmp/chk",
+        },
+        "incremental": {
+            "mode": "append",
+            "watermark": {"column": "created_at", "delay_threshold": "10 minutes"},
+        },
+    }
+
+    VALIDATOR.validate(_base_config(dataset))
+
+
+def test_schema_accepts_repartition_object():
+    dataset = {
+        "name": "customers",
+        "layer": "silver",
+        "source": {"type": "storage", "uri": "abfss://bronze/customers/"},
+        "sink": {
+            "type": "storage",
+            "uri": "abfss://silver/customers/",
+            "repartition": {"columns": ["country"], "numPartitions": 4},
+        },
+    }
+
+    VALIDATOR.validate(_base_config(dataset))
+
+
+def test_schema_rejects_transform_validation_block():
+    dataset = {
+        "name": "customers",
+        "layer": "silver",
+        "source": {"type": "storage", "uri": "abfss://bronze/customers/"},
+        "transform": {"validation": {"rules": []}},
+        "sink": {"type": "storage", "uri": "abfss://silver/customers/"},
+    }
+
+    with pytest.raises(ValidationError):
+        VALIDATOR.validate(_base_config(dataset))
+
+
+def test_schema_allows_dataset_validation_block():
+    dataset = {
+        "name": "customers",
+        "layer": "silver",
+        "source": {"type": "storage", "uri": "abfss://bronze/customers/"},
+        "validation": {"rules": [{"check": "expect_not_null", "columns": ["id"]}]},
+        "sink": {"type": "storage", "uri": "abfss://silver/customers/"},
+    }
+
+    VALIDATOR.validate(_base_config(dataset))
