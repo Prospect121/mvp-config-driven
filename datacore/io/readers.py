@@ -11,6 +11,7 @@ from pyspark.sql import functions as F
 from pyspark.sql.types import StructType
 
 from datacore.connectors.api import graphql, rest
+from datacore.connectors import http
 from datacore.connectors.db import jdbc
 from datacore.connectors.storage import abfs, gcs, local, s3
 from datacore.platforms.base import PlatformBase
@@ -72,6 +73,10 @@ def _storage_connector(backend: str):
     return connectors.get(backend, local)
 
 
+def _merge_read_options(source: dict[str, Any]) -> dict[str, Any]:
+    return {**source.get("options", {}), **source.get("read_options", {})}
+
+
 def _read_storage(
     spark: SparkSession,
     platform: PlatformBase,
@@ -82,7 +87,7 @@ def _read_storage(
     environment: str,
 ) -> DataFrame:
     fmt = source.get("format", "parquet")
-    options = source.get("options", {})
+    options = _merge_read_options(source)
     infer_schema = bool(source.get("infer_schema"))
     merged_options = _merge_format_options(fmt, options, infer_schema)
     backend = source.get("backend", platform.name)
@@ -148,7 +153,30 @@ def _read_api_rest(
     dataset: str,
     environment: str,
 ) -> DataFrame:
-    fetch_config = {**source.get("options", {}), **{k: v for k, v in source.items() if k in {"url", "headers", "params", "page_param", "start_page", "max_pages", "backoff", "bearer_token"}}}
+    fetch_config = {
+        **source.get("options", {}),
+        **source.get("read_options", {}),
+        **{
+            key: value
+            for key, value in source.items()
+            if key
+            in {
+                "url",
+                "headers",
+                "params",
+                "page_param",
+                "start_page",
+                "max_pages",
+                "backoff",
+                "bearer_token",
+                "pagination",
+                "method",
+                "body",
+                "auth",
+                "retry",
+            }
+        },
+    }
     record_path = _record_path_to_list(source.get("record_path"))
     flatten = source.get("flatten", True)
     depth = source.get("flatten_depth")
@@ -194,6 +222,37 @@ def _read_api_graphql(
     return df
 
 
+def _read_http_endpoint(
+    spark: SparkSession,
+    platform: PlatformBase,
+    source: dict[str, Any],
+    *,
+    layer: str,
+    dataset: str,
+    environment: str,
+) -> DataFrame:
+    fetch_conf = {
+        **source,
+        "options": {
+            **source.get("options", {}),
+            **source.get("read_options", {}),
+        },
+    }
+    pages = http.fetch_pages(fetch_conf)
+    record_path = _record_path_to_list(source.get("record_path"))
+    flatten = source.get("flatten", True)
+    depth = source.get("flatten_depth")
+    rows: list[dict[str, Any]] = []
+    for page in pages:
+        for record in _extract_records(page, record_path):
+            rows.append(_flatten_record(record, depth=depth) if flatten else record)
+    df = _records_to_df(spark, rows)
+    if source.get("infer_schema"):
+        cache_path = _schema_cache_path(platform, layer, dataset, environment)
+        _store_schema(cache_path, df.schema)
+    return df
+
+
 def _parse_stream_payload(df: DataFrame, source: dict[str, Any]) -> DataFrame:
     payload_format = source.get("payload_format", "json").lower()
     schema_conf = source.get("schema")
@@ -217,14 +276,14 @@ def _parse_stream_payload(df: DataFrame, source: dict[str, Any]) -> DataFrame:
 
 def _read_kafka_batch(spark: SparkSession, source: dict[str, Any]) -> DataFrame:
     reader = spark.read.format("kafka")
-    reader = _apply_options(reader, source.get("options", {}))
+    reader = _apply_options(reader, _merge_read_options(source))
     df = reader.load()
     return _parse_stream_payload(df, source)
 
 
 def _read_event_hubs_batch(spark: SparkSession, source: dict[str, Any]) -> DataFrame:
     reader = spark.read.format("eventhubs")
-    reader = _apply_options(reader, source.get("options", {}))
+    reader = _apply_options(reader, _merge_read_options(source))
     df = reader.load()
     return _parse_stream_payload(df, source)
 
@@ -247,6 +306,15 @@ def read_batch(
         return _read_api_rest(spark, platform, source, layer=layer, dataset=dataset, environment=environment)
     if source_type == "api_graphql":
         return _read_api_graphql(spark, platform, source, layer=layer, dataset=dataset, environment=environment)
+    if source_type == "endpoint":
+        return _read_http_endpoint(
+            spark,
+            platform,
+            source,
+            layer=layer,
+            dataset=dataset,
+            environment=environment,
+        )
     if source_type == "kafka":
         return _read_kafka_batch(spark, source)
     if source_type == "event_hubs":
@@ -260,7 +328,7 @@ def _read_storage_stream(
     source: dict[str, Any],
 ) -> DataFrame:
     fmt = source.get("format", "parquet")
-    options = _merge_format_options(fmt, source.get("options", {}), False)
+    options = _merge_format_options(fmt, _merge_read_options(source), False)
     uri = platform.normalize_uri(source["uri"])
     reader = spark.readStream.format(fmt)
     reader = _apply_options(reader, options)
@@ -269,14 +337,14 @@ def _read_storage_stream(
 
 def _read_kafka_stream(spark: SparkSession, source: dict[str, Any]) -> DataFrame:
     reader = spark.readStream.format("kafka")
-    reader = _apply_options(reader, source.get("options", {}))
+    reader = _apply_options(reader, _merge_read_options(source))
     df = reader.load()
     return _parse_stream_payload(df, source)
 
 
 def _read_event_hubs_stream(spark: SparkSession, source: dict[str, Any]) -> DataFrame:
     reader = spark.readStream.format("eventhubs")
-    reader = _apply_options(reader, source.get("options", {}))
+    reader = _apply_options(reader, _merge_read_options(source))
     df = reader.load()
     return _parse_stream_payload(df, source)
 

@@ -6,7 +6,10 @@ import json
 from datetime import datetime
 from typing import Any
 
-import boto3
+try:  # pragma: no cover - dependencia opcional
+    import boto3
+except ImportError:  # pragma: no cover - entornos sin boto3
+    boto3 = None  # type: ignore[assignment]
 
 from pyspark.sql import DataFrame
 
@@ -36,20 +39,56 @@ def _merge_schema_flag(sink: dict[str, Any]) -> bool | None:
     return None
 
 
+def _merge_write_options(sink: dict[str, Any]) -> dict[str, Any]:
+    options = {**sink.get("options", {})}
+    options.update(sink.get("write_options", {}))
+    if "compression" in sink and "compression" not in options:
+        options["compression"] = sink["compression"]
+    if sink.get("atomic") is not None and "atomic" not in options:
+        options["atomic"] = sink["atomic"]
+    return options
+
+
+def _apply_partitioning(df: DataFrame, sink: dict[str, Any]) -> DataFrame:
+    result = df
+    if "coalesce" in sink:
+        result = result.coalesce(int(sink["coalesce"]))
+    repartition = sink.get("repartition")
+    if repartition:
+        if isinstance(repartition, int):
+            result = result.repartition(repartition)
+        elif isinstance(repartition, (list, tuple)):
+            result = result.repartition(*repartition)
+        elif isinstance(repartition, dict):
+            num = repartition.get("num") or repartition.get("partitions")
+            cols = repartition.get("cols") or repartition.get("columns") or []
+            if num and cols:
+                result = result.repartition(int(num), *cols)
+            elif num:
+                result = result.repartition(int(num))
+            elif cols:
+                result = result.repartition(*cols)
+    return result
+
+
 def write_batch(df: DataFrame, platform: PlatformBase, sink: dict[str, Any]) -> None:
     sink_type = sink["type"]
     fmt = sink.get("format", "parquet")
     mode = sink.get("mode", "append")
-    options = sink.get("options", {})
+    options = _merge_write_options(sink)
     partition_by = sink.get("partition_by")
     merge_schema = _merge_schema_flag(sink)
+    prepared_df = _apply_partitioning(df, sink)
+    file_size = sink.get("file_size_mb")
+    if file_size is not None:
+        options.setdefault("maxRecordsPerFile", int(file_size) * 1024 * 1024)
 
     if sink_type == "storage":
         uri = platform.normalize_uri(sink["uri"])
         backend = sink.get("backend", platform.name)
         connector = _storage_connector(backend)
         connector.write(
-            df,
+            prepared_df,
             uri,
             fmt,
             mode,
@@ -62,10 +101,10 @@ def write_batch(df: DataFrame, platform: PlatformBase, sink: dict[str, Any]) -> 
     if sink_type == "warehouse":
         engine = sink.get("engine")
         if engine in {"synapse", "redshift", "postgres", "mysql", "sqlserver"}:
-            jdbc.write(df, sink)
+            jdbc.write(prepared_df, {**sink, "options": options})
             return
         if engine == "bigquery":
-            writer = df.write.format("bigquery").mode(mode)
+            writer = prepared_df.write.format("bigquery").mode(mode)
             for key, value in options.items():
                 writer = writer.option(key, value)
             if sink.get("temporaryGcsBucket"):
@@ -77,7 +116,7 @@ def write_batch(df: DataFrame, platform: PlatformBase, sink: dict[str, Any]) -> 
         raise ValueError(f"Motor de warehouse no soportado: {engine}")
 
     if sink_type == "nosql":
-        _write_nosql(df, sink)
+        _write_nosql(prepared_df, sink)
         return
 
     raise ValueError(f"Tipo de destino no soportado: {sink_type}")
@@ -85,7 +124,7 @@ def write_batch(df: DataFrame, platform: PlatformBase, sink: dict[str, Any]) -> 
 
 def _write_nosql(df: DataFrame, sink: dict[str, Any]) -> None:
     engine = sink.get("engine")
-    options = sink.get("options", {})
+    options = _merge_write_options(sink)
     if engine == "cosmosdb":
         writer = df.write.format(options.get("format", "cosmos.oltp")).mode(sink.get("mode", "append"))
         for key, value in options.items():
@@ -93,14 +132,15 @@ def _write_nosql(df: DataFrame, sink: dict[str, Any]) -> None:
         writer.save()
         return
     if engine == "dynamodb":
-        _write_dynamodb(df, sink)
+        _write_dynamodb(df, sink, options)
         return
     raise ValueError(f"Motor NoSQL no soportado: {engine}")
 
 
-def _write_dynamodb(df: DataFrame, sink: dict[str, Any]) -> None:
+def _write_dynamodb(df: DataFrame, sink: dict[str, Any], options: dict[str, Any]) -> None:
+    if boto3 is None:  # pragma: no cover - requiere dependencia externa
+        raise RuntimeError("boto3 es requerido para escribir en DynamoDB")
     table_name = sink["table"]
-    options = sink.get("options", {})
     region = options.get("region")
     resource = boto3.resource("dynamodb", region_name=region)
     table = resource.Table(table_name)
@@ -152,7 +192,7 @@ def write_stream(
 ) -> None:
     sink_type = sink["type"]
     mode = sink.get("mode", "append")
-    options = {**sink.get("options", {})}
+    options = _merge_write_options(sink)
 
     if sink_type == "storage":
         fmt = sink.get("format", "parquet")

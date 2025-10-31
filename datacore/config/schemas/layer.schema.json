@@ -35,6 +35,7 @@
                       "jdbc",
                       "api_rest",
                       "api_graphql",
+                      "endpoint",
                       "kafka",
                       "event_hubs",
                       "nosql"
@@ -43,6 +44,7 @@
                   "format": {"type": "string"},
                   "uri": {"type": "string"},
                   "options": {"type": "object"},
+                  "read_options": {"type": "object"},
                   "infer_schema": {"type": "boolean"},
                   "record_path": {"type": ["string", "array"]},
                   "flatten": {"type": "boolean"}
@@ -58,7 +60,8 @@
                     "type": {"type": "string"},
                     "format": {"type": "string"},
                     "uri": {"type": "string"},
-                    "options": {"type": "object"}
+                    "options": {"type": "object"},
+                    "read_options": {"type": "object"}
                   },
                   "additionalProperties": true
                 }
@@ -87,6 +90,13 @@
               },
               "validation": {
                 "type": "object",
+                "properties": {
+                  "rules": {
+                    "type": "array",
+                    "items": {"type": "object"}
+                  },
+                  "quarantine_sink": {"type": "object"}
+                },
                 "additionalProperties": true
               }
             },
@@ -107,19 +117,21 @@
               "mode": {"type": "string"},
               "partition_by": {"type": "array", "items": {"type": "string"}},
               "mergeSchema": {"type": "boolean"},
-              "merge_schema": {"type": "boolean"}
+              "merge_schema": {"type": "boolean"},
+              "write_options": {"type": "object"},
+              "read_options": {"type": "object"}
             },
             "additionalProperties": true
           },
           "incremental": {
             "type": "object",
             "properties": {
-              "mode": {"enum": ["append", "merge"]},
+              "mode": {"enum": ["full", "append", "merge"]},
               "keys": {"type": "array", "items": {"type": "string"}},
               "order_by": {"type": "array", "items": {"type": "string"}},
               "watermark_column": {"type": "string"}
             },
-            "additionalProperties": false
+            "additionalProperties": true
           },
           "streaming": {
             "type": "object",

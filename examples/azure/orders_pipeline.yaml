@@ -14,13 +14,18 @@ datasets:
         options:
           header: true
           delimiter: ";"
-      - type: api_rest
-        options:
-          endpoint: https://api.retail.example.com/v1/orders
-          method: GET
-          params:
-            status: completed
-          flatten: true
+      - type: endpoint
+        url: https://api.retail.example.com/v1/orders
+        method: GET
+        auth:
+          type: bearer
+          token: ${SECRET:RETAIL_API_TOKEN}
+        pagination:
+          strategy: cursor
+          param: cursor
+          cursor_path: $.next
+        record_path: data
+        flatten: true
     merge_strategy:
       keys: [order_id]
       prefer: newest
@@ -44,12 +49,21 @@ datasets:
             keys: [order_id]
             order_by: ["order_date DESC", "_ingestion_ts DESC"]
     validation:
-      expect_not_null: [order_id, order_date]
-      expect_unique: [order_id]
-      expect_between:
-        col: total_amount
-        min: 0
-      expect_email: [customer_email]
+      rules:
+        - check: expect_not_null
+          columns: [order_id, order_date]
+        - check: expect_unique
+          columns: [order_id]
+        - check: range
+          column: total_amount
+          min: 0
+        - check: regex
+          column: customer_email
+          pattern: "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"
+          severity: warn
+      quarantine_sink:
+        type: storage
+        uri: abfs://silver/retail/orders_silver/_quarantine/
     incremental:
       mode: merge
       keys: [order_id]
@@ -63,6 +77,8 @@ datasets:
       options:
         mergeSchema: true
         compression: snappy
+      write_options:
+        maxRecordsPerFile: 134217728
   - name: orders_gold
     layer: gold
     source:

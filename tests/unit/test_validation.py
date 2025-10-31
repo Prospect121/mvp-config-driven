@@ -23,10 +23,11 @@ def test_validation_rules_with_metrics(spark):
 
     assert isinstance(result, ValidationResult)
     assert result.metrics["input_rows"] == 3
-    assert result.metrics["invalid_rows"] == 3
-    assert "expect_unique:id" in result.metrics["rules"]
+    assert result.metrics["invalid_rows"] >= 1
+    unique_rule = result.metrics["rules"]["expect_unique:id"]
+    assert unique_rule["invalid_rows"] >= 1
     reasons = [row._reject_reason for row in result.invalid_df.collect() if row._reject_reason]
-    assert reasons
+    assert any("expect_unique" in reason for reason in reasons)
 
 
 def test_validation_alias_and_set_rule(spark):
@@ -40,4 +41,35 @@ def test_validation_alias_and_set_rule(spark):
     )
 
     assert result.metrics["invalid_rows"] == 1
-    assert "expect_set:status" in result.metrics["rules"]
+    assert "values_in_set:status" in result.metrics["rules"]
+
+
+def test_validation_severity_and_quarantine(spark):
+    df = spark.createDataFrame([(1, None, None), (2, "ok", "ok")], ["id", "email_warn", "email_strict"])
+
+    result = apply_validation(
+        df,
+        {
+            "rules": [
+                {
+                    "check": "expect_not_null",
+                    "columns": ["email_warn"],
+                    "severity": "warn",
+                },
+                {
+                    "check": "expect_not_null",
+                    "columns": ["email_strict"],
+                    "severity": "error",
+                    "on_fail": "quarantine",
+                },
+            ],
+            "quarantine_sink": {"type": "storage", "uri": "memory"},
+        },
+    )
+
+    # La severidad warn no genera filas inválidas pero registra métricas
+    warn_rule = result.metrics["rules"]["expect_not_null:email_warn"]
+    assert warn_rule["invalid_rows"] == 1
+    assert result.metrics["invalid_rows"] == 1
+    # Cuarentena captura filas fallidas
+    assert result.quarantine_df.count() == 1

@@ -62,6 +62,25 @@ class PlatformBase(abc.ABC):
         base = self.config.get("checkpoint_base", f"/tmp/datacore/{env}")
         return f"{base}/{layer}/{dataset}"
 
+    # Adaptadores opcionales para merges específicos de plataforma.
+    def merge_into_warehouse(
+        self,
+        df,
+        sink: dict[str, Any],
+        keys: list[str],
+        order_by: list[str],
+    ) -> bool:  # pragma: no cover - comportamiento por defecto
+        return False
+
+    def merge_into_nosql(
+        self,
+        df,
+        sink: dict[str, Any],
+        keys: list[str],
+        order_by: list[str],
+    ) -> bool:  # pragma: no cover - comportamiento por defecto
+        return False
+
 
 class LocalPlatform(PlatformBase):
     name = "local"

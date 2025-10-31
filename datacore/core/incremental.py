@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
 
 from datacore.connectors.db import jdbc
+from datacore.platforms.base import PlatformBase
 
 
 def merge_delta(target_path: str, df: DataFrame, keys: list[str]) -> None:
@@ -86,22 +85,58 @@ def merge_jdbc(df: DataFrame, sink: dict[str, Any], keys: list[str], order_by: l
     jdbc.write(deduped, overwrite_conf)
 
 
-def handle_incremental(
+def _merge_with_platform(
+    platform: PlatformBase | None,
     df: DataFrame,
     sink: dict[str, Any],
-    incremental_cfg: dict[str, Any],
+    keys: list[str],
+    order_by: list[str],
 ) -> bool:
-    mode = incremental_cfg.get("mode", "append")
+    if platform and hasattr(platform, "merge_into_warehouse"):
+        try:
+            handled = platform.merge_into_warehouse(df, sink, keys, order_by)
+            if handled:
+                return True
+        except NotImplementedError:
+            pass
+    return False
+
+
+def prepare_incremental(
+    df: DataFrame,
+    sink: dict[str, Any],
+    incremental_cfg: dict[str, Any] | None,
+    platform: PlatformBase | None = None,
+) -> tuple[DataFrame, dict[str, Any], bool]:
+    if not incremental_cfg:
+        return df, sink, False
+    mode = str(incremental_cfg.get("mode", "append")).lower()
+    if mode == "full":
+        updated_sink = {**sink, "mode": "overwrite"}
+        return df, updated_sink, False
+    if mode == "append":
+        return df, sink, False
     if mode != "merge":
-        return False
-    keys = incremental_cfg.get("keys", [])
+        raise ValueError(f"Modo incremental no soportado: {mode}")
+
+    keys = incremental_cfg.get("keys") or []
     if not keys:
         raise ValueError("Se requieren keys para modo merge")
     order_by = incremental_cfg.get("order_by", ["_ingestion_ts DESC"])
+
     if sink["type"] == "storage":
         merge_storage(df.sparkSession, df, sink, keys, order_by)
-        return True
+        return df, sink, True
+
     if sink["type"] == "warehouse":
+        if _merge_with_platform(platform, df, sink, keys, order_by):
+            return df, sink, True
         merge_jdbc(df, sink, keys, order_by)
-        return True
+        return df, sink, True
+
+    if sink["type"] == "nosql" and platform and hasattr(platform, "merge_into_nosql"):
+        handled = platform.merge_into_nosql(df, sink, keys, order_by)  # type: ignore[attr-defined]
+        if handled:
+            return df, sink, True
+
     raise ValueError(f"Merge incremental no soportado para sink {sink['type']}")

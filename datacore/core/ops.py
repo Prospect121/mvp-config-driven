@@ -11,8 +11,19 @@ from pyspark.sql.types import StructType
 Operation = Callable[[DataFrame, Any], DataFrame]
 
 
-def op_drop_columns(df: DataFrame, columns: list[str]) -> DataFrame:
-    return df.drop(*columns)
+def _ensure_iterable(value: Any) -> list[str]:
+    if isinstance(value, (list, tuple, set)):
+        return list(value)
+    if value is None:
+        return []
+    return [str(value)]
+
+
+def op_exclude(df: DataFrame, columns: list[str]) -> DataFrame:
+    cols = _ensure_iterable(columns)
+    if not cols:
+        return df
+    return df.drop(*cols)
 
 
 def op_rename(df: DataFrame, mapping: dict[str, str]) -> DataFrame:
@@ -29,52 +40,34 @@ def op_cast(df: DataFrame, mapping: dict[str, str]) -> DataFrame:
     return result
 
 
-def op_trim(df: DataFrame, columns: list[str]) -> DataFrame:
+def op_normalize(df: DataFrame, config: dict[str, Any]) -> DataFrame:
     result = df
-    for column in columns:
+    for column in _ensure_iterable(config.get("trim")):
         result = result.withColumn(column, F.trim(F.col(column)))
-    return result
-
-
-def op_uppercase(df: DataFrame, columns: list[str]) -> DataFrame:
-    result = df
-    for column in columns:
-        result = result.withColumn(column, F.upper(F.col(column)))
-    return result
-
-
-def op_lowercase(df: DataFrame, columns: list[str]) -> DataFrame:
-    result = df
-    for column in columns:
+    for column in _ensure_iterable(config.get("lower")):
         result = result.withColumn(column, F.lower(F.col(column)))
-    return result
-
-
-def op_normalize_whitespace(df: DataFrame, columns: list[str]) -> DataFrame:
-    result = df
-    for column in columns:
+    for column in _ensure_iterable(config.get("upper")):
+        result = result.withColumn(column, F.upper(F.col(column)))
+    for column in _ensure_iterable(config.get("whitespace")):
         normalized = F.regexp_replace(F.col(column), r"\s+", " ")
         result = result.withColumn(column, F.trim(normalized))
     return result
 
 
-def op_standardize_dates(df: DataFrame, config: dict[str, Any]) -> DataFrame:
-    cols = config.get("cols", [])
-    fmt_in = config.get("format_in")
-    fmt_out = config.get("format_out", "yyyy-MM-dd HH:mm:ss")
-    timezone = config.get("tz")
+def op_filter(df: DataFrame, expressions: Any) -> DataFrame:
+    exprs = _ensure_iterable(expressions)
     result = df
-    for column in cols:
-        ts = F.to_timestamp(F.col(column), fmt_in) if fmt_in else F.to_timestamp(F.col(column))
-        if timezone:
-            ts = F.from_utc_timestamp(ts, timezone)
-        result = result.withColumn(column, F.date_format(ts, fmt_out))
+    for expr in exprs:
+        result = result.filter(F.expr(expr))
     return result
 
 
 def op_deduplicate(df: DataFrame, config: dict[str, Any]) -> DataFrame:
-    keys = config.get("keys", [])
-    order_by = config.get("order_by", ["_ingestion_ts DESC"])
+    keys = _ensure_iterable(config.get("keys"))
+    if not keys:
+        return df
+    order_by = _ensure_iterable(config.get("order_by")) or ["_ingestion_ts DESC"]
+
     def _to_order(expr: str):
         parts = expr.strip().split()
         column = parts[0]
@@ -90,8 +83,26 @@ def op_deduplicate(df: DataFrame, config: dict[str, Any]) -> DataFrame:
 def op_explode(df: DataFrame, config: dict[str, Any]) -> DataFrame:
     column = config["col"]
     outer = bool(config.get("outer", False))
+    into = config.get("into")
     explode_fn = F.explode_outer if outer else F.explode
-    return df.withColumn(column, explode_fn(F.col(column)))
+    exploded = df.withColumn(into or column, explode_fn(F.col(column)))
+    return exploded if into else exploded
+
+
+def op_standardize_dates(df: DataFrame, config: dict[str, Any]) -> DataFrame:
+    cols = _ensure_iterable(config.get("cols"))
+    if not cols:
+        return df
+    fmt_in = config.get("format_in")
+    fmt_out = config.get("format_out", "yyyy-MM-dd HH:mm:ss")
+    timezone = config.get("tz")
+    result = df
+    for column in cols:
+        ts = F.to_timestamp(F.col(column), fmt_in) if fmt_in else F.to_timestamp(F.col(column))
+        if timezone:
+            ts = F.from_utc_timestamp(ts, timezone)
+        result = result.withColumn(column, F.date_format(ts, fmt_out))
+    return result
 
 
 def _flatten_once(df: DataFrame, prefix: str) -> DataFrame:
@@ -110,7 +121,7 @@ def _flatten_once(df: DataFrame, prefix: str) -> DataFrame:
     return df.select(*select_exprs)
 
 
-def op_flatten_json(df: DataFrame, config: dict[str, Any]) -> DataFrame:
+def op_flatten(df: DataFrame, config: dict[str, Any]) -> DataFrame:
     prefix = config.get("prefix", "")
     depth = config.get("depth")
     result = df
@@ -127,17 +138,23 @@ def op_flatten_json(df: DataFrame, config: dict[str, Any]) -> DataFrame:
 
 
 OPERATIONS: dict[str, Operation] = {
-    "drop_columns": op_drop_columns,
+    "exclude": op_exclude,
     "rename": op_rename,
     "cast": op_cast,
-    "trim": op_trim,
-    "uppercase": op_uppercase,
-    "lowercase": op_lowercase,
-    "normalize_whitespace": op_normalize_whitespace,
-    "standardize_dates": op_standardize_dates,
+    "normalize": op_normalize,
+    "filter": op_filter,
+    "dedupe": op_deduplicate,
     "deduplicate": op_deduplicate,
     "explode": op_explode,
-    "flatten_json": op_flatten_json,
+    "flatten": op_flatten,
+    # compatibilidad histórica
+    "drop_columns": op_exclude,
+    "trim": lambda df, cols: op_normalize(df, {"trim": cols}),
+    "uppercase": lambda df, cols: op_normalize(df, {"upper": cols}),
+    "lowercase": lambda df, cols: op_normalize(df, {"lower": cols}),
+    "normalize_whitespace": lambda df, cols: op_normalize(df, {"whitespace": cols}),
+    "standardize_dates": op_standardize_dates,
+    "flatten_json": op_flatten,
 }
 
 

@@ -44,7 +44,8 @@ def cmd_run(args: argparse.Namespace) -> None:
         fail_fast=args.fail_fast,
     )
     if args.dry_run:
-        print(json.dumps({"plan": results}, indent=2, default=str))
+        payload = {"run_id": results["run_id"], "plan": results["datasets"]}
+        print(json.dumps(payload, indent=2, default=str))
     else:
         LOGGER.info("Resultados de ejecución: %s", results)
 
@@ -54,17 +55,18 @@ def cmd_plan(args: argparse.Namespace) -> None:
     validate_config(data)
     layers = sorted({d.get("layer") for d in data.get("datasets", [])})
     plans: list[dict[str, Any]] = []
+    run_ids: dict[str, str] = {}
     for layer in layers:
-        plans.extend(
-            run_layer_plan(
-                layer=layer,
-                config=data,
-                platform_name=args.platform,
-                environment=args.env,
-                dry_run=True,
-            )
+        plan_result = run_layer_plan(
+            layer=layer,
+            config=data,
+            platform_name=args.platform,
+            environment=args.env,
+            dry_run=True,
         )
-    print(json.dumps({"datasets": plans}, indent=2, default=str))
+        run_ids[layer] = plan_result["run_id"]
+        plans.extend(plan_result["datasets"])
+    print(json.dumps({"run_ids": run_ids, "datasets": plans}, indent=2, default=str))
 
 
 def build_parser() -> argparse.ArgumentParser:

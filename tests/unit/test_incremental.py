@@ -1,4 +1,4 @@
-from datacore.core.incremental import handle_incremental
+from datacore.core.incremental import prepare_incremental
 
 
 def test_handle_incremental_merge_storage(tmp_path, spark):
@@ -14,7 +14,7 @@ def test_handle_incremental_merge_storage(tmp_path, spark):
         ["id", "value", "_ingestion_ts"],
     )
 
-    handled = handle_incremental(
+    _, _, handled = prepare_incremental(
         new_df,
         {"type": "storage", "uri": str(path), "format": "parquet"},
         {"mode": "merge", "keys": ["id"], "order_by": ["_ingestion_ts DESC"]},
@@ -27,5 +27,10 @@ def test_handle_incremental_merge_storage(tmp_path, spark):
 
 def test_handle_incremental_non_merge_returns_false(spark):
     df = spark.createDataFrame([(1, "A")], ["id", "value"])
-    handled = handle_incremental(df, {"type": "storage", "uri": "/tmp/x"}, {"mode": "append"})
+    _, sink, handled = prepare_incremental(
+        df,
+        {"type": "storage", "uri": "/tmp/x"},
+        {"mode": "append"},
+    )
     assert handled is False
+    assert sink.get("mode", "append") == "append"

@@ -17,11 +17,11 @@ La configuración se organiza por entorno (`configs/envs/<env>`), capa (`layers/
 - Los parámetros sensibles (tokens, cadenas de conexión) deben declararse usando estas referencias.
 
 ## Estructura de datasets
-- `source`: puede ser un objeto o una lista de fuentes. Cada fuente define `type`, `uri`/`options`, `format`, `infer_schema`, `record_path`, `flatten`, etc.
+- `source`: puede ser un objeto o una lista de fuentes. Cada fuente define `type`, `uri`/`options`/`read_options`, `format`, `infer_schema`, `record_path`, `flatten`, autenticación (para `endpoint`) y paginación.
 - `transform`: admite `sql`, `udf`, `ops` (operaciones declarativas) y `add_ingestion_ts` (`true` por defecto).
 - `merge_strategy`: combina múltiples fuentes usando `keys`, `prefer` (`newest|left|coalesce`) y `order_by`.
 - `sink`: soporta `storage`, `warehouse`, `nosql`, `kafka`, `event_hubs` con opciones específicas (particionado, `mergeSchema`, etc.).
-- `incremental`: controla `mode` (`append|merge`), `keys`, `order_by`, `watermark_column`.
+- `incremental`: controla `mode` (`full|append|merge`), `keys`, `order_by`, `watermark_column` y banderas específicas por sink.
 - `streaming`: `enabled`, `trigger`, `checkpoint`, `watermark_column`.
 
 ## Ejemplo completo (capa silver)
@@ -73,13 +73,21 @@ datasets:
             keys: [order_id]
             order_by: ["order_date DESC", "_ingestion_ts DESC"]
     validation:
-      expect_not_null: [order_id, order_date]
-      expect_unique: [order_id]
-      expect_between:
-        col: total_amount
-        min: 0
-        max: 100000
-      expect_email: [customer_email]
+      rules:
+        - check: expect_not_null
+          columns: [order_id, order_date]
+        - check: expect_unique
+          columns: [order_id]
+        - check: range
+          column: total_amount
+          min: 0
+          max: 100000
+        - check: regex
+          column: customer_email
+          pattern: "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"
+      quarantine_sink:
+        type: storage
+        uri: abfs://silver/quarantine/orders/
     incremental:
       mode: merge
       keys: [order_id]

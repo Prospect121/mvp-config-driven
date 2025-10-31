@@ -26,19 +26,25 @@ sink:
     compression: snappy
 ```
 
-## APIs
+## APIs y endpoints HTTP
 - **REST** (`datacore.connectors.api.rest`): `fetch_pages` soporta paginación, backoff, cabeceras dinámicas y flatten opcional.
 - **GraphQL** (`datacore.connectors.api.graphql`): `execute_query` permite queries parametrizadas con `variables`.
+- **Endpoint genérico** (`datacore.connectors.http`): autenticación `bearer`/`basic`, reintentos exponenciales y paginación por página, cursor o cabecera `Link`. El lector normaliza JSON a columnas y permite `flatten_depth` configurable.
 
 ```yaml
 source:
-  type: api_rest
-  options:
-    endpoint: https://api.example.com/orders
-    method: GET
-    params:
-      status: completed
-    flatten: true
+  type: endpoint
+  url: https://api.example.com/v1/orders
+  method: GET
+  auth:
+    type: bearer
+    token: ${API_TOKEN}
+  pagination:
+    strategy: cursor
+    param: cursor
+    cursor_path: $.next
+  record_path: items
+  flatten: true
 ```
 
 ## Bases de datos y warehouses

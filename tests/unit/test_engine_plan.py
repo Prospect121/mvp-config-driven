@@ -26,5 +26,7 @@ def test_run_layer_plan_dry_run(tmp_path):
     }
 
     plan = run_layer_plan("bronze", config, dry_run=True)
-    assert plan[0]["status"] == "planned"
-    assert "incremental.merge requiere keys" in plan[0]["issues"][0]
+    assert "run_id" in plan
+    dataset_plan = plan["datasets"][0]
+    assert dataset_plan["status"] == "planned"
+    assert any("incremental.merge requiere keys" in issue for issue in dataset_plan["issues"])

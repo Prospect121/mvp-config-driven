@@ -79,3 +79,33 @@ def test_read_batch_api_graphql(monkeypatch, spark, tmp_path):
 
     assert result.count() == 1
     assert result.collect()[0]["email"] == "ada@example.com"
+
+
+def test_read_endpoint(monkeypatch, spark, tmp_path):
+    platform = LocalPlatform({"checkpoint_base": str(tmp_path / "chk")})
+
+    monkeypatch.setattr(
+        readers.http,
+        "fetch_pages",
+        lambda cfg: [
+            {"items": [{"id": 1, "payload": {"name": "Ada"}}]},
+            {"items": [{"id": 2, "payload": {"name": "Ben"}}]},
+        ],
+    )
+
+    result = readers.read_batch(
+        spark,
+        platform,
+        {
+            "type": "endpoint",
+            "format": "json",
+            "record_path": "items",
+            "flatten": True,
+        },
+        layer="bronze",
+        dataset="endpoint_customers",
+        environment="dev",
+    )
+
+    names = sorted(row["payload.name"] for row in result.collect())
+    assert names == ["Ada", "Ben"]
