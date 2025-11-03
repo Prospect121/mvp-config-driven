@@ -1,8 +1,11 @@
 import json
 from pathlib import Path
 
+import pytest
+import yaml
 from jsonschema import Draft7Validator
 
+from datacore.core import engine as engine_module
 from datacore.core.engine import run_layer_plan
 
 PLAN_SCHEMA_PATH = Path(__file__).resolve().parents[2] / "datacore" / "config" / "schemas" / "plan.schema.json"
@@ -82,3 +85,27 @@ def test_plan_streaming_contract(tmp_path):
     assert streaming_plan["trigger"] == "10 minutes"
     assert streaming_plan["checkpoint_location"] == str(tmp_path / "chk")
     assert streaming_plan["watermark"]["column"] == "created_at"
+
+
+@pytest.mark.parametrize(
+    "config_rel_path, layer, dataset_name",
+    [
+        ("examples/streaming/orders_stream.yaml", "bronze", "orders_stream"),
+        ("examples/streaming/kafka_cosmos.yaml", "bronze", "orders_stream"),
+    ],
+)
+def test_streaming_examples_emit_watermark_and_checkpoint(monkeypatch, config_rel_path, layer, dataset_name):
+    base_dir = Path(__file__).resolve().parents[2]
+    config = yaml.safe_load((base_dir / config_rel_path).read_text(encoding="utf-8"))
+    config = dict(config)
+    config["platform"] = "local"
+    monkeypatch.setattr(engine_module, "_prepare_spark", lambda platform, conf: object())
+    plan = engine_module.run_layer_plan(layer, config, platform_name="local", dry_run=True)
+    PLAN_VALIDATOR.validate(plan)
+    dataset_plan = next(ds for ds in plan["datasets"] if ds["name"] == dataset_name)
+    streaming_plan = dataset_plan["streaming_plan"]
+    assert streaming_plan["checkpoint_location"]
+    watermark = streaming_plan.get("watermark")
+    assert watermark
+    assert watermark.get("column")
+    assert watermark.get("delay_threshold")

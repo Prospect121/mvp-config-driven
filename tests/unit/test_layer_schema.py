@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 import pytest
+import yaml
 from jsonschema import Draft7Validator, ValidationError
 
 SCHEMA_PATH = Path(__file__).resolve().parents[2] / "datacore" / "config" / "schemas" / "layer.schema.json"
@@ -12,6 +13,17 @@ with SCHEMA_PATH.open("r", encoding="utf-8") as handle:
 Draft7Validator.check_schema(SCHEMA)
 
 VALIDATOR = Draft7Validator(SCHEMA)
+
+EXAMPLES_BASE = Path(__file__).resolve().parents[2] / "examples"
+EXAMPLE_CONFIGS = [
+    EXAMPLES_BASE / "azure" / "orders_pipeline.yaml",
+    EXAMPLES_BASE / "aws" / "products_pipeline.yaml",
+    EXAMPLES_BASE / "gcp" / "customers_pipeline.yaml",
+    EXAMPLES_BASE / "endpoint_orders.yaml",
+    EXAMPLES_BASE / "jdbc_partitioned.yaml",
+    EXAMPLES_BASE / "streaming" / "kafka_cosmos.yaml",
+    EXAMPLES_BASE / "streaming" / "orders_stream.yaml",
+]
 
 
 def _base_config(dataset: dict) -> dict:
@@ -196,3 +208,9 @@ def test_schema_allows_dataset_validation_block():
     }
 
     VALIDATOR.validate(_base_config(dataset))
+
+
+@pytest.mark.parametrize("example_path", EXAMPLE_CONFIGS)
+def test_examples_conform_to_layer_schema(example_path: Path):
+    data = yaml.safe_load(example_path.read_text(encoding="utf-8"))
+    VALIDATOR.validate(data)
