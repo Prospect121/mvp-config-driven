@@ -109,3 +109,47 @@ def test_streaming_examples_emit_watermark_and_checkpoint(monkeypatch, config_re
     assert watermark
     assert watermark.get("column")
     assert watermark.get("delay_threshold")
+
+
+@pytest.mark.parametrize(
+    "config_rel_path",
+    [
+        "examples/azure/orders_pipeline.yaml",
+        "examples/aws/products_pipeline.yaml",
+        "examples/gcp/customers_pipeline.yaml",
+        "examples/endpoint_orders.yaml",
+        "examples/jdbc_partitioned.yaml",
+        "examples/streaming/orders_stream.yaml",
+        "examples/streaming/kafka_cosmos.yaml",
+    ],
+)
+def test_examples_dry_run_match_plan_contract(monkeypatch, config_rel_path):
+    base_dir = Path(__file__).resolve().parents[2]
+    config_path = base_dir / config_rel_path
+    config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+    config = dict(config)
+    config["platform"] = "local"
+    monkeypatch.setattr(engine_module, "_prepare_spark", lambda platform, conf: object())
+    layers = {dataset.get("layer") for dataset in config.get("datasets", []) if dataset.get("layer")}
+    assert layers, "El ejemplo no define datasets con capa"
+
+    for layer in layers:
+        plan = engine_module.run_layer_plan(
+            layer,
+            config,
+            platform_name="local",
+            environment=config.get("environment", "dev"),
+            dry_run=True,
+        )
+        PLAN_VALIDATOR.validate(plan)
+        assert plan.get("datasets"), "El plan debe contener datasets"
+        for dataset_plan in plan["datasets"]:
+            assert dataset_plan["layer"] == layer
+            streaming_plan = dataset_plan.get("streaming_plan", {})
+            if streaming_plan.get("enabled"):
+                checkpoint = streaming_plan.get("checkpoint_location")
+                assert checkpoint, f"Falta checkpoint para {dataset_plan['name']}"
+                watermark = streaming_plan.get("watermark")
+                assert watermark, f"Falta watermark para {dataset_plan['name']}"
+                assert watermark.get("column")
+                assert watermark.get("delay_threshold")
