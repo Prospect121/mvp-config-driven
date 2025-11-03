@@ -62,6 +62,7 @@ def test_cli_run_dry_run(monkeypatch, sample_config, capsys):
     assert output["run_id"] == "run-123"
     assert "layer" not in output
     assert output["datasets"][0]["status"] == "planned"
+    assert output["plan"] == output["datasets"]
 
 
 def test_cli_plan(monkeypatch, sample_config, capsys):

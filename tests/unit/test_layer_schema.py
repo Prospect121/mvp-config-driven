@@ -9,6 +9,8 @@ SCHEMA_PATH = Path(__file__).resolve().parents[2] / "datacore" / "config" / "sch
 with SCHEMA_PATH.open("r", encoding="utf-8") as handle:
     SCHEMA = json.load(handle)
 
+Draft7Validator.check_schema(SCHEMA)
+
 VALIDATOR = Draft7Validator(SCHEMA)
 
 
@@ -131,6 +133,44 @@ def test_schema_accepts_repartition_object():
     }
 
     VALIDATOR.validate(_base_config(dataset))
+
+
+def test_schema_accepts_repartition_integer():
+    dataset = {
+        "name": "customers",
+        "layer": "silver",
+        "source": {"type": "storage", "uri": "abfss://bronze/customers/"},
+        "sink": {"type": "storage", "uri": "abfss://silver/customers/", "repartition": 3},
+    }
+
+    VALIDATOR.validate(_base_config(dataset))
+
+
+def test_schema_accepts_repartition_list():
+    dataset = {
+        "name": "customers",
+        "layer": "silver",
+        "source": {"type": "storage", "uri": "abfss://bronze/customers/"},
+        "sink": {
+            "type": "storage",
+            "uri": "abfss://silver/customers/",
+            "repartition": ["country", "segment"],
+        },
+    }
+
+    VALIDATOR.validate(_base_config(dataset))
+
+
+def test_schema_rejects_invalid_repartition_shape():
+    dataset = {
+        "name": "customers",
+        "layer": "silver",
+        "source": {"type": "storage", "uri": "abfss://bronze/customers/"},
+        "sink": {"type": "storage", "uri": "abfss://silver/customers/", "repartition": {}},
+    }
+
+    with pytest.raises(ValidationError):
+        VALIDATOR.validate(_base_config(dataset))
 
 
 def test_schema_rejects_transform_validation_block():

@@ -47,6 +47,7 @@ def cmd_run(args: argparse.Namespace) -> None:
         payload = {
             "run_id": results["run_id"],
             "datasets": results["datasets"],
+            "plan": results["datasets"],
         }
         print(json.dumps(payload, indent=2, default=str))
     else:
@@ -65,6 +66,7 @@ def cmd_plan(args: argparse.Namespace) -> None:
             platform_name=args.platform,
             environment=args.env,
             dry_run=True,
+            fail_fast=args.fail_fast,
         )
         layer_plans.append(
             {
@@ -109,6 +111,7 @@ def build_parser() -> argparse.ArgumentParser:
     plan_parser.add_argument("--config", required=True, help="Archivo YAML del proyecto")
     plan_parser.add_argument("--platform", required=False, help="Plataforma cloud (azure/aws/gcp)")
     plan_parser.add_argument("--env", required=False, help="Entorno (dev/test/prod)")
+    plan_parser.add_argument("--fail-fast", action="store_true", help="Detener al primer error")
     plan_parser.set_defaults(func=cmd_plan)
 
     return parser

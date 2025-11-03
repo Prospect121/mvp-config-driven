@@ -1,6 +1,6 @@
 # Validaciones de datos
 
-Las validaciones se declaran en el bloque `validation` de cada dataset (junto a `source` y `sink`). Cada regla genera métricas, puede marcar registros inválidos y opcionalmente enviarlos a cuarentena.
+Las validaciones se declaran en el bloque `validation` de cada dataset (junto a `source` y `sink`). Cada regla genera métricas, puede marcar registros inválidos y opcionalmente enviarlos a cuarentena. El bloque histórico `transform.validation` quedó obsoleto y ya no es reconocido por el esquema.
 
 ## Reglas soportadas
 - `expect_not_null`: asegura que las columnas listadas no contengan nulos.
