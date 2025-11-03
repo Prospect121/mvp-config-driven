@@ -1,33 +1,14 @@
+from types import SimpleNamespace
+from unittest.mock import MagicMock
+
 from datacore.connectors.db import jdbc
 
 
-class _FakeReader:
-    def __init__(self):
-        self.options: dict[str, object] = {}
-
-    def option(self, key, value):
-        self.options[key] = value
-        return self
-
-    def load(self):
-        return self.options
-
-
-class _FakeSpark:
-    def __init__(self):
-        self._reader = _FakeReader()
-
-    @property
-    def read(self):  # pragma: no cover - accessor pattern
-        return self
-
-    def format(self, fmt):
-        assert fmt == "jdbc"
-        return self._reader
-
-
 def test_jdbc_read_injects_partitioning_and_pushdown():
-    spark = _FakeSpark()
+    reader = MagicMock()
+    reader.jdbc.return_value = "df"
+    spark = SimpleNamespace(read=reader)
+
     result = jdbc.read(
         spark,
         {
@@ -39,21 +20,31 @@ def test_jdbc_read_injects_partitioning_and_pushdown():
             "upper_bound": 100,
             "num_partitions": 4,
             "fetchsize": 1_000,
+            "options": {"user": "app", "password": "secret"},
         },
     )
 
-    assert result["url"] == "jdbc:postgresql://host/db"
-    assert result["dbtable"] == "public.orders"
-    assert result["partitionColumn"] == "id"
-    assert result["lowerBound"] == 1
-    assert result["upperBound"] == 100
-    assert result["numPartitions"] == 4
-    assert result["fetchsize"] == 1_000
-    assert result["pushDownPredicate"] == "true"
+    assert result == "df"
+    reader.jdbc.assert_called_once()
+    kwargs = reader.jdbc.call_args.kwargs
+    assert kwargs["url"] == "jdbc:postgresql://host/db"
+    assert kwargs["table"] == "public.orders"
+    assert kwargs["column"] == "id"
+    assert kwargs["lowerBound"] == 1
+    assert kwargs["upperBound"] == 100
+    assert kwargs["numPartitions"] == 4
+    props = kwargs["properties"]
+    assert props["fetchsize"] == "1000"
+    assert props["pushDownPredicate"] == "true"
+    assert props["user"] == "app"
+    assert props["password"] == "secret"
 
 
 def test_jdbc_read_supports_partitioning_block_aliases():
-    spark = _FakeSpark()
+    reader = MagicMock()
+    reader.jdbc.return_value = "df"
+    spark = SimpleNamespace(read=reader)
+
     result = jdbc.read(
         spark,
         {
@@ -70,12 +61,15 @@ def test_jdbc_read_supports_partitioning_block_aliases():
         },
     )
 
-    assert result["partitionColumn"] == "id"
-    assert result["lowerBound"] == 10
-    assert result["upperBound"] == 20
-    assert result["numPartitions"] == 2
-    assert result["fetchsize"] == 5_000
-    assert result["pushDownPredicate"] == "false"
+    assert result == "df"
+    kwargs = reader.jdbc.call_args.kwargs
+    assert kwargs["column"] == "id"
+    assert kwargs["lowerBound"] == 10
+    assert kwargs["upperBound"] == 20
+    assert kwargs["numPartitions"] == 2
+    props = kwargs["properties"]
+    assert props["fetchsize"] == "5000"
+    assert props["pushDownPredicate"] == "false"
 
 
 def test_jdbc_write_honours_snake_case_options():

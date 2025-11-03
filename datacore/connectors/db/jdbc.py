@@ -20,6 +20,12 @@ def _bool_to_lower(value: Any) -> str:
 def _collect_partitioning(config: dict[str, Any]) -> dict[str, Any]:
     partitioning: dict[str, Any] = {}
     raw_partitioning = config.get("partitioning", {})
+    option_blocks = [
+        config,
+        raw_partitioning,
+        config.get("options", {}),
+        config.get("read_options", {}),
+    ]
     alias_map = {
         "partitionColumn": ["partition_column"],
         "lowerBound": ["lower_bound"],
@@ -27,59 +33,105 @@ def _collect_partitioning(config: dict[str, Any]) -> dict[str, Any]:
         "numPartitions": ["num_partitions"],
     }
     for canonical, aliases in alias_map.items():
-        value = config.get(canonical)
-        if value is None:
+        value = None
+        for block in option_blocks:
+            if canonical in block:
+                value = block[canonical]
+                break
             for alias in aliases:
-                if alias in config:
-                    value = config[alias]
+                if alias in block:
+                    value = block[alias]
                     break
-        if value is None and canonical in raw_partitioning:
-            value = raw_partitioning[canonical]
-        if value is None:
-            for alias in aliases:
-                if alias in raw_partitioning:
-                    value = raw_partitioning[alias]
-                    break
+            if value is not None:
+                break
         if value is not None:
             partitioning[canonical] = value
-    if "fetchsize" in config:
-        partitioning["fetchsize"] = config["fetchsize"]
-    elif "fetchsize" in raw_partitioning:
-        partitioning["fetchsize"] = raw_partitioning["fetchsize"]
+
+    for block in option_blocks:
+        if "fetchsize" in block:
+            partitioning["fetchsize"] = block["fetchsize"]
+            break
+
     return partitioning
 
 
 def _collect_pushdown(config: dict[str, Any]) -> dict[str, Any]:
     pushdown_flags = {}
-    if "pushdown" in config:
-        pushdown_flags["pushDownPredicate"] = _bool_to_lower(config["pushdown"])
-    if "predicate_pushdown" in config:
-        pushdown_flags["pushDownPredicate"] = _bool_to_lower(config["predicate_pushdown"])
-    options = config.get("options", {})
-    if "pushdown" in options:
-        pushdown_flags.setdefault("pushDownPredicate", _bool_to_lower(options["pushdown"]))
-    if "predicate_pushdown" in options:
-        pushdown_flags.setdefault(
-            "pushDownPredicate", _bool_to_lower(options["predicate_pushdown"])
-        )
+    blocks = [config, config.get("options", {}), config.get("read_options", {})]
+    for block in blocks:
+        if "pushdown" in block:
+            pushdown_flags["pushDownPredicate"] = _bool_to_lower(block["pushdown"])
+        if "predicate_pushdown" in block:
+            pushdown_flags["pushDownPredicate"] = _bool_to_lower(block["predicate_pushdown"])
     return pushdown_flags
 
 
 def read(spark: SparkSession, config: dict[str, Any]) -> DataFrame:
-    base_options: dict[str, Any] = {}
-    base_options.update(config.get("options", {}))
-    base_options.update(config.get("read_options", {}))
-    base_options.setdefault("url", config["url"])
-    if "table" in config:
-        base_options.setdefault("dbtable", config["table"])
-    if "query" in config:
-        base_options.setdefault("query", config["query"])
-    base_options.update(_collect_pushdown(config))
-    base_options.update(_collect_partitioning(config))
+    options: dict[str, Any] = {}
+    options.update(config.get("options", {}))
+    options.update(config.get("read_options", {}))
 
-    reader = spark.read.format("jdbc")
-    reader = _apply_reader_options(reader, base_options)
-    return reader.load()
+    url = options.pop("url", config.get("url"))
+    if not url:
+        raise ValueError("La configuración JDBC requiere 'url'")
+
+    table = config.get("table") or options.pop("dbtable", None)
+    query = config.get("query") or options.pop("query", None)
+    if query:
+        table = f"({query}) tmp"
+    if not table:
+        raise ValueError("Se requiere 'table' o 'query' para leer vía JDBC")
+
+    partitioning = _collect_partitioning(config)
+    pushdown = _collect_pushdown(config)
+
+    for key in [
+        "partitionColumn",
+        "lowerBound",
+        "upperBound",
+        "numPartitions",
+        "fetchsize",
+        "partition_column",
+        "lower_bound",
+        "upper_bound",
+        "num_partitions",
+        "pushdown",
+        "predicate_pushdown",
+    ]:
+        options.pop(key, None)
+
+    properties: dict[str, str] = {}
+    for key, value in options.items():
+        if value is None:
+            continue
+        if isinstance(value, bool):
+            properties[key] = _bool_to_lower(value)
+        else:
+            properties[key] = str(value)
+
+    fetchsize = partitioning.pop("fetchsize", None)
+    if fetchsize is not None:
+        properties["fetchsize"] = str(fetchsize)
+
+    for key, value in pushdown.items():
+        properties[key] = str(value)
+
+    reader = spark.read
+
+    if partitioning.get("partitionColumn") and all(
+        bound in partitioning for bound in ("lowerBound", "upperBound", "numPartitions")
+    ):
+        return reader.jdbc(
+            url=url,
+            table=table,
+            column=partitioning["partitionColumn"],
+            lowerBound=partitioning["lowerBound"],
+            upperBound=partitioning["upperBound"],
+            numPartitions=partitioning["numPartitions"],
+            properties=properties,
+        )
+
+    return reader.jdbc(url=url, table=table, properties=properties)
 
 
 def write(df: DataFrame, config: dict[str, Any]) -> None:
