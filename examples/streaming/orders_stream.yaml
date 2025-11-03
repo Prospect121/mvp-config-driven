@@ -12,6 +12,10 @@ transform:
     - cast:
         created_at: timestamp
         amount: double
+streaming:
+  enabled: true
+  trigger: "1 minute"
+  checkpoint_location: "abfss://chk@storage.dfs.core.windows.net/orders_stream/_chk/"
 incremental:
   mode: append
   watermark:

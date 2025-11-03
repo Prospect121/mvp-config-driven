@@ -34,9 +34,6 @@ datasets:
       enabled: true
       trigger: "1 minute"
       checkpoint_location: abfs://checkpoints/retail/orders_stream/
-      watermark:
-        column: event_time
-        delay_threshold: "5 minutes"
     sink:
       type: nosql
       engine: cosmosdb
@@ -49,3 +46,6 @@ datasets:
       checkpoint_location: abfs://checkpoints/retail/orders_stream/
     incremental:
       mode: append
+      watermark:
+        column: event_time
+        delay_threshold: "5 minutes"
