@@ -1,0 +1,32 @@
+project: retail360
+environment: dev
+platform: aws
+datasets:
+  - name: orders_endpoint
+    layer: bronze
+    source:
+      type: endpoint
+      url: https://api.example.com/v1/orders
+      method: GET
+      auth:
+        type: bearer
+        token_env: API_TOKEN
+      pagination:
+        strategy: cursor
+        param: cursor
+        cursor_path: $.next
+      record_path: data.items
+      flatten: true
+      infer_schema: true
+    transform:
+      ops:
+        - rename:
+            orderId: order_id
+        - cast:
+            totalAmount: double
+    sink:
+      type: storage
+      format: parquet
+      uri: s3://raw/orders_endpoint/
+      merge_schema: true
+      compression: snappy

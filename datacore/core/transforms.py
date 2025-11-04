@@ -6,6 +6,8 @@ from collections.abc import Callable
 
 from pyspark.sql import DataFrame
 
+from datacore.core import ops
+
 _TRANSFORMS: dict[str, Callable[[DataFrame], DataFrame]] = {}
 
 
@@ -20,3 +22,9 @@ def apply_registered(df: DataFrame, names: list[str]) -> DataFrame:
             raise KeyError(f"Transformación {name} no registrada")
         result = _TRANSFORMS[name](result)
     return result
+
+
+def apply_ops(df: DataFrame, operations: list[dict[str, object] | str]) -> DataFrame:
+    if not operations:
+        return df
+    return ops.apply_ops(df, operations)

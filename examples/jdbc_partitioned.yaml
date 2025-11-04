@@ -1,0 +1,25 @@
+project: retail360
+environment: dev
+platform: aws
+datasets:
+  - name: orders_jdbc
+    layer: raw
+    source:
+      type: jdbc
+      url: "${JDBC_URL}"
+      table: public.orders
+      options:
+        user: "${DB_USER}"
+        password: "${DB_PASS}"
+      partition_column: id
+      lower_bound: 1
+      upper_bound: 100000000
+      num_partitions: 16
+      fetchsize: 10000
+      pushdown: true
+    sink:
+      type: storage
+      format: parquet
+      uri: s3://raw/orders/
+      merge_schema: true
+      compression: snappy

@@ -1,0 +1,131 @@
+project: retail360
+environment: dev
+platform: azure
+spark:
+  shuffle_partitions: 4
+datasets:
+  - name: orders_silver
+    layer: silver
+    source:
+      - type: storage
+        format: csv
+        uri: abfs://landing/retail/orders/
+        infer_schema: true
+        options:
+          header: true
+          delimiter: ";"
+      - type: endpoint
+        url: https://api.retail.example.com/v1/orders
+        method: GET
+        auth:
+          type: bearer
+          token: ${SECRET:RETAIL_API_TOKEN}
+        pagination:
+          strategy: cursor
+          param: cursor
+          cursor_path: $.next
+        record_path: data
+        flatten: true
+    merge_strategy:
+      keys: [order_id]
+      prefer: newest
+      order_by: ["_ingestion_ts DESC"]
+    transform:
+      add_ingestion_ts: true
+      ops:
+        - trim: [customer_name, country]
+        - uppercase: [country]
+        - rename:
+            country: country_code
+        - cast:
+            total_amount: decimal(18,2)
+        - normalize_whitespace: [customer_name]
+        - standardize_dates:
+            cols: [order_date]
+            format_in: "yyyy-MM-dd'T'HH:mm:ss'Z'"
+            format_out: "yyyy-MM-dd"
+            tz: UTC
+        - deduplicate:
+            keys: [order_id]
+            order_by: ["order_date DESC", "_ingestion_ts DESC"]
+    validation:
+      rules:
+        - check: expect_not_null
+          columns: [order_id, order_date]
+          severity: error
+        - check: expect_unique
+          columns: [order_id]
+          severity: error
+        - check: expect_range
+          column: total_amount
+          min: 0
+          severity: warn
+          threshold: 0.05
+        - check: expect_regex
+          column: customer_email
+          pattern: "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"
+          severity: warn
+      quarantine_sink:
+        type: storage
+        uri: abfs://silver/retail/orders_silver/_quarantine/
+    incremental:
+      mode: merge
+      keys: [order_id]
+      order_by: ["order_date DESC", "_ingestion_ts DESC"]
+      watermark:
+        column: order_date
+        delay_threshold: "1 day"
+    sink:
+      type: storage
+      format: parquet
+      uri: abfs://silver/retail/orders_silver/
+      partition_by: [order_date]
+      merge_schema: true
+      compression: snappy
+      target_file_size_mb: 128
+  - name: orders_gold
+    layer: gold
+    source:
+      type: storage
+      format: parquet
+      uri: abfs://silver/retail/orders_silver/
+      options:
+        mergeSchema: true
+    transform:
+      sql:
+        - |
+          SELECT
+            order_id,
+            customer_name,
+            customer_email,
+            country_code,
+            total_amount,
+            CAST(order_date AS DATE) AS order_date,
+            _ingestion_ts
+          FROM orders_silver
+    validation:
+      rules:
+        - check: expect_not_null
+          columns: [order_id, order_date, customer_email]
+          severity: error
+        - check: expect_regex
+          column: country_code
+          pattern: "^[A-Z]{2}$"
+          severity: warn
+        - check: expect_length
+          column: customer_name
+          min: 3
+          severity: warn
+    incremental:
+      mode: merge
+      keys: [order_id]
+      order_by: ["order_date DESC", "_ingestion_ts DESC"]
+    sink:
+      type: warehouse
+      engine: synapse
+      table: analytics.orders_gold
+      partition_by: [order_date]
+      batch_size: 10000
+      truncate_safe: false
+      isolation_level: READ_COMMITTED
+      create_table_options: "DISTRIBUTION = HASH(order_id)"

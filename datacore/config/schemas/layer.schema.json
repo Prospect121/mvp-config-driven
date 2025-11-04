@@ -2,81 +2,240 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "required": ["project", "environment", "platform", "datasets"],
+  "additionalProperties": false,
   "properties": {
     "project": {"type": "string"},
     "environment": {"enum": ["dev", "test", "prod"]},
     "platform": {"enum": ["azure", "aws", "gcp"]},
     "spark": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "shuffle_partitions": {"type": "integer"},
-        "extra_conf": {"type": "object", "additionalProperties": {"type": ["string", "number", "boolean"]}}
-      },
-      "additionalProperties": false
+        "extra_conf": {
+          "type": "object",
+          "additionalProperties": {"type": ["string", "number", "boolean"]}
+        }
+      }
     },
     "datasets": {
       "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["name", "layer", "source", "sink"],
-        "properties": {
-          "name": {"type": "string"},
-          "layer": {"enum": ["raw", "bronze", "silver", "gold"]},
-          "source": {
-            "type": "object",
-            "required": ["type"],
-            "properties": {
-              "type": {"type": "string"},
-              "format": {"type": "string"},
-              "uri": {"type": "string"},
-              "options": {"type": "object"}
-            },
-            "additionalProperties": true
-          },
-          "transform": {
-            "type": "object",
-            "properties": {
-              "sql": {"type": "array", "items": {"type": "string"}},
-              "udf": {"type": "array", "items": {"type": "string"}},
-              "validation": {"type": "object"}
-            },
-            "additionalProperties": true
-          },
-          "sink": {
-            "type": "object",
-            "required": ["type"],
-            "properties": {
-              "type": {"type": "string"},
-              "format": {"type": "string"},
-              "uri": {"type": "string"},
-              "engine": {"type": "string"},
-              "table": {"type": "string"},
-              "mode": {"type": "string"},
-              "partition_by": {"type": "array", "items": {"type": "string"}}
-            },
-            "additionalProperties": true
-          },
-          "incremental": {
-            "type": "object",
-            "properties": {
-              "mode": {"enum": ["append", "merge"]},
-              "keys": {"type": "array", "items": {"type": "string"}},
-              "watermark_column": {"type": "string"}
-            },
-            "additionalProperties": false
-          },
-          "streaming": {
-            "type": "object",
-            "properties": {
-              "enabled": {"type": "boolean"},
-              "trigger": {"type": "string"}
-            },
-            "additionalProperties": false
-          }
-        },
-        "additionalProperties": true
-      }
+      "items": {"$ref": "#/definitions/dataset"}
     }
   },
-  "additionalProperties": false
+  "definitions": {
+    "string_map": {
+      "type": "object",
+      "additionalProperties": {"type": ["string", "number", "boolean"]}
+    },
+    "string_array": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "source": {
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": true,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "storage",
+            "jdbc",
+            "endpoint",
+            "api_rest",
+            "api_graphql",
+            "kafka",
+            "event_hubs",
+            "nosql"
+          ]
+        },
+        "format": {"type": "string"},
+        "backend": {"type": "string"},
+        "uri": {"type": "string"},
+        "url": {"type": "string"},
+        "table": {"type": "string"},
+        "query": {"type": "string"},
+        "options": {"$ref": "#/definitions/string_map"},
+        "read_options": {"$ref": "#/definitions/string_map"},
+        "infer_schema": {"type": "boolean"},
+        "record_path": {
+          "oneOf": [
+            {"type": "string"},
+            {"$ref": "#/definitions/string_array"}
+          ]
+        },
+        "flatten": {"type": "boolean"},
+        "flatten_depth": {"type": "integer", "minimum": 0},
+        "schema": {"type": ["object", "string"]},
+        "payload_format": {"type": "string"},
+        "pagination": {"type": "object"},
+        "auth": {"type": "object"},
+        "pushdown": {"type": "boolean"},
+        "predicate_pushdown": {"type": "boolean"},
+        "partition_column": {"type": "string"},
+        "lower_bound": {"type": ["number", "integer"]},
+        "upper_bound": {"type": ["number", "integer"]},
+        "num_partitions": {"type": "integer", "minimum": 1},
+        "fetchsize": {"type": "integer", "minimum": 1}
+      }
+    },
+    "sink": {
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": true,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["storage", "warehouse", "nosql", "kafka", "event_hubs"]
+        },
+        "format": {"type": "string"},
+        "backend": {"type": "string"},
+        "uri": {"type": "string"},
+        "engine": {"type": "string"},
+        "table": {"type": "string"},
+        "mode": {"type": "string", "enum": ["append", "overwrite", "overwrite_partitions", "merge"]},
+        "partition_by": {"$ref": "#/definitions/string_array"},
+        "merge_schema": {"type": "boolean"},
+        "options": {"$ref": "#/definitions/string_map"},
+        "write_options": {"$ref": "#/definitions/string_map"},
+        "compression": {"type": "string"},
+        "coalesce": {"type": "integer", "minimum": 1},
+        "repartition": {
+          "oneOf": [
+            {"type": "integer", "minimum": 1},
+            {"$ref": "#/definitions/string_array"},
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "columns": {"$ref": "#/definitions/string_array"},
+                "numPartitions": {"type": "integer", "minimum": 1}
+              },
+              "required": ["columns"]
+            }
+          ]
+        },
+        "target_file_size_mb": {"type": "integer", "minimum": 1},
+        "file_size_mb": {"type": "integer", "minimum": 1},
+        "atomic": {"type": "boolean"},
+        "temporary_gcs_bucket": {"type": "string"},
+        "intermediate_format": {"type": "string"},
+        "checkpoint_location": {"type": "string"},
+        "reject_options": {"$ref": "#/definitions/string_map"},
+        "metrics_compression": {"type": "string"},
+        "batch_size": {"type": "integer", "minimum": 1},
+        "truncate_safe": {"type": "boolean"},
+        "isolation_level": {"type": "string"},
+        "create_table_options": {"type": "string"}
+      }
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["check"],
+            "properties": {
+              "check": {"type": "string"},
+              "columns": {"$ref": "#/definitions/string_array"},
+              "column": {"type": "string"},
+              "severity": {"enum": ["error", "warn"]},
+              "threshold": {"type": "number", "minimum": 0, "maximum": 1},
+              "params": {"type": "object"},
+              "on_fail": {"type": "string", "enum": ["quarantine", "reject", "none"]}
+            },
+            "additionalProperties": true
+          }
+        },
+        "quarantine_sink": {"$ref": "#/definitions/sink"}
+      }
+    },
+    "incremental": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "mode": {"enum": ["full", "append", "merge"]},
+        "keys": {"$ref": "#/definitions/string_array"},
+        "order_by": {"$ref": "#/definitions/string_array"},
+        "watermark": {
+          "type": "object",
+          "properties": {
+            "column": {"type": "string"},
+            "delay_threshold": {"type": "string"}
+          },
+          "required": ["column"],
+          "additionalProperties": false
+        }
+      }
+    },
+    "streaming": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "trigger": {"type": "string"},
+        "checkpoint": {"type": "string"},
+        "checkpoint_location": {"type": "string"}
+      }
+    },
+    "dataset": {
+      "type": "object",
+      "required": ["name", "layer", "source", "sink"],
+      "additionalProperties": true,
+      "properties": {
+        "name": {"type": "string"},
+        "layer": {"enum": ["raw", "bronze", "silver", "gold"]},
+        "source": {
+          "oneOf": [
+            {"$ref": "#/definitions/source"},
+            {
+              "type": "array",
+              "minItems": 1,
+              "items": {"$ref": "#/definitions/source"}
+            }
+          ]
+        },
+        "transform": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "sql": {"type": "array", "items": {"type": "string"}},
+            "udf": {"type": "array", "items": {"type": "string"}},
+            "add_ingestion_ts": {"type": "boolean"},
+            "ops": {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {"type": "string"},
+                  {
+                    "type": "object",
+                    "minProperties": 1,
+                    "maxProperties": 1,
+                    "additionalProperties": true
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "validation": {"$ref": "#/definitions/validation"},
+        "sink": {"$ref": "#/definitions/sink"},
+        "incremental": {"$ref": "#/definitions/incremental"},
+        "streaming": {"$ref": "#/definitions/streaming"},
+        "merge_strategy": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "keys": {"$ref": "#/definitions/string_array"},
+            "prefer": {"enum": ["newest", "left", "coalesce"]},
+            "order_by": {"$ref": "#/definitions/string_array"}
+          }
+        }
+      }
+    }
+  }
 }

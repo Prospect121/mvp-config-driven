@@ -1,3 +1,8 @@
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[2]))
+
 from datacore.core.engine import run_layer_plan
 
 
@@ -29,4 +34,5 @@ def test_run_layer_plan_local(tmp_path):
         ],
     }
     results = run_layer_plan("raw", config, platform_name="local", environment="dev")
-    assert results[0]["status"] == "completed"
+    assert "run_id" in results
+    assert results["datasets"][0]["status"] == "completed"
