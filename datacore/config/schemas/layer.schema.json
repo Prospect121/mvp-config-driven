@@ -158,17 +158,30 @@
       }
     },
     "source_shortcut": {
-      "type": "object",
-      "required": ["type", "name"],
-      "additionalProperties": false,
-      "properties": {
-        "id": {"type": "string"},
-        "type": {"const": "shortcut"},
-        "name": {"type": "string"},
-        "provider": {"type": "string"},
-        "target_uri": {"type": "string"},
-        "read_options": {"$ref": "#/definitions/string_map"}
-      }
+      "allOf": [
+        {
+          "type": "object",
+          "required": ["type", "name"],
+          "additionalProperties": false,
+          "properties": {
+            "id": {"type": "string"},
+            "type": {"const": "shortcut"},
+            "name": {"type": "string"},
+            "provider": {"type": "string"},
+            "target_uri": {"type": "string"},
+            "read_options": {"$ref": "#/definitions/string_map"}
+          }
+        },
+        {
+          "not": {
+            "anyOf": [
+              {"required": ["uri"]},
+              {"required": ["url"]},
+              {"required": ["path"]}
+            ]
+          }
+        }
+      ]
     },
     "source_def": {
       "oneOf": [

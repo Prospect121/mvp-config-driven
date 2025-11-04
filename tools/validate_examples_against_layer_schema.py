@@ -29,14 +29,14 @@ def _wrap_dataset(document: dict) -> dict:
 def _iter_documents(base_dir: Path) -> Iterator[Tuple[Path, int, dict]]:
     paths = sorted(base_dir.rglob("*.yml")) + sorted(base_dir.rglob("*.yaml"))
     for path in paths:
-        with path.open("r", encoding="utf-8") as handle:
-            for index, document in enumerate(yaml.safe_load_all(handle), start=1):
-                if not isinstance(document, dict) or not document:
-                    continue
-                if "datasets" in document:
-                    yield path, index, document
-                elif "dataset" in document or "name" in document:
-                    yield path, index, _wrap_dataset(document)
+        text = path.read_text(encoding="utf-8")
+        for index, document in enumerate(yaml.safe_load_all(text), start=1):
+            if not isinstance(document, dict) or not document:
+                continue
+            if "datasets" in document:
+                yield path, index, document
+            elif "dataset" in document or "name" in document:
+                yield path, index, _wrap_dataset(document)
 
 
 def _format_error_path(error) -> str:
