@@ -6,7 +6,7 @@
   "properties": {
     "project": {"type": "string"},
     "environment": {"enum": ["dev", "test", "prod"]},
-    "platform": {"enum": ["azure", "aws", "gcp"]},
+    "platform": {"enum": ["azure", "aws", "gcp", "local"]},
     "spark": {
       "type": "object",
       "additionalProperties": false,
@@ -32,34 +32,19 @@
       "type": "array",
       "items": {"type": "string"}
     },
-    "source": {
+    "source_generic": {
       "type": "object",
       "required": ["type"],
       "additionalProperties": true,
       "properties": {
+        "id": {"type": "string"},
         "type": {
           "type": "string",
-          "enum": [
-            "storage",
-            "jdbc",
-            "endpoint",
-            "api_rest",
-            "api_graphql",
-            "kafka",
-            "event_hubs",
-            "nosql",
-            "shortcut"
-          ]
+          "enum": ["api_rest", "api_graphql", "kafka", "event_hubs", "nosql"]
         },
         "format": {"type": "string"},
-        "backend": {"type": "string"},
-        "uri": {"type": "string"},
-        "url": {"type": "string"},
-        "table": {"type": "string"},
-        "query": {"type": "string"},
         "options": {"$ref": "#/definitions/string_map"},
-        "read_options": {"$ref": "#/definitions/string_map"},
-        "infer_schema": {"type": "boolean"},
+        "payload_format": {"type": "string"},
         "record_path": {
           "oneOf": [
             {"type": "string"},
@@ -68,17 +53,51 @@
         },
         "flatten": {"type": "boolean"},
         "flatten_depth": {"type": "integer", "minimum": 0},
+        "schema": {"type": ["object", "string"]}
+      }
+    },
+    "source_storage": {
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {"type": "string"},
+        "type": {"const": "storage"},
+        "format": {"type": "string"},
+        "backend": {"type": "string"},
+        "uri": {"type": "string"},
+        "path": {"type": "string"},
         "schema": {"type": ["object", "string"]},
-        "payload_format": {"type": "string"},
-        "pagination": {"type": "object"},
-        "auth": {"type": "object"},
-        "pushdown": {"type": "boolean"},
-        "predicate_pushdown": {"type": "boolean"},
+        "infer_schema": {"type": "boolean"},
+        "merge_schema": {"type": "boolean"},
+        "options": {"$ref": "#/definitions/string_map"},
+        "read_options": {"$ref": "#/definitions/string_map"}
+      },
+      "anyOf": [
+        {"required": ["uri"]},
+        {"required": ["path"]}
+      ]
+    },
+    "source_jdbc": {
+      "type": "object",
+      "required": ["type", "url"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {"type": "string"},
+        "type": {"const": "jdbc"},
+        "url": {"type": "string"},
+        "table": {"type": "string"},
+        "query": {"type": "string"},
+        "database": {"type": "string"},
+        "schema": {"type": "string"},
+        "options": {"$ref": "#/definitions/string_map"},
         "partition_column": {"type": "string"},
         "lower_bound": {"type": ["number", "integer"]},
         "upper_bound": {"type": ["number", "integer"]},
         "num_partitions": {"type": "integer", "minimum": 1},
         "fetchsize": {"type": "integer", "minimum": 1},
+        "pushdown": {"type": "boolean"},
+        "predicate_pushdown": {"type": "boolean"},
         "cdc": {
           "type": "object",
           "additionalProperties": false,
@@ -103,12 +122,72 @@
             "poll_interval": {"type": "string"}
           },
           "required": ["mode"]
+        }
+      },
+      "anyOf": [
+        {"required": ["table"]},
+        {"required": ["query"]}
+      ]
+    },
+    "source_endpoint": {
+      "type": "object",
+      "required": ["type", "url"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {"type": "string"},
+        "type": {"const": "endpoint"},
+        "url": {"type": "string"},
+        "method": {"type": "string"},
+        "headers": {"$ref": "#/definitions/string_map"},
+        "body": {},
+        "format": {"type": "string", "enum": ["json", "csv"]},
+        "options": {"$ref": "#/definitions/string_map"},
+        "read_options": {"$ref": "#/definitions/string_map"},
+        "schema": {"type": ["object", "string"]},
+        "infer_schema": {"type": "boolean"},
+        "auth": {"type": "object"},
+        "pagination": {"type": "object"},
+        "record_path": {
+          "oneOf": [
+            {"type": "string"},
+            {"$ref": "#/definitions/string_array"}
+          ]
         },
+        "flatten": {"type": "boolean"},
+        "flatten_depth": {"type": "integer", "minimum": 0}
+      }
+    },
+    "source_shortcut": {
+      "type": "object",
+      "required": ["type", "name"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {"type": "string"},
+        "type": {"const": "shortcut"},
         "name": {"type": "string"},
         "provider": {"type": "string"},
         "target_uri": {"type": "string"},
         "read_options": {"$ref": "#/definitions/string_map"}
       }
+    },
+    "source_def": {
+      "oneOf": [
+        {"$ref": "#/definitions/source_storage"},
+        {"$ref": "#/definitions/source_jdbc"},
+        {"$ref": "#/definitions/source_endpoint"},
+        {"$ref": "#/definitions/source_shortcut"},
+        {"$ref": "#/definitions/source_generic"}
+      ]
+    },
+    "source_def_with_id": {
+      "allOf": [
+        {"$ref": "#/definitions/source_def"},
+        {
+          "type": "object",
+          "required": ["id"],
+          "properties": {"id": {"type": "string"}}
+        }
+      ]
     },
     "sink": {
       "type": "object",
@@ -221,11 +300,11 @@
         "layer": {"enum": ["raw", "bronze", "silver", "gold"]},
         "source": {
           "oneOf": [
-            {"$ref": "#/definitions/source"},
+            {"$ref": "#/definitions/source_def"},
             {
               "type": "array",
-              "minItems": 1,
-              "items": {"$ref": "#/definitions/source"}
+              "minItems": 2,
+              "items": {"$ref": "#/definitions/source_def_with_id"}
             }
           ]
         },
@@ -246,13 +325,16 @@
                 },
                 "join": {
                   "type": "object",
+                  "additionalProperties": false,
                   "properties": {
                     "left": {"type": "string"},
                     "right": {"type": "string"},
                     "on": {
                       "type": "array",
+                      "minItems": 1,
                       "items": {
                         "type": "object",
+                        "additionalProperties": false,
                         "required": ["left", "right"],
                         "properties": {
                           "left": {"type": "string"},
@@ -268,7 +350,8 @@
                       "type": "array",
                       "items": {
                         "type": "object",
-                        "required": ["expr", "as"],
+                        "additionalProperties": false,
+                        "required": ["expr"],
                         "properties": {
                           "expr": {"type": "string"},
                           "as": {"type": "string"}
@@ -280,6 +363,7 @@
                 },
                 "union": {
                   "type": "object",
+                  "additionalProperties": false,
                   "properties": {
                     "allow_missing_columns": {"type": "boolean"},
                     "schema_mode": {

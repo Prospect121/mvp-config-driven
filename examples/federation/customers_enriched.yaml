@@ -1,39 +1,43 @@
-dataset: customers_enriched
-layer: silver
-source:
-  - id: api
-    type: endpoint
-    method: GET
-    url: "https://api.example.com/customers"
-    format: json
-  - id: crm
-    type: jdbc
-    url: "${JDBC_URL}"
-    table: "public.crm_customers"
-transform:
-  federate:
-    strategy: join
-    join:
-      left: api
-      right: crm
-      on:
-        - { left: "email", right: "email" }
-      join_type: left
-      select:
-        - { expr: "crm.id", as: "customer_id" }
-        - { expr: "api.email", as: "email" }
-        - { expr: "nvl(crm.segment,'UNKNOWN')", as: "segment" }
-  ops:
-    - normalize: { trim: ["email"], lower: ["email"] }
-    - dedupe: { keys: ["email"], order_by: ["_ingestion_ts DESC"] }
-validation:
-  rules:
-    - { check: expect_not_null, columns: ["email"], severity: error }
-sink:
-  type: storage
-  backend: azure
-  format: parquet
-  uri: "abfss://silver@acme/customers/"
-incremental:
-  mode: merge
-  keys: ["email"]
+project: federation-demo
+environment: dev
+platform: local
+datasets:
+  - name: customers_enriched
+    layer: silver
+    source:
+      - id: api
+        type: endpoint
+        method: GET
+        url: "https://api.example.com/customers"
+        format: json
+      - id: crm
+        type: jdbc
+        url: "${JDBC_URL}"
+        table: "public.crm_customers"
+    transform:
+      federate:
+        strategy: join
+        join:
+          left: api
+          right: crm
+          'on':
+            - { left: "email", right: "email" }
+          join_type: left
+          select:
+            - { expr: "crm.id", as: "customer_id" }
+            - { expr: "api.email", as: "email" }
+            - { expr: "nvl(crm.segment,'UNKNOWN')", as: "segment" }
+      ops:
+        - normalize: { trim: ["email"], lower: ["email"] }
+        - dedupe: { keys: ["email"], order_by: ["_ingestion_ts DESC"] }
+    validation:
+      rules:
+        - { check: expect_not_null, columns: ["email"], severity: error }
+    sink:
+      type: storage
+      backend: azure
+      format: parquet
+      uri: "abfss://silver@acme/customers/"
+    incremental:
+      mode: merge
+      keys: ["email"]
