@@ -47,7 +47,8 @@
             "api_graphql",
             "kafka",
             "event_hubs",
-            "nosql"
+            "nosql",
+            "shortcut"
           ]
         },
         "format": {"type": "string"},
@@ -77,7 +78,36 @@
         "lower_bound": {"type": ["number", "integer"]},
         "upper_bound": {"type": ["number", "integer"]},
         "num_partitions": {"type": "integer", "minimum": 1},
-        "fetchsize": {"type": "integer", "minimum": 1}
+        "fetchsize": {"type": "integer", "minimum": 1},
+        "cdc": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "engine": {
+              "type": "string",
+              "enum": [
+                "sqlserver",
+                "postgres",
+                "mysql",
+                "oracle",
+                "snowflake",
+                "bigquery"
+              ]
+            },
+            "mode": {
+              "type": "string",
+              "enum": ["timestamp", "version_column", "log"]
+            },
+            "keys": {"$ref": "#/definitions/string_array"},
+            "watermark_column": {"type": "string"},
+            "poll_interval": {"type": "string"}
+          },
+          "required": ["mode"]
+        },
+        "name": {"type": "string"},
+        "provider": {"type": "string"},
+        "target_uri": {"type": "string"},
+        "read_options": {"$ref": "#/definitions/string_map"}
       }
     },
     "sink": {
@@ -206,6 +236,61 @@
             "sql": {"type": "array", "items": {"type": "string"}},
             "udf": {"type": "array", "items": {"type": "string"}},
             "add_ingestion_ts": {"type": "boolean"},
+            "federate": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "strategy": {
+                  "type": "string",
+                  "enum": ["join", "union"]
+                },
+                "join": {
+                  "type": "object",
+                  "properties": {
+                    "left": {"type": "string"},
+                    "right": {"type": "string"},
+                    "on": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": ["left", "right"],
+                        "properties": {
+                          "left": {"type": "string"},
+                          "right": {"type": "string"}
+                        }
+                      }
+                    },
+                    "join_type": {
+                      "type": "string",
+                      "enum": ["inner", "left", "right", "full"]
+                    },
+                    "select": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": ["expr", "as"],
+                        "properties": {
+                          "expr": {"type": "string"},
+                          "as": {"type": "string"}
+                        }
+                      }
+                    }
+                  },
+                  "required": ["left", "right", "on", "join_type"]
+                },
+                "union": {
+                  "type": "object",
+                  "properties": {
+                    "allow_missing_columns": {"type": "boolean"},
+                    "schema_mode": {
+                      "type": "string",
+                      "enum": ["by_name", "by_position"]
+                    }
+                  }
+                }
+              },
+              "required": ["strategy"]
+            },
             "ops": {
               "type": "array",
               "items": {
@@ -233,6 +318,15 @@
             "keys": {"$ref": "#/definitions/string_array"},
             "prefer": {"enum": ["newest", "left", "coalesce"]},
             "order_by": {"$ref": "#/definitions/string_array"}
+          }
+        },
+        "cache": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {"type": "boolean"},
+            "storage": {"type": "string"},
+            "ttl": {"type": "string"}
           }
         }
       }

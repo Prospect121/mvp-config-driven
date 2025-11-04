@@ -15,6 +15,7 @@ from datacore.connectors import http
 from datacore.connectors.db import jdbc
 from datacore.connectors.storage import abfs, gcs, local, s3
 from datacore.platforms.base import PlatformBase
+from datacore.io import shortcuts
 
 FORMAT_DEFAULTS: dict[str, dict[str, Any]] = {
     "csv": {"header": "true", "inferSchema": "true", "delimiter": ","},
@@ -319,6 +320,15 @@ def read_batch(
         return _read_kafka_batch(spark, source)
     if source_type == "event_hubs":
         return _read_event_hubs_batch(spark, source)
+    if source_type == "shortcut":
+        return shortcuts.resolve_shortcut(
+            source,
+            platform,
+            spark,
+            layer=layer,
+            dataset=dataset,
+            environment=environment,
+        )
     raise ValueError(f"Tipo de origen no soportado: {source_type}")
 
 

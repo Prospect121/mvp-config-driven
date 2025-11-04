@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import json
+from hashlib import sha1
+from pathlib import Path
 from datetime import datetime
 from time import perf_counter
 from typing import Any
@@ -10,7 +13,8 @@ from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
 
-from datacore.core import transforms, validation
+from datacore.core import cache, federation, pushdown, transforms, validation
+from datacore.core.cdc import incremental_fetch_jdbc
 from datacore.core.incremental import prepare_incremental
 from datacore.io import readers, writers
 from datacore.platforms.aws_glue import AwsGluePlatform
@@ -72,6 +76,28 @@ def _sanitize_options(options: dict[str, Any] | None) -> dict[str, Any]:
     return sanitized
 
 
+def _cdc_state_path(
+    platform: PlatformBase,
+    layer: str,
+    dataset: str,
+    environment: str,
+    source_id: str,
+) -> Path:
+    base = Path(platform.checkpoint_dir(layer, dataset, environment)) / "_cdc"
+    base.mkdir(parents=True, exist_ok=True)
+    return base / f"{source_id}.json"
+
+
+def _load_cdc_state(path: Path) -> dict[str, Any]:
+    if not path.exists():
+        return {}
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _store_cdc_state(path: Path, state: dict[str, Any]) -> None:
+    path.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
 def _apply_transformations(df: DataFrame, transform_config: dict[str, Any]) -> DataFrame:
     sql_steps = transform_config.get("sql", [])
     for idx, statement in enumerate(sql_steps):
@@ -109,42 +135,126 @@ def _merge_strategy(df: DataFrame, strategy: dict[str, Any]) -> DataFrame:
     return ranked.filter(F.col("__dc_union_rank") == 1).drop("__dc_union_rank")
 
 
-def _read_dataset_source(
+def _source_list(dataset: dict[str, Any]) -> list[dict[str, Any]]:
+    raw = dataset.get("source")
+    if isinstance(raw, list):
+        return list(raw)
+    if isinstance(raw, dict):
+        return [raw]
+    raise ValueError("La definición de source es obligatoria")
+
+
+def _source_identifier(idx: int, source: dict[str, Any]) -> str:
+    return str(source.get("id") or source.get("name") or f"src_{idx}")
+
+
+def _prepare_source_for_pushdown(
+    source: dict[str, Any],
+    transform_cfg: dict[str, Any],
+) -> dict[str, Any]:
+    ops_cfg = transform_cfg.get("ops", [])
+    sql = pushdown.try_pushdown(source, ops_cfg)
+    if not sql:
+        return source
+    updated = dict(source)
+    updated.pop("table", None)
+    updated["query"] = sql
+    return updated
+
+
+def _read_single_source(
+    spark,
+    platform: PlatformBase,
+    dataset: dict[str, Any],
+    source: dict[str, Any],
+    *,
+    source_id: str,
+    ordinal: int,
+    layer: str,
+    environment: str,
+) -> DataFrame:
+    transform_cfg = dataset.get("transform", {})
+    prepared = _prepare_source_for_pushdown(source, transform_cfg)
+    cdc_cfg = prepared.pop("cdc", None)
+    if cdc_cfg and prepared.get("type") == "jdbc":
+        state_path = _cdc_state_path(platform, layer, dataset["name"], environment, source_id)
+        previous_state = _load_cdc_state(state_path)
+        df, new_state = incremental_fetch_jdbc(spark, prepared, cdc_cfg, previous_state)
+        _store_cdc_state(state_path, new_state)
+    else:
+        df = readers.read_batch(
+            spark,
+            platform,
+            prepared,
+            layer=layer,
+            dataset=dataset["name"],
+            environment=environment,
+        )
+    df = df.withColumn("__dc_source_ordinal", F.lit(ordinal))
+    view_name = f"_src_{source_id}"
+    df.createOrReplaceTempView(view_name)
+    return df
+
+
+def _combine_sources(
+    dataset: dict[str, Any],
+    sources: dict[str, DataFrame],
+) -> DataFrame:
+    transform_cfg = dataset.get("transform", {})
+    federate_cfg = transform_cfg.get("federate")
+    if federate_cfg:
+        sanitized = {
+            name: (df.drop("__dc_source_ordinal") if "__dc_source_ordinal" in df.columns else df)
+            for name, df in sources.items()
+        }
+        return federation.apply_federation(sanitized, federate_cfg)
+    frames = list(sources.values())
+    if not frames:
+        raise ValueError("No se encontraron fuentes para el dataset")
+    if len(frames) == 1:
+        combined = frames[0]
+        return combined.drop("__dc_source_ordinal") if "__dc_source_ordinal" in combined.columns else combined
+    combined = frames[0]
+    for frame in frames[1:]:
+        combined = combined.unionByName(frame, allowMissingColumns=True)
+    if dataset.get("merge_strategy"):
+        combined = _merge_strategy(combined, dataset["merge_strategy"])
+    return combined.drop("__dc_source_ordinal") if "__dc_source_ordinal" in combined.columns else combined
+
+
+def _build_sources_map(
     spark,
     platform: PlatformBase,
     dataset: dict[str, Any],
     *,
     layer: str,
     environment: str,
-) -> DataFrame:
-    source_conf = dataset["source"]
-    if isinstance(source_conf, list):
-        dataframes: list[DataFrame] = []
-        for idx, source in enumerate(source_conf):
-            df = readers.read_batch(
-                spark,
-                platform,
-                source,
-                layer=layer,
-                dataset=dataset["name"],
-                environment=environment,
-            )
-            df = df.withColumn("__dc_source_ordinal", F.lit(idx))
-            dataframes.append(df)
-        combined = dataframes[0]
-        for frame in dataframes[1:]:
-            combined = combined.unionByName(frame, allowMissingColumns=True)
-        if dataset.get("merge_strategy"):
-            combined = _merge_strategy(combined, dataset["merge_strategy"])
-        return combined.drop("__dc_source_ordinal")
-    return readers.read_batch(
-        spark,
-        platform,
-        source_conf,
-        layer=layer,
-        dataset=dataset["name"],
-        environment=environment,
-    )
+) -> dict[str, DataFrame]:
+    frames: list[tuple[str, DataFrame]] = []
+    for idx, source in enumerate(_source_list(dataset)):
+        source_id = _source_identifier(idx, source)
+        df = _read_single_source(
+            spark,
+            platform,
+            dataset,
+            dict(source),
+            source_id=source_id,
+            ordinal=idx,
+            layer=layer,
+            environment=environment,
+        )
+        frames.append((source_id, df))
+    return dict(frames)
+
+
+def _dataset_signature(dataset: dict[str, Any]) -> str:
+    payload = {
+        "source": dataset.get("source"),
+        "transform": dataset.get("transform"),
+        "incremental": dataset.get("incremental"),
+    }
+    serialized = json.dumps(payload, sort_keys=True, default=str)
+    return sha1(serialized.encode("utf-8")).hexdigest()
 
 
 def _detect_dataset_issues(dataset: dict[str, Any]) -> list[str]:
@@ -175,7 +285,7 @@ def _build_plan(dataset: dict[str, Any]) -> dict[str, Any]:
         sources = []
 
     source_summaries = []
-    for source in sources:
+    for idx, source in enumerate(sources):
         if not isinstance(source, dict):
             continue
         summary = {
@@ -183,6 +293,10 @@ def _build_plan(dataset: dict[str, Any]) -> dict[str, Any]:
             "format": source.get("format"),
             "uri": source.get("uri"),
         }
+        source_id = source.get("id") or source.get("name") or f"src_{idx}"
+        summary["id"] = source_id
+        if source.get("name"):
+            summary["name"] = source.get("name")
         if source.get("table"):
             summary["table"] = source.get("table")
         if source.get("url"):
@@ -192,6 +306,8 @@ def _build_plan(dataset: dict[str, Any]) -> dict[str, Any]:
         summary["options"] = _sanitize_options(source.get("options"))
         if source.get("read_options"):
             summary["read_options"] = _sanitize_options(source.get("read_options"))
+        if source.get("cdc"):
+            summary["cdc"] = dict(source.get("cdc"))
         source_summaries.append(summary)
 
     sink_conf = dataset.get("sink", {})
@@ -228,6 +344,7 @@ def _build_plan(dataset: dict[str, Any]) -> dict[str, Any]:
         "ops": transform_cfg.get("ops", []),
         "udf": transform_cfg.get("udf", []),
         "add_ingestion_ts": transform_cfg.get("add_ingestion_ts", True),
+        "federate": transform_cfg.get("federate"),
     }
 
     validation_cfg = dataset.get("validation", {})
@@ -242,6 +359,7 @@ def _build_plan(dataset: dict[str, Any]) -> dict[str, Any]:
             "merge_strategy": dataset.get("merge_strategy"),
         },
         "transform_plan": transform_summary,
+        "federate_plan": transform_cfg.get("federate"),
         "validation_plan": validation_cfg,
         "incremental_plan": incremental_cfg,
         "streaming_plan": {
@@ -253,6 +371,7 @@ def _build_plan(dataset: dict[str, Any]) -> dict[str, Any]:
             or incremental_cfg.get("watermark"),
         },
         "sink_plan": sink_summary,
+        "cache_plan": dataset.get("cache", {}),
     }
     plan["issues"] = _detect_dataset_issues(dataset)
     return plan
@@ -282,11 +401,32 @@ def _handle_batch_dataset(
     spark,
     run_id: str,
 ) -> dict[str, Any]:
-    df = _read_dataset_source(spark, platform, dataset, layer=layer, environment=environment)
-    transformed = _apply_transformations(df, dataset.get("transform", {}))
+    sources = _build_sources_map(
+        spark,
+        platform,
+        dataset,
+        layer=layer,
+        environment=environment,
+    )
+    combined = _combine_sources(dataset, sources)
+    transformed = _apply_transformations(combined, dataset.get("transform", {}))
+    cache_cfg = dataset.get("cache")
+    if cache_cfg:
+        transformed = cache.with_cache(
+            transformed,
+            cache_cfg,
+            {
+                "dataset": dataset["name"],
+                "layer": layer,
+                "environment": environment,
+                "signature": _dataset_signature(dataset),
+            },
+        )
     validation_cfg = dataset.get("validation", {})
     validation_result = validation.apply_validation(transformed, validation_cfg)
     metrics = dict(validation_result.metrics)
+    if cache_cfg:
+        metrics["cache_enabled"] = bool(cache_cfg.get("enabled"))
     metrics.update(
         {
             "dataset": dataset["name"],

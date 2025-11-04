@@ -13,6 +13,12 @@ El módulo `datacore.core.incremental` proporciona utilidades para ejecutar carg
 - Para otros formatos se ejecuta un merge genérico: se escribe un staging temporal, se deduplica por `keys`+`order_by` y se reemplaza la tabla destino de forma atómica.
 - Para sinks JDBC el motor crea una tabla temporal y ejecuta un merge por etapas dentro de una transacción, respetando `isolationLevel`.
 
+## Change Data Capture (CDC)
+- Declarar `source.cdc` habilita lecturas incrementales sin replicar toda la tabla.
+- Modos soportados: `timestamp` (requiere `watermark_column`) y `version_column`.
+- El motor persiste el último watermark/versión en `<checkpoint>/_cdc/<source_id>.json` y lo reutiliza en ejecuciones posteriores.
+- `poll_interval` define la frecuencia para futuros micro-batches (reservado para extensiones streaming).
+
 ## Upserts JDBC
 1. Se escribe el DataFrame en una tabla temporal con `batchsize` configurable.
 2. Se ejecuta el `MERGE`/`UPSERT` mediante SQL específico del motor (`postgres`, `mysql`, `sqlserver/synapse`, `redshift`).
