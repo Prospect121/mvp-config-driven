@@ -7,14 +7,16 @@ datasets:
   - name: orders_silver
     layer: silver
     source:
-      - type: storage
+      - id: landing
+        type: storage
         format: csv
         uri: abfs://landing/retail/orders/
         infer_schema: true
         options:
           header: true
           delimiter: ";"
-      - type: endpoint
+      - id: orders_api
+        type: endpoint
         url: https://api.retail.example.com/v1/orders
         method: GET
         auth:

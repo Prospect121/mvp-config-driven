@@ -38,12 +38,17 @@ graph TD
 ## Flujo general
 1. La CLI carga un archivo YAML y lo valida contra los esquemas JSON.
 2. El motor determina las capas a ejecutar y construye un plan declarativo con las transformaciones y validaciones.
-3. Los lectores soportan múltiples fuentes por dataset (storage, JDBC, APIs REST/GraphQL, Kafka/Event Hubs, NoSQL) y unen los 
-   DataFrames mediante `unionByName(allowMissingColumns=True)`.
-4. Los conectores traducen los parámetros a llamadas de Spark o APIs externas, aplicando `pushdown`, particiones y paginación
-   cuando corresponde.
-5. Las reglas de validación, normalización y los contratos incrementales se aplican de forma uniforme sin importar la nube.
-6. Se generan métricas por dataset y, en caso de errores, los registros rechazados se escriben en `_rejects`.
+3. Cada dataset construye un DAG declarativo `sources → federate → ops → validations → incremental → sink`. Cada `source`
+   queda materializado como vista temporal `_src_<id>` y puede provenir de storage, JDBC, endpoints REST/GraphQL, Kafka/Event
+   Hubs, NoSQL o shortcuts declarados en `.prodi/shortcuts.yml`.
+4. El bloque `transform.federate` habilita `join`/`union` multi-fuente sin ingestas redundantes y respeta `allow_missing_columns`
+   y proyecciones selectivas.
+5. Los conectores traducen los parámetros a llamadas de Spark o APIs externas, aplicando `pushdown` seguro, cache/TTL declarativo
+   y particiones físicas cuando corresponde.
+6. Las reglas de validación, normalización, cuarentena y los contratos incrementales (incluyendo CDC por timestamp o columna de
+   versión) se aplican de forma uniforme sin importar la nube.
+7. Se generan métricas por dataset y, en caso de errores, los registros rechazados se escriben en `_rejects` junto con métricas
+   JSON por regla.
 
 ## Esquema e inferencia
 - Los formatos soportados incluyen `csv`, `json`, `parquet`, `avro` y `orc`, con opciones específicas por formato.
@@ -57,8 +62,9 @@ graph TD
 - Se añade `transform.add_ingestion_ts` (true por defecto) y se soporta `merge_strategy` para múltiples fuentes.
 - **Breaking change**: el bloque `transform.validation` fue retirado; las reglas deben declararse en `dataset.validation`.
 
-## Incremental y streaming
+## Incremental, CDC y streaming
 - `incremental.mode` soporta `full`, `append` y `merge` genérico para cualquier formato, aprovechando Delta Lake cuando está disponible.
+- Las fuentes JDBC con bloque `source.cdc` realizan lecturas incrementales por timestamp o columna de versión y persisten el watermark en el checkpoint del dataset.
 - Para sinks JDBC el motor realiza upserts por etapas (tablas temporales + transacciones) cuando se definen `keys`.
 - Las cargas streaming manejan `watermark` (`column` + `delay_threshold`), triggers configurables y checkpoints por dataset.
 

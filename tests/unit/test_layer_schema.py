@@ -59,8 +59,9 @@ def test_schema_accepts_multi_source_list():
         "name": "orders",
         "layer": "bronze",
         "source": [
-            {"type": "storage", "format": "csv", "uri": "s3://raw/orders/"},
+            {"id": "landing", "type": "storage", "format": "csv", "uri": "s3://raw/orders/"},
             {
+                "id": "api",
                 "type": "api_rest",
                 "url": "https://api.example.com/v1/orders",
                 "record_path": "items",
