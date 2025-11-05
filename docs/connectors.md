@@ -46,6 +46,26 @@ source:
   flatten: true
 ```
 
+## Virtualización y archivos remotos
+- **Shortcuts** (`datacore.io.shortcuts`): resuelven referencias declaradas en `.prodi/shortcuts.yml` sin copiar datos. Se puede apuntar a storage, JDBC o endpoints simplemente por nombre.
+- **SFTP/FTP** (`datacore.connectors.sftp`): lectura básica de archivos remotos soportando las mismas opciones que storage.
+- **Google Sheets** (`datacore.connectors.sheets`): admite `values` inline o `csv_url` para exportaciones públicas.
+- **Excel SharePoint/OneDrive** (`datacore.connectors.excel_ms`): ingesta vía `rows`, `csv_url` o export local previamente montado.
+
+```yaml
+source:
+  type: shortcut
+  name: sales_s3
+
+source:
+  type: endpoint
+  provider: sftp
+  path: sftp://host/data/report.csv
+  format: csv
+  options:
+    header: true
+```
+
 ## Bases de datos y warehouses
 - **JDBC** (`datacore.connectors.db.jdbc`): Postgres, SQL Server/Synapse, MySQL, Redshift. Soporta `pushdown`, lectura por particiones (`partitionColumn`, `lowerBound`, `upperBound`, `numPartitions`, `fetchsize`) y upserts en modo `merge`.
 - **Warehouse** (`datacore.io.writers`): escritura JDBC con `batch_size`, `isolation_level`, `truncate_safe` y `create_table_options`.

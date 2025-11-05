@@ -7,11 +7,13 @@ datasets:
   - name: customers_silver
     layer: silver
     source:
-      - type: storage
+      - id: landing
+        type: storage
         format: parquet
         uri: gs://landing/retail/customers/
         merge_schema: true
-      - type: api_graphql
+      - id: loyalty_api
+        type: api_graphql
         url: https://api.retail.example.com/graphql
         query: |
           query Customers($region: String!) {
