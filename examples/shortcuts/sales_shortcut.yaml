@@ -1,0 +1,12 @@
+dataset: sales_shortcut
+layer: bronze
+source:
+  type: shortcut
+  name: sales_s3
+sink:
+  type: storage
+  backend: azure
+  format: parquet
+  uri: "abfss://bronze@acme/data/sales/"
+incremental:
+  mode: append

@@ -15,7 +15,7 @@ Ambos comandos exponen un contrato JSON estable que se valida contra `datacore/c
       "run_id": "<uuid>",
       "source_plan": {
         "sources": [
-          {"type": "storage", "uri": "abfss://landing/orders/", "format": "csv"}
+          {"id": "raw", "type": "storage", "uri": "abfss://landing/orders/", "format": "csv"}
         ],
         "merge_strategy": {"keys": ["order_id"], "prefer": "newest"}
       },
@@ -26,8 +26,10 @@ Ambos comandos exponen un contrato JSON estable que se valida contra `datacore/c
           {"cast": {"amount": "double"}}
         ],
         "udf": [],
-        "add_ingestion_ts": true
+        "add_ingestion_ts": true,
+        "federate": null
       },
+      "federate_plan": null,
       "validation_plan": {
         "rules": [
           {"check": "expect_not_null", "columns": ["order_id"], "severity": "error"}
@@ -53,13 +55,14 @@ Ambos comandos exponen un contrato JSON estable que se valida contra `datacore/c
         "merge_schema": true,
         "compression": "snappy"
       },
+      "cache_plan": {"enabled": false},
       "issues": []
     }
   ]
 }
 ```
 
-Cada dataset puede incluir propiedades adicionales (`metrics` en ejecuciones reales) pero el núcleo anterior se mantiene estable para CI y tooling externo.
+Cada dataset puede incluir propiedades adicionales (`metrics` en ejecuciones reales) pero el núcleo anterior se mantiene estable para CI y tooling externo. Los bloques `federate_plan` y `cache_plan` describen respectivamente la estrategia de federación multi-fuente y la configuración de cache/TTL aplicada durante la ejecución.
 
 ## Validación en pruebas
 

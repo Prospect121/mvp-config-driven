@@ -1,0 +1,36 @@
+dataset: orders_cdc
+layer: bronze
+source:
+  type: jdbc
+  url: "${PG_URL}"
+  table: "public.orders"
+  cdc:
+    engine: postgres
+    mode: timestamp
+    keys: ["order_id"]
+    watermark_column: "updated_at"
+    poll_interval: "60s"
+sink:
+  type: storage
+  backend: s3
+  format: parquet
+  uri: "s3://raw/orders_cdc/"
+incremental:
+  mode: append
+---
+dataset: orders_upsert
+layer: silver
+source:
+  type: storage
+  backend: s3
+  format: parquet
+  uri: "s3://raw/orders_cdc/"
+incremental:
+  mode: merge
+  keys: ["order_id"]
+  order_by: ["_ingestion_ts DESC"]
+sink:
+  type: storage
+  backend: s3
+  format: parquet
+  uri: "s3://silver/orders/"
