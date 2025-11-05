@@ -18,6 +18,24 @@
         }
       }
     },
+    "providers": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "fabric": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "workspace_id": {"type": "string"},
+            "environment_id": {"type": "string"},
+            "lakehouse_id": {"type": "string"},
+            "warehouse_id": {"type": "string"},
+            "eventhouse_id": {"type": "string"},
+            "tenant_id": {"type": "string"}
+          }
+        }
+      }
+    },
     "datasets": {
       "type": "array",
       "items": {"$ref": "#/definitions/dataset"}

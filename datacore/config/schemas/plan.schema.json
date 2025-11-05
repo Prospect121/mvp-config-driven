@@ -22,6 +22,34 @@
           }
         }
       }
+    },
+    "fabric": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "lakehouse",
+                  "warehouse",
+                  "pipeline",
+                  "spark_job",
+                  "shortcut"
+                ]
+              },
+              "id": {"type": "string"},
+              "url": {"type": "string"},
+              "name": {"type": "string"}
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {

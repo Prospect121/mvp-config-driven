@@ -5,6 +5,9 @@ on: [push, pull_request]
 jobs:
   build-test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        profile: [base, fabric]
     steps:
       - uses: actions/checkout@v4
 
@@ -16,7 +19,11 @@ jobs:
       - name: deps
         run: |
           python -m pip install --upgrade pip
-          pip install -e .[dev] pytest jsonschema
+          if [ "${{ matrix.profile }}" = "fabric" ]; then
+            pip install -e .[dev,fabric] pytest jsonschema responses
+          else
+            pip install -e .[dev] pytest jsonschema responses
+          fi
 
       - name: spin emulators
         run: docker compose -f ci/docker-compose.emu.yml up -d
@@ -35,5 +42,10 @@ jobs:
       - name: plan contract
         run: python tools/validate_plan_against_schema.py plan.json datacore/config/schemas/plan.schema.json
 
-      - name: tests
-        run: pytest --maxfail=1 --disable-warnings -q
+      - name: unit tests
+        run: |
+          if [ "${{ matrix.profile }}" = "fabric" ]; then
+            pytest -q
+          else
+            pytest -q -k "not fabric"
+          fi
