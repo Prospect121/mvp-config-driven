@@ -7,20 +7,33 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+
       - name: deps
         run: |
           python -m pip install --upgrade pip
           pip install -e .[dev] pytest jsonschema
+
       - name: spin emulators
         run: docker compose -f ci/docker-compose.emu.yml up -d
+
       - name: schema check (layer)
         run: python tools/validate_examples_against_layer_schema.py
-      - name: dry-run plan
-        run: prodi plan --config examples/federation/customers_enriched.yaml > plan.json
+
+      - name: sanity - CLI import
+        run: >-
+          python -c "import importlib.util as u, sys; ok=bool(u.find_spec('datacore.cli'));
+          print('datacore.cli importable:', ok); sys.exit(0 if ok else 1)"
+
+      - name: plan (module)
+        run: python -m datacore.cli plan --config examples/federation/customers_enriched.yaml > plan.json
+
       - name: plan contract
         run: python tools/validate_plan_against_schema.py plan.json datacore/config/schemas/plan.schema.json
+
       - name: tests
         run: pytest --maxfail=1 --disable-warnings -q

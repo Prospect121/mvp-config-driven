@@ -78,5 +78,6 @@ def test_cli_plan(monkeypatch, sample_config, capsys):
 
     cli_main.main(["plan", "--config", str(sample_config)])
     payload = json.loads(capsys.readouterr().out)
-    assert payload["layers"][0]["run_id"].startswith("run-")
-    assert payload["layers"][0]["datasets"][0]["status"] == "planned"
+    assert payload["run_id"].startswith("run-")
+    assert payload["datasets"][0]["status"] == "planned"
+    assert "layers" not in payload

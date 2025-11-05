@@ -12,6 +12,7 @@ import yaml
 
 from datacore.config.validation import validate_config
 from datacore.core.engine import run_layer_plan
+from datacore.utils import observability
 from datacore.utils.logging import configure_logging
 
 LOGGER = logging.getLogger(__name__)
@@ -57,8 +58,10 @@ def cmd_run(args: argparse.Namespace) -> None:
 def cmd_plan(args: argparse.Namespace) -> None:
     data = _load_config(args.config)
     validate_config(data)
-    layers = sorted({d.get("layer") for d in data.get("datasets", [])})
-    layer_plans: list[dict[str, Any]] = []
+    layers = sorted({d.get("layer") for d in data.get("datasets", []) if d.get("layer")})
+    aggregated_datasets: list[dict[str, Any]] = []
+    aggregated_plan_nodes: list[dict[str, Any]] = []
+    run_id: str | None = None
     for layer in layers:
         plan_result = run_layer_plan(
             layer=layer,
@@ -68,14 +71,21 @@ def cmd_plan(args: argparse.Namespace) -> None:
             dry_run=True,
             fail_fast=args.fail_fast,
         )
-        layer_plans.append(
-            {
-                "layer": layer,
-                "run_id": plan_result["run_id"],
-                "datasets": plan_result["datasets"],
-            }
-        )
-    print(json.dumps({"layers": layer_plans}, indent=2, default=str))
+        run_id = run_id or plan_result.get("run_id")
+        datasets = plan_result.get("datasets", [])
+        aggregated_datasets.extend(datasets)
+        for dataset_plan in datasets:
+            nodes = dataset_plan.get("plan")
+            if nodes:
+                aggregated_plan_nodes.append(
+                    {"dataset": dataset_plan.get("name"), "nodes": nodes}
+                )
+    if run_id is None:
+        run_id = observability.new_run_id()
+    payload: dict[str, Any] = {"run_id": run_id, "datasets": aggregated_datasets}
+    if aggregated_plan_nodes:
+        payload["plan"] = aggregated_plan_nodes
+    print(json.dumps(payload, indent=2, default=str))
 
 
 def build_parser() -> argparse.ArgumentParser:
