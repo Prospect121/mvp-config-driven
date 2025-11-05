@@ -1,85 +1,76 @@
-- "properties": {
--   "source": {
--     "source_generic": {
--       "type": "object",
--       "required": ["type"],
--       ...
--     }
--   },
-+ "properties": {
-+   "source": {
-+     "oneOf": [
-+       { "$ref": "#/definitions/source_def" },
-+       {
-+         "type": "array",
-+         "minItems": 2,
-+         "items": { "$ref": "#/definitions/source_def_with_id" }
-+       }
-+     ]
-+   },
--   "transform": { "type":"object", "additionalProperties": false, ... }
-+   "transform": { "type":"object", "additionalProperties": true, ... }
+"properties": {
+  "source": {
+    "oneOf": [
+      { "$ref": "#/definitions/source_def" },
+      {
+        "type": "array",
+        "minItems": 2,
+        "items": { "$ref": "#/definitions/source_def_with_id" }
+      }
+    ]
+  },
+    transform": { "type":"object", "additionalProperties": true }
  }
 
-+ "definitions": {
-+   "source_common": {
-+     "type": "object",
-+     "required": ["type"],
-+     "additionalProperties": true,
-+     "properties": {
-+       "id": { "type": "string" },
-+       "type": {
-+         "type": "string",
-+         "enum": [
-+           "storage","jdbc","endpoint",    // ⚠️ restaurados
-+           "api_rest","api_graphql","kafka","event_hubs","nosql","shortcut"
-+         ]
-+       },
-+       "format": { "type": "string" },
-+       "options": { "$ref": "#/definitions/string_map" }
-+     }
-+   },
-+   "source_def": {
-+     "allOf": [
-+       { "$ref": "#/definitions/source_common" },
-+       {
-+         "oneOf": [
-+           { "$ref": "#/definitions/source_storage" },
-+           { "$ref": "#/definitions/source_jdbc" },
-+           { "$ref": "#/definitions/source_endpoint" },
-+           { "$ref": "#/definitions/source_api_rest" },
-+           { "$ref": "#/definitions/source_api_graphql" },
-+           { "$ref": "#/definitions/source_kafka" },
-+           { "$ref": "#/definitions/source_event_hubs" },
-+           { "$ref": "#/definitions/source_nosql" },
-+           { "$ref": "#/definitions/source_shortcut" }
-+         ]
-+       }
-+     ]
-+   },
-+   "source_def_with_id": {
-+     "allOf": [
-+       { "$ref": "#/definitions/source_def" },
-+       { "required": ["id"] }
-+     ]
-+   },
-+   "source_shortcut": {
-+     "allOf": [
-+       {
-+         "type": "object",
-+         "properties": {
-+           "type": { "const": "shortcut" },
-+           "name": { "type": "string" },
-+           "read_options": { "$ref": "#/definitions/string_map" }
-+         },
-+         "required": ["type","name"],
-+         "additionalProperties": true
-+       },
-+       {
-+         "not": { "anyOf": [
-+           { "required": ["uri"] }, { "required": ["url"] }, { "required": ["path"] }
-+         ] }
-+       }
-+     ]
-+   }
-+ }
+"definitions": {
+  "source_common": {
+    "type": "object",
+    "required": ["type"],
+    "additionalProperties": true,
+    "properties": {
+      "id": { "type": "string" },
+      "type": {
+        "type": "string",
+        "enum": [
+          "storage","jdbc","endpoint",    // ⚠️ restaurados
+          "api_rest","api_graphql","kafka","event_hubs","nosql","shortcut"
+        ]
+      },
+      "format": { "type": "string" },
+      "options": { "$ref": "#/definitions/string_map" }
+    }
+  },
+  "source_def": {
+    "allOf": [
+      { "$ref": "#/definitions/source_common" },
+      {
+        "oneOf": [
+          { "$ref": "#/definitions/source_storage" },
+          { "$ref": "#/definitions/source_jdbc" },
+          { "$ref": "#/definitions/source_endpoint" },
+          { "$ref": "#/definitions/source_api_rest" },
+          { "$ref": "#/definitions/source_api_graphql" },
+          { "$ref": "#/definitions/source_kafka" },
+          { "$ref": "#/definitions/source_event_hubs" },
+          { "$ref": "#/definitions/source_nosql" },
+          { "$ref": "#/definitions/source_shortcut" }
+        ]
+      }
+    ]
+  },
+  "source_def_with_id": {
+    "allOf": [
+      { "$ref": "#/definitions/source_def" },
+      { "required": ["id"] }
+    ]
+  },
+  "source_shortcut": {
+    "allOf": [
+      {
+        "type": "object",
+        "properties": {
+          "type": { "const": "shortcut" },
+          "name": { "type": "string" },
+          "read_options": { "$ref": "#/definitions/string_map" }
+        },
+        "required": ["type","name"],
+        "additionalProperties": true
+      },
+      {
+        "not": { "anyOf": [
+          { "required": ["uri"] }, { "required": ["url"] }, { "required": ["path"] }
+        ] }
+      }
+    ]
+  }
+}
