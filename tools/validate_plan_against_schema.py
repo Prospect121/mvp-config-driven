@@ -18,10 +18,13 @@ def main() -> int:
     plan = json.loads(plan_path.read_text(encoding="utf-8"))
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
     validator = Draft7Validator(schema)
-    errors = list(validator.iter_errors(plan))
+    errors = sorted(validator.iter_errors(plan), key=lambda e: e.path)
     if errors:
         for error in errors:
-            sys.stderr.write(f"{error.message}\n")
+            path = "$"
+            if error.path:
+                path += "." + ".".join(map(str, error.path))
+            sys.stderr.write(f"[PLAN] {path}: {error.message}\n")
         return 1
     return 0
 
