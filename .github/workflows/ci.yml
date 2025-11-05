@@ -1,5 +1,4 @@
 name: ci
-
 on: [push, pull_request]
 
 jobs:
@@ -10,17 +9,23 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+
       - name: deps
         run: |
           python -m pip install --upgrade pip
           pip install -e .[dev] pytest jsonschema
+
       - name: spin emulators
         run: docker compose -f ci/docker-compose.emu.yml up -d
+
       - name: schema check (layer)
         run: python tools/validate_examples_against_layer_schema.py
+
       - name: dry-run plan
         run: prodi run --config examples/federation/customers_enriched.yaml --dry-run > plan.json
+
       - name: plan contract
         run: python tools/validate_plan_against_schema.py plan.json datacore/config/schemas/plan.schema.json
+
       - name: tests
         run: pytest --maxfail=1 --disable-warnings -q
