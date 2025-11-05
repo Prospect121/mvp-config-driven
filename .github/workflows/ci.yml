@@ -1,10 +1,17 @@
 name: ci
 
-on: [push, pull_request]
+on: [push, pull_request, workflow_dispatch]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        profile: [base, fabric]
     steps:
       - uses: actions/checkout@v4
 
@@ -13,27 +20,61 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Purge pip caches (runner)
+        run: |
+          pip cache purge || true
+          rm -rf ~/.cache/pip || true
+
       - name: deps
+        env:
+          PIP_NO_CACHE_DIR: "1"
         run: |
           python -m pip install --upgrade pip
-          pip install -e .[dev] pytest jsonschema
+          if [ "${{ matrix.profile }}" = "fabric" ]; then
+            pip install --no-cache-dir -e .[dev,fabric] pytest jsonschema responses build
+          else
+            pip install --no-cache-dir -e .[dev] pytest jsonschema responses build
+          fi
 
       - name: spin emulators
+        if: ${{ hashFiles('ci/docker-compose.emu.yml') != '' }}
         run: docker compose -f ci/docker-compose.emu.yml up -d
 
       - name: schema check (layer)
         run: python tools/validate_examples_against_layer_schema.py
 
       - name: sanity - CLI import
-        run: >-
-          python -c "import importlib.util as u, sys; ok=bool(u.find_spec('datacore.cli'));
-          print('datacore.cli importable:', ok); sys.exit(0 if ok else 1)"
+        run: python -c "import importlib.util as u, sys; ok=bool(u.find_spec('datacore.cli')); print('datacore.cli importable:', ok); sys.exit(0 if ok else 1)"
 
       - name: plan (module)
         run: python -m datacore.cli plan --config examples/federation/customers_enriched.yaml > plan.json
 
+      - name: print plan (debug)
+        run: |
+          python - << 'PY'
+from pathlib import Path; import json
+p=Path("plan.json"); print(json.dumps(json.loads(p.read_text()), indent=2, ensure_ascii=False))
+PY
+
+      - name: upload plan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: plan-${{ matrix.profile }}.json
+          path: plan.json
+
       - name: plan contract
         run: python tools/validate_plan_against_schema.py plan.json datacore/config/schemas/plan.schema.json
 
-      - name: tests
-        run: pytest --maxfail=1 --disable-warnings -q
+      - name: unit tests
+        run: |
+          if [ "${{ matrix.profile }}" = "fabric" ]; then
+            pytest -q
+          else
+            pytest -q -k "not fabric"
+          fi
+
+      - name: build wheel
+        run: python -m build
+
+      - name: install wheel (smoke)
+        run: pip install --no-cache-dir dist/*.whl

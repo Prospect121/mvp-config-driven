@@ -530,7 +530,14 @@ def _process_dataset(
     dry_run: bool = False,
 ) -> dict[str, Any]:
     dataset_cfg = _resolve_references(dataset, platform)
-    LOGGER.info("Procesando dataset %s (run_id=%s)", dataset_cfg["name"], run_id)
+    LOGGER.info(
+        "Procesando dataset",
+        extra={
+            "dataset": dataset_cfg["name"],
+            "run_id": run_id,
+            "layer": layer,
+        },
+    )
     if dry_run:
         plan = _build_plan(dataset_cfg)
         plan["status"] = "planned"
@@ -613,5 +620,9 @@ def run_layer_plan(
                     "duration_seconds": None,
                 }
             )
-    LOGGER.info("Ejecución de capa %s completada", layer)
-    return {"run_id": run_id, "datasets": results}
+    created_at = datetime.utcnow().isoformat(timespec="seconds") + "Z"
+    LOGGER.info(
+        "Ejecución de capa completada",
+        extra={"layer": layer, "run_id": run_id, "datasets": len(results)},
+    )
+    return {"run_id": run_id, "created_at": created_at, "datasets": results}

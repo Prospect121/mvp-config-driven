@@ -1,0 +1,45 @@
+project: fabric-demo
+environment: dev
+platform: azure
+providers:
+  fabric:
+    workspace_id: "${FABRIC_WORKSPACE_ID}"
+    environment_id: "${FABRIC_ENVIRONMENT_ID}"
+    lakehouse_id: "${FABRIC_LAKEHOUSE_ID}"
+
+datasets:
+  - name: customers_enriched
+    layer: silver
+    source:
+      - id: api
+        type: endpoint
+        url: "https://api.example.com/customers"
+        format: json
+      - id: crm
+        type: jdbc
+        url: "${JDBC_URL}"
+        table: "public.crm_customers"
+    transform:
+      federate:
+        strategy: join
+        join:
+          left: api
+          right: crm
+          'on':
+            - left: "email"
+              right: "email"
+          join_type: left
+    sink:
+      type: storage
+      backend: delta
+      uri: "lakehouse://tables/silver/customers_enriched"
+    incremental:
+      mode: merge
+      keys: ["email"]
+    orchestration:
+      fabric:
+        create_items: [lakehouse, spark_job]
+        spark_job:
+          name: "customers_enriched-job"
+          parameters:
+            layer: "silver"

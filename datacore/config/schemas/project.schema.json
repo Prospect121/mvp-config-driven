@@ -18,6 +18,42 @@
         }
       }
     },
+    "providers": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "fabric": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "workspace_id": {
+              "type": "string",
+              "pattern": "^(?:[A-Za-z0-9-]+|\\$\\{[A-Z0-9_]+\\})$"
+            },
+            "environment_id": {
+              "type": "string",
+              "pattern": "^(?:[A-Za-z0-9-]+|\\$\\{[A-Z0-9_]+\\})$"
+            },
+            "lakehouse_id": {
+              "type": "string",
+              "pattern": "^(?:[A-Za-z0-9-]+|\\$\\{[A-Z0-9_]+\\})$"
+            },
+            "warehouse_id": {
+              "type": "string",
+              "pattern": "^(?:[A-Za-z0-9-]+|\\$\\{[A-Z0-9_]+\\})$"
+            },
+            "eventhouse_id": {
+              "type": "string",
+              "pattern": "^(?:[A-Za-z0-9-]+|\\$\\{[A-Z0-9_]+\\})$"
+            },
+            "tenant_id": {
+              "type": "string",
+              "pattern": "^(?:[A-Za-z0-9-]+|\\$\\{[A-Z0-9_]+\\})$"
+            }
+          }
+        }
+      }
+    },
     "datasets": {
       "type": "array",
       "items": {"$ref": "#/definitions/dataset"}
@@ -162,13 +198,11 @@
         {
           "type": "object",
           "required": ["type", "name"],
-          "additionalProperties": false,
+          "additionalProperties": true,
           "properties": {
             "id": {"type": "string"},
             "type": {"const": "shortcut"},
             "name": {"type": "string"},
-            "provider": {"type": "string"},
-            "target_uri": {"type": "string"},
             "read_options": {"$ref": "#/definitions/string_map"}
           }
         },

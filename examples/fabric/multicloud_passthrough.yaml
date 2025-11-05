@@ -1,0 +1,18 @@
+project: multicloud-demo
+environment: dev
+platform: aws
+
+datasets:
+  - name: sales_csv
+    layer: bronze
+    source:
+      type: storage
+      backend: s3
+      uri: "s3://acme/sales/*.csv"
+    sink:
+      type: storage
+      backend: s3
+      format: parquet
+      uri: "s3://acme-bronze/sales/"
+    incremental:
+      mode: append

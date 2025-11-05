@@ -1,0 +1,34 @@
+project: fabric-demo
+environment: dev
+platform: azure
+providers:
+  fabric:
+    workspace_id: "${FABRIC_WORKSPACE_ID}"
+    environment_id: "${FABRIC_ENVIRONMENT_ID}"
+    lakehouse_id: "${FABRIC_LAKEHOUSE_ID}"
+
+datasets:
+  - name: sales_shortcut
+    layer: bronze
+    source:
+      type: shortcut
+      name: sales_onelake
+      target: "https://onelake.dfs.fabric.microsoft.com/contoso"
+      subpath: "/sales/"
+      labels: ["bronze", "external"]
+    sink:
+      type: storage
+      backend: delta
+      uri: "lakehouse://tables/bronze/sales_shortcut"
+    incremental:
+      mode: append
+    orchestration:
+      fabric:
+        create_items: [lakehouse, spark_job, pipeline, shortcut]
+        spark_job:
+          name: "sales_shortcut-job"
+          entrypoint: "python -m datacore.cli run --layer bronze --config examples/fabric/bronze_shortcut.yaml"
+        pipeline:
+          name: "sales_shortcut-pipeline"
+          properties:
+            activities: []
