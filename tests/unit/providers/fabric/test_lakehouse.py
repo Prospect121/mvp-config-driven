@@ -67,3 +67,15 @@ def test_optimize_delta_generates_sql(dummy_spark):
         "OPTIMIZE delta.`lakehouse://tables/bronze/demo`",
         "VACUUM delta.`lakehouse://tables/bronze/demo` RETAIN 168 HOURS",
     ]
+
+
+def test_optimize_delta_with_zorder(dummy_spark):
+    dummy_spark.sql_calls.clear()
+    lakehouse.optimize_delta(
+        None,
+        "lakehouse://tables/silver/demo",
+        {"zorder": ["col_a", "col_b"]},
+    )
+    assert dummy_spark.sql_calls == [
+        "OPTIMIZE delta.`lakehouse://tables/silver/demo` ZORDER BY (col_a, col_b)",
+    ]

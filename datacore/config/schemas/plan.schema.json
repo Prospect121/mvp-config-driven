@@ -2,9 +2,10 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "additionalProperties": false,
-  "required": ["run_id", "datasets"],
+  "required": ["run_id", "created_at", "datasets"],
   "properties": {
     "run_id": {"type": "string"},
+    "created_at": {"type": "string", "format": "date-time"},
     "datasets": {
       "type": "array",
       "items": {"$ref": "#/definitions/dataset_plan"}

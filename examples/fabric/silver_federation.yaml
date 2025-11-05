@@ -3,9 +3,9 @@ environment: dev
 platform: azure
 providers:
   fabric:
-    workspace_id: "abc"
-    environment_id: "env-1"
-    lakehouse_id: "lk-1"
+    workspace_id: "${FABRIC_WORKSPACE_ID}"
+    environment_id: "${FABRIC_ENVIRONMENT_ID}"
+    lakehouse_id: "${FABRIC_LAKEHOUSE_ID}"
 
 datasets:
   - name: customers_enriched

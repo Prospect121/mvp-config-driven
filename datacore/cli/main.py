@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -48,9 +49,20 @@ def cmd_run(args: argparse.Namespace) -> None:
     )
     fabric_items = _collect_fabric_items(provider, data, force=getattr(args, "provision", False))
     _attach_fabric_items(results, fabric_items)
+    summary = observability.summarize_run(results.get("datasets", []))
+    LOGGER.info(
+        "Resumen de ejecución",
+        extra={
+            **summary,
+            "run_id": results.get("run_id"),
+            "created_at": results.get("created_at"),
+            "provider": getattr(provider, "name", "none"),
+        },
+    )
     if args.dry_run:
         payload = {
             "run_id": results["run_id"],
+            "created_at": results.get("created_at"),
             "datasets": results["datasets"],
             "plan": results["datasets"],
         }
@@ -58,7 +70,14 @@ def cmd_run(args: argparse.Namespace) -> None:
             _attach_fabric_items(payload, fabric_items)
         print(json.dumps(payload, indent=2, default=str))
     else:
-        LOGGER.info("Resultados de ejecución: %s", results)
+        LOGGER.info(
+            "Resultados de ejecución",
+            extra={
+                "run_id": results.get("run_id"),
+                "created_at": results.get("created_at"),
+                "datasets": len(results.get("datasets", [])),
+            },
+        )
 
 
 def cmd_plan(args: argparse.Namespace) -> None:
@@ -69,6 +88,7 @@ def cmd_plan(args: argparse.Namespace) -> None:
     aggregated_datasets: list[dict[str, Any]] = []
     aggregated_plan_nodes: list[dict[str, Any]] = []
     run_id: str | None = None
+    created_at: str | None = None
     for layer in layers:
         plan_result = run_layer_plan(
             layer=layer,
@@ -79,6 +99,7 @@ def cmd_plan(args: argparse.Namespace) -> None:
             fail_fast=args.fail_fast,
         )
         run_id = run_id or plan_result.get("run_id")
+        created_at = created_at or plan_result.get("created_at")
         datasets = plan_result.get("datasets", [])
         aggregated_datasets.extend(datasets)
         for dataset_plan in datasets:
@@ -89,7 +110,11 @@ def cmd_plan(args: argparse.Namespace) -> None:
                 )
     if run_id is None:
         run_id = observability.new_run_id()
-    payload: dict[str, Any] = {"run_id": run_id, "datasets": aggregated_datasets}
+    payload: dict[str, Any] = {
+        "run_id": run_id,
+        "created_at": created_at or datetime.utcnow().isoformat(timespec="seconds") + "Z",
+        "datasets": aggregated_datasets,
+    }
     if aggregated_plan_nodes:
         payload["plan"] = aggregated_plan_nodes
     fabric_items = _collect_fabric_items(provider, data, force=getattr(args, "provision", False))

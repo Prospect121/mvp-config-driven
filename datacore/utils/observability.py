@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import Any, Iterable
 
 LOGGER = logging.getLogger(__name__)
 
@@ -47,11 +47,14 @@ def record_dataset(dataset: str, status: str, duration: float, metrics: dict[str
     if DATASET_DURATION is not None:
         DATASET_DURATION.labels(dataset=dataset).observe(duration)
     LOGGER.debug(
-        "Observabilidad dataset=%s status=%s duration=%.3fs métricas=%s",
+        "Observabilidad dataset %s",
         dataset,
-        status,
-        duration,
-        sorted(metrics.keys()) if metrics else [],
+        extra={
+            "dataset": dataset,
+            "status": status,
+            "duration_seconds": round(duration, 3),
+            "metrics": sorted(metrics.keys()) if metrics else [],
+        },
     )
 
 
@@ -90,3 +93,32 @@ def emit_openlineage(payload: dict[str, Any], config: dict[str, Any]) -> None:
         outputs=[],
     )
     client.emit(event)
+
+
+def summarize_run(datasets: Iterable[dict[str, Any]]) -> dict[str, Any]:
+    """Construye un resumen agregando métricas relevantes."""
+
+    summary = {
+        "datasets_total": 0,
+        "datasets_completed": 0,
+        "datasets_failed": 0,
+        "rows_in": 0,
+        "rows_out": 0,
+        "bytes_written": 0,
+        "duration_seconds": 0.0,
+    }
+    for dataset in datasets:
+        summary["datasets_total"] += 1
+        status = (dataset or {}).get("status") or ""
+        if status.lower() in {"completed", "success", "succeeded"}:
+            summary["datasets_completed"] += 1
+        elif status.lower() in {"failed", "error"}:
+            summary["datasets_failed"] += 1
+        metrics = dataset.get("metrics") or {}
+        summary["rows_in"] += int(metrics.get("input_rows", metrics.get("rows_in", 0)) or 0)
+        summary["rows_out"] += int(metrics.get("valid_rows", metrics.get("rows_out", 0)) or 0)
+        summary["bytes_written"] += int(metrics.get("bytes_written", metrics.get("output_bytes", 0)) or 0)
+        duration = dataset.get("duration_seconds")
+        if duration:
+            summary["duration_seconds"] += float(duration)
+    return summary

@@ -26,12 +26,30 @@
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "workspace_id": {"type": "string"},
-            "environment_id": {"type": "string"},
-            "lakehouse_id": {"type": "string"},
-            "warehouse_id": {"type": "string"},
-            "eventhouse_id": {"type": "string"},
-            "tenant_id": {"type": "string"}
+            "workspace_id": {
+              "type": "string",
+              "pattern": "^(?:[A-Za-z0-9-]+|\\$\\{[A-Z0-9_]+\\})$"
+            },
+            "environment_id": {
+              "type": "string",
+              "pattern": "^(?:[A-Za-z0-9-]+|\\$\\{[A-Z0-9_]+\\})$"
+            },
+            "lakehouse_id": {
+              "type": "string",
+              "pattern": "^(?:[A-Za-z0-9-]+|\\$\\{[A-Z0-9_]+\\})$"
+            },
+            "warehouse_id": {
+              "type": "string",
+              "pattern": "^(?:[A-Za-z0-9-]+|\\$\\{[A-Z0-9_]+\\})$"
+            },
+            "eventhouse_id": {
+              "type": "string",
+              "pattern": "^(?:[A-Za-z0-9-]+|\\$\\{[A-Z0-9_]+\\})$"
+            },
+            "tenant_id": {
+              "type": "string",
+              "pattern": "^(?:[A-Za-z0-9-]+|\\$\\{[A-Z0-9_]+\\})$"
+            }
           }
         }
       }

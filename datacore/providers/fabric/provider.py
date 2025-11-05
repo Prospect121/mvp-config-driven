@@ -17,16 +17,14 @@ class FabricProvider(Provider):
         from .env import FabricEnv
 
         self.env = FabricEnv(self.cfg)
+        self._capabilities = {"shortcuts", "lakehouse", "orchestration"}
+        if getattr(self.env, "warehouse_id", None):
+            self._capabilities.add("warehouse")
+        if getattr(self.env, "eventhouse_id", None):
+            self._capabilities.add("kql")
 
     def supports(self, feature: str) -> bool:
-        return feature in {
-            "shortcuts",
-            "lakehouse",
-            "warehouse",
-            "kql",
-            "mirroring",
-            "orchestration",
-        }
+        return feature in self._capabilities
 
     # ---- Shortcuts ----
     def ensure_shortcut(self, cfg: Dict[str, Any]) -> None:

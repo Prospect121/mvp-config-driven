@@ -27,13 +27,12 @@ class DummyEnv:
     def __init__(self, workspace_id: str, responses: List[Tuple[str, DummyResponse]]):
         self.workspace_id = workspace_id
         self._responses = responses
-        self.calls: List[Tuple[str, str, Dict[str, Any] | None]] = []
+        self.calls: List[Tuple[str, str, Dict[str, Any]]] = []
 
     def http(self, method: str, url: str, **kwargs):
-        payload = kwargs.get("json")
-        self.calls.append((method, url, payload))
         expected_method, response = self._responses.pop(0)
         assert expected_method == method
+        self.calls.append((method, url, kwargs))
         return response
 
 
@@ -67,14 +66,16 @@ def test_ensure_shortcut_creates_or_updates(existing_fp):
     ensure_shortcut(env, shortcut_cfg)
     assert env.calls[0][0] == "GET"
     if existing_fp is None:
-        method, url, payload = env.calls[1]
+        method, url, kwargs = env.calls[1]
         assert method == "POST"
         assert url == _base_url(workspace)
+        payload = kwargs.get("json")
         assert payload["name"] == "sales_onelake"
         assert payload["properties"]["fingerprint"] == desired_fp
     else:
-        method, url, payload = env.calls[1]
+        method, url, kwargs = env.calls[1]
         assert method == "PATCH"
+        payload = kwargs.get("json")
         assert payload["properties"]["fingerprint"] == desired_fp
 
 

@@ -19,11 +19,17 @@ jobs:
       - name: deps
         run: |
           python -m pip install --upgrade pip
+          python -m pip install build
           if [ "${{ matrix.profile }}" = "fabric" ]; then
             pip install -e .[dev,fabric] pytest jsonschema responses
           else
             pip install -e .[dev] pytest jsonschema responses
           fi
+
+      - name: build wheel
+        run: |
+          python -m build
+          pip install --force-reinstall dist/*.whl
 
       - name: spin emulators
         run: docker compose -f ci/docker-compose.emu.yml up -d
@@ -41,6 +47,15 @@ jobs:
 
       - name: plan contract
         run: python tools/validate_plan_against_schema.py plan.json datacore/config/schemas/plan.schema.json
+
+      - name: mostrar plan
+        run: python -m json.tool plan.json
+
+      - name: subir plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: plan-${{ matrix.profile }}
+          path: plan.json
 
       - name: unit tests
         run: |
