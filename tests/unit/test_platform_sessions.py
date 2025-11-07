@@ -28,16 +28,170 @@ def test_azure_platform_reuses_active_session(monkeypatch, active_session):
 
 
 def test_fabric_platform_reuses_active_session(monkeypatch, active_session):
+    class DummyBuilder:
+        def appName(self, _):  # pragma: no cover - should not be called
+            raise AssertionError("builder.appName should not be invoked")
+
     class DummySpark:
+        builder = DummyBuilder()
+
         @staticmethod
         def getActiveSession():  # noqa: N802 - keep pyspark naming
             return active_session
 
+        @staticmethod
+        def getDefaultSession():  # noqa: N802
+            raise AssertionError("getDefaultSession should not be called")
+
     monkeypatch.setattr("datacore.platforms.fabric.SparkSession", DummySpark)
+    monkeypatch.setattr("datacore.platforms.fabric.SparkContext", object())
 
     platform = FabricPlatform(config={})
 
     assert platform.build_spark_session({}) is active_session
+
+
+def test_fabric_platform_reuses_default_session(monkeypatch):
+    default_session = object()
+
+    class DummyBuilder:
+        def appName(self, _):  # pragma: no cover - should not be called
+            raise AssertionError("builder.appName should not be invoked")
+
+    class DummySpark:
+        builder = DummyBuilder()
+        _instantiatedSession = None
+
+        @staticmethod
+        def getActiveSession():  # noqa: N802 - keep pyspark naming
+            return None
+
+        @staticmethod
+        def getDefaultSession():  # noqa: N802 - keep pyspark naming
+            return default_session
+
+    monkeypatch.setattr("datacore.platforms.fabric.SparkSession", DummySpark)
+    monkeypatch.setattr("datacore.platforms.fabric.SparkContext", object())
+
+    platform = FabricPlatform(config={})
+
+    assert platform.build_spark_session({}) is default_session
+
+
+def test_fabric_platform_reuses_instantiated_session(monkeypatch):
+    instantiated_session = object()
+
+    class DummyBuilder:
+        def appName(self, _):  # pragma: no cover - should not be called
+            raise AssertionError("builder.appName should not be invoked")
+
+    class DummySpark:
+        builder = DummyBuilder()
+        _instantiatedSession = instantiated_session
+
+        @staticmethod
+        def getActiveSession():  # noqa: N802 - keep pyspark naming
+            return None
+
+        @staticmethod
+        def getDefaultSession():  # noqa: N802 - keep pyspark naming
+            return None
+
+    monkeypatch.setattr("datacore.platforms.fabric.SparkSession", DummySpark)
+    monkeypatch.setattr("datacore.platforms.fabric.SparkContext", object())
+
+    platform = FabricPlatform(config={})
+
+    assert platform.build_spark_session({}) is instantiated_session
+
+
+def test_fabric_platform_attaches_active_spark_context(monkeypatch):
+    active_sc = object()
+
+    class DummyBuilder:
+        def appName(self, _):  # pragma: no cover - should not be called
+            raise AssertionError("builder.appName should not be invoked")
+
+    class DummySpark:
+        builder = DummyBuilder()
+        _instantiatedSession = None
+
+        def __init__(self, sc):
+            self.sc = sc
+
+        @staticmethod
+        def getActiveSession():  # noqa: N802 - keep pyspark naming
+            return None
+
+        @staticmethod
+        def getDefaultSession():  # noqa: N802 - keep pyspark naming
+            return None
+
+    class DummySparkContext:
+        _active_spark_context = active_sc
+
+    monkeypatch.setattr("datacore.platforms.fabric.SparkSession", DummySpark)
+    monkeypatch.setattr("datacore.platforms.fabric.SparkContext", DummySparkContext)
+
+    platform = FabricPlatform(config={})
+
+    session = platform.build_spark_session({})
+
+    assert isinstance(session, DummySpark)
+    assert session.sc is active_sc
+
+
+def test_fabric_platform_creates_new_session_when_no_context(monkeypatch):
+    created = object()
+
+    class RecordingBuilder:
+        def __init__(self):
+            self.app_name = None
+            self.configs = []
+
+        def appName(self, name):
+            self.app_name = name
+            return self
+
+        def config(self, key, value):
+            self.configs.append((key, value))
+            return self
+
+        def getOrCreate(self):  # noqa: N802 - keep pyspark naming
+            return created
+
+    class DummySpark:
+        builder = RecordingBuilder()
+        _instantiatedSession = None
+
+        @staticmethod
+        def getActiveSession():  # noqa: N802 - keep pyspark naming
+            return None
+
+        @staticmethod
+        def getDefaultSession():  # noqa: N802 - keep pyspark naming
+            return None
+
+    class DummySparkContext:
+        _active_spark_context = None
+
+    monkeypatch.setattr("datacore.platforms.fabric.SparkSession", DummySpark)
+    monkeypatch.setattr("datacore.platforms.fabric.SparkContext", DummySparkContext)
+
+    platform = FabricPlatform(
+        config={
+            "app_name": "custom-app",
+            "extra_conf": {"spark.sql.shuffle.partitions": "4"},
+        }
+    )
+
+    session = platform.build_spark_session({"spark.executor.instances": "2"})
+
+    assert session is created
+    builder = DummySpark.builder
+    assert builder.app_name == "custom-app"
+    assert ("spark.executor.instances", "2") in builder.configs
+    assert ("spark.sql.shuffle.partitions", "4") in builder.configs
 
 
 def test_prepare_spark_reuses_global_active_session(monkeypatch, active_session):
