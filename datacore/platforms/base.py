@@ -9,12 +9,17 @@ from typing import Any
 from pyspark.sql import SparkSession
 
 from datacore.utils.paths import normalize_uri
+from datacore.utils.logging import get_logger
+
+
+LOGGER = get_logger(__name__)
 
 
 class PlatformBase(abc.ABC):
     """Interfaz común para plataformas cloud."""
 
     name: str
+    reuse_active_session: bool = True
 
     def __init__(self, config: dict[str, Any] | None = None) -> None:
         self.config = config or {}
@@ -86,10 +91,23 @@ class LocalPlatform(PlatformBase):
     name = "local"
 
     def build_spark_session(self, opts: dict[str, Any] | None = None) -> SparkSession:
+        active = SparkSession.getActiveSession()
+        if active is not None:
+            LOGGER.info(
+                "Reusing active SparkSession",
+                extra={"platform": self.name, "event": "spark_session_reuse"},
+            )
+            return active
+
         builder = SparkSession.builder.appName(self.config.get("app_name", "datacore-local"))
         for key, value in (opts or {}).items():
             builder = builder.config(key, value)
-        return builder.getOrCreate()
+        session = builder.getOrCreate()
+        LOGGER.info(
+            "Creating new SparkSession",
+            extra={"platform": self.name, "event": "spark_session_create"},
+        )
+        return session
 
     def _resolve_platform_secret(self, name: str) -> str:
         return self.config.get("secrets", {}).get(name, "")
