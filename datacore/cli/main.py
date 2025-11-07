@@ -144,7 +144,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Capa a ejecutar",
     )
     run_parser.add_argument("--config", required=True, help="Archivo YAML de configuración")
-    run_parser.add_argument("--platform", required=False, help="Plataforma cloud (azure/aws/gcp)")
+    run_parser.add_argument(
+        "--platform",
+        required=False,
+        help="Plataforma cloud (azure/aws/gcp/fabric)",
+    )
     run_parser.add_argument("--env", required=False, help="Entorno (dev/test/prod)")
     run_parser.add_argument("--log-level", default="INFO", help="Nivel de logging")
     run_parser.add_argument("--dry-run", action="store_true", help="Solo genera el plan")
@@ -158,7 +162,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     plan_parser = subparsers.add_parser("plan", help="Muestra el plan de datasets")
     plan_parser.add_argument("--config", required=True, help="Archivo YAML del proyecto")
-    plan_parser.add_argument("--platform", required=False, help="Plataforma cloud (azure/aws/gcp)")
+    plan_parser.add_argument(
+        "--platform",
+        required=False,
+        help="Plataforma cloud (azure/aws/gcp/fabric)",
+    )
     plan_parser.add_argument("--env", required=False, help="Entorno (dev/test/prod)")
     plan_parser.add_argument("--fail-fast", action="store_true", help="Detener al primer error")
     plan_parser.add_argument(

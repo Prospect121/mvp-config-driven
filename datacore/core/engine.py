@@ -10,6 +10,7 @@ from time import perf_counter
 from typing import Any
 
 from pyspark.sql import DataFrame
+from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
 
@@ -20,6 +21,7 @@ from datacore.io import readers, writers
 from datacore.platforms.aws_glue import AwsGluePlatform
 from datacore.platforms.azure_databricks import AzureDatabricksPlatform
 from datacore.platforms.base import LocalPlatform, PlatformBase
+from datacore.platforms.fabric import FabricPlatform
 from datacore.platforms.gcp_dataproc import GcpDataprocPlatform
 from datacore.utils.logging import get_logger
 from datacore.utils import observability
@@ -30,6 +32,7 @@ PLATFORM_MAP = {
     "azure": AzureDatabricksPlatform,
     "aws": AwsGluePlatform,
     "gcp": GcpDataprocPlatform,
+    "fabric": FabricPlatform,
     "local": LocalPlatform,
 }
 
@@ -50,7 +53,20 @@ def _prepare_spark(platform: PlatformBase, config: dict[str, Any]):
         spark_conf["spark.sql.shuffle.partitions"] = spark_section["shuffle_partitions"]
     if "extra_conf" in spark_section:
         spark_conf.update(spark_section["extra_conf"])
-    return platform.build_spark_session(spark_conf)
+    active = SparkSession.getActiveSession()
+    if active is not None and getattr(platform, "reuse_active_session", True):
+        LOGGER.info(
+            "Reusing active SparkSession before building platform session",
+            extra={"platform": platform.name, "event": "spark_session_reuse"},
+        )
+        return active
+
+    session = platform.build_spark_session(spark_conf)
+    LOGGER.info(
+        "SparkSession prepared",
+        extra={"platform": platform.name, "event": "spark_session_ready"},
+    )
+    return session
 
 
 def _resolve_references(value: Any, platform: PlatformBase):

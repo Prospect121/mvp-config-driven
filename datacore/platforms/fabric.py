@@ -1,4 +1,4 @@
-"""Plataforma AWS Glue."""
+"""Plataforma para Microsoft Fabric."""
 
 from __future__ import annotations
 
@@ -13,8 +13,8 @@ from datacore.utils.logging import get_logger
 LOGGER = get_logger(__name__)
 
 
-class AwsGluePlatform(PlatformBase):
-    name = "aws"
+class FabricPlatform(PlatformBase):
+    name = "fabric"
 
     def build_spark_session(self, opts: dict[str, Any] | None = None) -> SparkSession:
         active = SparkSession.getActiveSession()
@@ -25,16 +25,14 @@ class AwsGluePlatform(PlatformBase):
             )
             return active
 
-        builder = SparkSession.builder.appName(self.config.get("app_name", "datacore-aws"))
-        builder = builder.config("spark.sql.sources.partitionOverwriteMode", "dynamic")
-        builder = builder.config(
-            "spark.hadoop.fs.s3a.impl",
-            "org.apache.hadoop.fs.s3a.S3AFileSystem",
+        builder = SparkSession.builder.appName(
+            self.config.get("app_name", "datacore-fabric")
         )
         for key, value in (opts or {}).items():
             builder = builder.config(key, value)
         for key, value in self.config.get("extra_conf", {}).items():
             builder = builder.config(key, value)
+
         session = builder.getOrCreate()
         LOGGER.info(
             "Creating new SparkSession",
