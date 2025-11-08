@@ -108,23 +108,20 @@ def test_fabric_platform_reuses_instantiated_session(monkeypatch):
 def test_fabric_platform_attaches_active_spark_context(monkeypatch):
     attached_session = object()
 
-    class RecordingBuilder:
-        def __init__(self):
-            self.get_or_create_calls = 0
-
-        def getOrCreate(self):  # noqa: N802 - keep pyspark naming
-            self.get_or_create_calls += 1
-            return attached_session
-
+    class GuardBuilder:
         def appName(self, _):  # pragma: no cover - should not be called
             raise AssertionError("appName should not be used when attaching")
 
         def config(self, *_args, **_kwargs):  # pragma: no cover - defensive
             raise AssertionError("config should not be used when attaching")
 
-    class DummySpark:
-        builder = RecordingBuilder()
+        def getOrCreate(self):  # pragma: no cover - should not be used
+            raise AssertionError("builder.getOrCreate should not be called when attaching")
+
+    class DummySparkSession:
+        builder = GuardBuilder()
         _instantiatedSession = None
+        created_with = None
 
         @staticmethod
         def getActiveSession():  # noqa: N802 - keep pyspark naming
@@ -134,10 +131,21 @@ def test_fabric_platform_attaches_active_spark_context(monkeypatch):
         def getDefaultSession():  # noqa: N802 - keep pyspark naming
             return None
 
+        def __new__(cls, sc):
+            cls.created_with = sc
+            return attached_session
+
     class DummySparkContext:
         _active_spark_context = object()
+        get_or_create_calls = 0
+        returned_context = object()
 
-    monkeypatch.setattr("datacore.platforms.fabric.SparkSession", DummySpark)
+        @classmethod
+        def getOrCreate(cls):  # noqa: N802 - keep pyspark naming
+            cls.get_or_create_calls += 1
+            return cls.returned_context
+
+    monkeypatch.setattr("datacore.platforms.fabric.SparkSession", DummySparkSession)
     monkeypatch.setattr("datacore.platforms.fabric.SparkContext", DummySparkContext)
 
     platform = FabricPlatform(config={})
@@ -145,7 +153,8 @@ def test_fabric_platform_attaches_active_spark_context(monkeypatch):
     session = platform.build_spark_session({})
 
     assert session is attached_session
-    assert DummySpark.builder.get_or_create_calls == 1
+    assert DummySparkContext.get_or_create_calls == 1
+    assert DummySparkSession.created_with is DummySparkContext.returned_context
 
 
 def test_fabric_platform_creates_new_session_when_no_context(monkeypatch):
