@@ -58,30 +58,16 @@ class FabricPlatform(PlatformBase):
 
         active_sc = getattr(SparkContext, "_active_spark_context", None)
         if active_sc is not None:
-            try:
-                session = SparkSession.builder.getOrCreate()
-                LOGGER.info(
-                    "Attached to existing active SparkContext for Fabric",
-                    extra={
-                        "platform": self.name,
-                        "event": "spark_session_attach_active_sparkcontext",
-                    },
-                )
-                return session
-            except Exception as exc:  # pragma: no cover
-                LOGGER.error(
-                    "Unable to attach to existing SparkContext in Fabric",
-                    extra={
-                        "platform": self.name,
-                        "event": "spark_session_attach_failed",
-                        "error": str(exc),
-                    },
-                )
-                raise RuntimeError(
-                    "FabricPlatform detected an existing SparkContext but could not "
-                    "attach a SparkSession. Avoid creating a new SparkContext in "
-                    "Microsoft Fabric managed environments."
-                ) from exc
+            sc = SparkContext.getOrCreate()
+            session = SparkSession(sc)
+            LOGGER.info(
+                "Attached to existing active SparkContext for Fabric",
+                extra={
+                    "platform": self.name,
+                    "event": "spark_session_attach_active_sparkcontext",
+                },
+            )
+            return session
 
         builder = SparkSession.builder.appName(
             self.config.get("app_name", "datacore-fabric")
