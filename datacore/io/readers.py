@@ -13,7 +13,7 @@ from pyspark.sql.types import StructType
 from datacore.connectors.api import graphql, rest
 from datacore.connectors import http
 from datacore.connectors.db import jdbc
-from datacore.connectors.storage import abfs, gcs, local, s3
+from datacore.connectors.storage import abfs, fabric, gcs, local, s3
 from datacore.platforms.base import PlatformBase
 from datacore.io import shortcuts
 
@@ -69,6 +69,7 @@ def _storage_connector(backend: str):
         "aws": s3,
         "azure": abfs,
         "gcp": gcs,
+        "fabric": fabric,
         "local": local,
     }
     return connectors.get(backend, local)

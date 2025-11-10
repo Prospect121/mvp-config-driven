@@ -4,8 +4,12 @@ from __future__ import annotations
 
 import logging
 from time import perf_counter
-from typing import Any, Dict, Optional
-from urllib.parse import urlparse
+from typing import Any, Dict
+
+from datacore.providers.fabric.uris import (
+    parse_fabric_lakehouse_uri,
+    resolve_fabric_files_path,
+)
 
 
 LOGGER = logging.getLogger(__name__)
@@ -15,50 +19,6 @@ def _spark():
     from pyspark.sql import SparkSession
 
     return SparkSession.builder.getOrCreate()
-
-
-def _fabric_table_from_uri(uri: str) -> tuple[bool, Optional[tuple[str, str]]]:
-    """Return schema/table when the URI points to a Fabric Lakehouse table."""
-
-    if not uri:
-        return False, None
-
-    parsed = urlparse(uri)
-    segments: list[str] = []
-    if parsed.netloc:
-        segments.append(parsed.netloc)
-    segments.extend(seg for seg in parsed.path.split("/") if seg)
-
-    if not segments:
-        return False, None
-
-    tables_index: Optional[int] = next(
-        (idx for idx, value in enumerate(segments) if value.lower() == "tables"),
-        None,
-    )
-    if tables_index is None:
-        return False, None
-
-    remainder = segments[tables_index + 1 :]
-    if not remainder:
-        return True, None
-
-    schema: Optional[str]
-    table: Optional[str]
-    if len(remainder) == 1:
-        item = remainder[0]
-        if "." in item:
-            schema, table = item.split(".", 1)
-        else:
-            schema, table = "dbo", item
-    else:
-        schema = remainder[0] or "dbo"
-        table = remainder[1] if len(remainder) > 1 else None
-
-    if not table:
-        return True, None
-
-    return True, (schema or "dbo", table)
 
 
 def write_delta(env, df, table_uri: str, options: Dict[str, Any]) -> None:
@@ -77,52 +37,47 @@ def write_delta(env, df, table_uri: str, options: Dict[str, Any]) -> None:
         writer = writer.options(**extra)
     mode_value = str(opts.get("mode", "append"))
     normalized_mode = mode_value.lower()
-    is_tables_uri, table_identifier = _fabric_table_from_uri(table_uri)
+    ref = parse_fabric_lakehouse_uri(table_uri)
 
-    if table_identifier:
-        schema, table = table_identifier
-        LOGGER.info(
-            "Fabric Lakehouse table sink detected",
-            extra={
-                "platform": "fabric",
-                "event": "fabric_table_sink_detected",
-                "schema": schema,
-                "table": table,
-                "uri": table_uri,
-            },
-        )
+    if ref.is_lakehouse and ref.kind == "tables" and ref.full_table_name:
         if normalized_mode == "overwrite":
             writer = writer.mode("overwrite").option("overwriteSchema", "true")
         else:
-            writer = writer.mode("append") if normalized_mode == "append" else writer.mode(mode_value)
+            writer = writer.mode(mode_value)
         LOGGER.info(
-            "Usando saveAsTable para Lakehouse",
+            "Fabric managed table write",
             extra={
-                "platform": "fabric",
-                "event": "fabric_table_saveas",
-                "schema": schema,
-                "table": table,
+                "event": "fabric_save_as_managed_table",
+                "backend": "fabric",
+                "lakehouse": ref.lakehouse,
+                "schema": ref.schema,
+                "table": ref.table,
                 "mode": normalized_mode,
-                "uri": table_uri,
             },
         )
-        writer.saveAsTable(f"{schema}.{table}")
-    else:
-        if is_tables_uri:
-            LOGGER.warning(
-                "No se pudo interpretar la ruta de tabla de Fabric",
-                extra={
-                    "platform": "fabric",
-                    "event": "fabric_table_parse_failed",
-                    "uri": table_uri,
-                },
-            )
+        writer.saveAsTable(ref.full_table_name)
+    elif ref.is_lakehouse and ref.kind == "files" and ref.lakehouse:
+        resolved = resolve_fabric_files_path(ref)
         LOGGER.info(
-            "Escritura estilo archivos para Fabric",
+            "Fabric files write",
             extra={
-                "platform": "fabric",
-                "event": "fabric_file_sink",
+                "event": "fabric_write_files_path",
+                "backend": "fabric",
+                "lakehouse": ref.lakehouse,
+                "resolved_path": resolved,
+                "mode": mode_value,
+            },
+        )
+        writer = writer.mode(mode_value)
+        writer.save(resolved)
+    else:
+        LOGGER.info(
+            "Fabric raw path write",
+            extra={
+                "event": "fabric_raw_path_write",
+                "backend": "fabric",
                 "uri": table_uri,
+                "mode": mode_value,
             },
         )
         writer = writer.mode(mode_value)

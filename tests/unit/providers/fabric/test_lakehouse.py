@@ -101,7 +101,7 @@ def test_optimize_delta_with_zorder(dummy_spark):
     ]
 
 
-def test_write_delta_keeps_file_behavior_for_files_uri(dummy_spark):
+def test_write_delta_keeps_raw_behavior_for_https_uri(dummy_spark):
     df = DummyDataFrame()
     lakehouse.write_delta(
         None,
@@ -115,15 +115,23 @@ def test_write_delta_keeps_file_behavior_for_files_uri(dummy_spark):
     assert writer.mode_calls[-1] == "append"
 
 
-def test_write_delta_detects_onelake_tables_url(dummy_spark):
+def test_write_delta_resolves_lakehouse_files_uri(dummy_spark, monkeypatch):
     df = DummyDataFrame()
+    monkeypatch.setattr(
+        lakehouse,
+        "resolve_fabric_files_path",
+        lambda ref: f"/lakehouse/{ref.lakehouse}/Files/{ref.subpath}",
+    )
     lakehouse.write_delta(
         None,
         df,
-        "https://onelake.dfs.fabric.microsoft.com/workspaces/ws/Lakehouses/lh/Tables/sales/customers",
-        {"mode": "append"},
+        "lakehouse://mvp-lakehouse/files/raw/customers/data.parquet",
+        {"mode": "overwrite"},
     )
     writer = df.write
-    assert writer.save_as_table_name == "sales.customers"
-    assert writer.saved_path is None
-    assert writer.mode_calls[-1] == "append"
+    assert writer.save_as_table_name is None
+    assert (
+        writer.saved_path
+        == "/lakehouse/mvp-lakehouse/Files/raw/customers/data.parquet"
+    )
+    assert writer.mode_calls[-1] == "overwrite"
