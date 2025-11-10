@@ -32,7 +32,7 @@ datasets:
     sink:
       type: storage
       backend: delta
-      uri: "lakehouse://tables/silver/customers_enriched"
+      uri: "lakehouse://contoso-lh/tables/silver/customers_enriched"
     incremental:
       mode: merge
       keys: ["email"]

@@ -35,3 +35,27 @@ prodi run --layer bronze --config configs/envs/dev/layers/bronze.yml
 
 ## Documentación adicional
 Toda la documentación vive en `docs/`. Consulta `docs/architecture.md` para comprender la nueva arquitectura hexagonal y los puertos/adaptadores implementados.
+
+## Microsoft Fabric Lakehouse
+
+Para escribir en tablas administradas de Fabric sin generar carpetas "Unidentified", utiliza el backend `fabric` junto con una URI `lakehouse://<lakehouse>/tables/<esquema>/<tabla>`:
+
+```yaml
+sink:
+  type: storage
+  backend: fabric
+  uri: "lakehouse://contoso-lh/tables/dbo/customers_raw"
+  options:
+    mode: overwrite
+```
+
+Si quieres dejar archivos en bruto dentro de OneLake, apunta a la ruta `Files/` y se mantendrá el comportamiento estilo archivos:
+
+```yaml
+sink:
+  type: storage
+  backend: fabric
+  uri: "https://onelake.dfs.fabric.microsoft.com/workspaces/<ws>/Lakehouses/<lh>/Files/raw/snapshot"
+  options:
+    mode: append
+```
