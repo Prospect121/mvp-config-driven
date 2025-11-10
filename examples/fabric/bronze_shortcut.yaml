@@ -19,7 +19,7 @@ datasets:
     sink:
       type: storage
       backend: delta
-      uri: "lakehouse://tables/bronze/sales_shortcut"
+      uri: "lakehouse://contoso-lh/tables/dbo/sales_shortcut"
     incremental:
       mode: append
     orchestration:

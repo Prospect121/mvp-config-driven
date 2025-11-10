@@ -65,6 +65,30 @@ El módulo `datacore.providers.fabric.lakehouse` utiliza `delta-spark` para leer
 
 Los secretos referenciados como `secret://kv/<vault>/<secret>` se resuelven automáticamente mediante Azure Key Vault (`DefaultAzureCredential`). Para otros backends (`secret://sm/`, `secret://gcp/`) se delega en AWS Secrets Manager o Google Secret Manager respectivamente, devolviendo errores claros si las dependencias no están instaladas.
 
+### Escritura en tablas administradas
+
+Cuando el `sink` apunta a un Lakehouse de Fabric utilizando el backend `fabric` y la ruta `lakehouse://<nombre_lakehouse>/tables/<esquema>/<tabla>`, el motor escribe directamente con `saveAsTable`. Esto genera el layout Delta administrado que espera la UI de Fabric, sin carpetas intermedias "Unidentified/Sin identificar".
+
+```yaml
+sink:
+  type: storage
+  backend: fabric
+  uri: "lakehouse://contoso-lh/tables/dbo/customers_raw"
+  options:
+    mode: overwrite
+```
+
+Para rutas que apuntan a `Files/`, el comportamiento continúa siendo estilo archivos (`writer.save(path)`), útil para aterrizar datos crudos o stageados:
+
+```yaml
+sink:
+  type: storage
+  backend: fabric
+  uri: "https://onelake.dfs.fabric.microsoft.com/workspaces/<ws>/Lakehouses/<lh>/Files/landing/sales/"
+  options:
+    mode: append
+```
+
 ## Warehouse y SQL Endpoint
 
 El módulo `datacore.providers.fabric.warehouse` incluye utilidades para crear o actualizar vistas (`CREATE OR ALTER VIEW` apuntando a tablas Delta) y ejecutar operaciones `COPY INTO` con opciones de tolerancia (`MAXERRORS`, patrones de archivos, particiones). Las peticiones se envían al endpoint REST del Warehouse y registran acción y destino en los logs.
