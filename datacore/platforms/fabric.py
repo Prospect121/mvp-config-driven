@@ -19,53 +19,56 @@ class FabricPlatform(PlatformBase):
     reuse_active_session = True
 
     def build_spark_session(self, opts: dict[str, Any] | None = None) -> SparkSession:
+        opts = opts or {}
+        extra_conf = self.config.get("extra_conf", {})
+        config_items = list(opts.items()) + list(extra_conf.items())
+
+        def _log(event: str, message: str) -> None:
+            LOGGER.info(message, extra={"platform": self.name, "event": event})
+
         get_active = getattr(SparkSession, "getActiveSession", None)
         if callable(get_active):
-            active = get_active()
-            if active is not None:
-                LOGGER.info(
-                    "Reusing active SparkSession for Fabric",
-                    extra={
-                        "platform": self.name,
-                        "event": "spark_session_reuse_active",
-                    },
-                )
-                return active
+            active_session = get_active()
+            if active_session is not None:
+                _log("spark_session_reuse", "Reusing active SparkSession for Fabric")
+                return active_session
 
         get_default = getattr(SparkSession, "getDefaultSession", None)
         if callable(get_default):
-            default = get_default()
-            if default is not None:
-                LOGGER.info(
-                    "Reusing default SparkSession for Fabric",
-                    extra={
-                        "platform": self.name,
-                        "event": "spark_session_reuse_default",
-                    },
-                )
-                return default
+            default_session = get_default()
+            if default_session is not None:
+                _log("spark_session_reuse", "Reusing default SparkSession for Fabric")
+                return default_session
 
-        instantiated = getattr(SparkSession, "_instantiatedSession", None)
-        if instantiated is not None:
-            LOGGER.info(
-                "Reusing instantiated SparkSession for Fabric",
-                extra={
-                    "platform": self.name,
-                    "event": "spark_session_reuse_instantiated",
-                },
-            )
-            return instantiated
+        instantiated_session = getattr(SparkSession, "_instantiatedSession", None)
+        if instantiated_session is not None:
+            _log("spark_session_reuse", "Reusing instantiated SparkSession for Fabric")
+            return instantiated_session
 
-        active_sc = getattr(SparkContext, "_active_spark_context", None)
-        if active_sc is not None:
-            sc = SparkContext.getOrCreate()
-            session = SparkSession(sc)
-            LOGGER.info(
+        get_active_context = getattr(SparkContext, "getActive", None)
+        active_context = None
+        if callable(get_active_context):
+            active_context = get_active_context()
+        if active_context is None:
+            active_context = getattr(SparkContext, "_active_spark_context", None)
+
+        if active_context is not None:
+            session = SparkSession(active_context)
+            for key, value in config_items:
+                try:
+                    session.conf.set(key, value)
+                except Exception:  # pragma: no cover - depends on runtime support
+                    LOGGER.debug(
+                        "Could not apply Spark config when attaching to active context",
+                        extra={
+                            "platform": self.name,
+                            "event": "spark_session_attach_config_skip",
+                            "key": key,
+                        },
+                    )
+            _log(
+                "spark_session_attach_active_sparkcontext",
                 "Attached to existing active SparkContext for Fabric",
-                extra={
-                    "platform": self.name,
-                    "event": "spark_session_attach_active_sparkcontext",
-                },
             )
             return session
 
@@ -73,17 +76,11 @@ class FabricPlatform(PlatformBase):
             self.config.get("app_name", "datacore-fabric")
         )
 
-        for key, value in (opts or {}).items():
-            builder = builder.config(key, value)
-
-        for key, value in self.config.get("extra_conf", {}).items():
+        for key, value in config_items:
             builder = builder.config(key, value)
 
         session = builder.getOrCreate()
-        LOGGER.info(
-            "Creating new SparkSession for Fabric (no active context found)",
-            extra={"platform": self.name, "event": "spark_session_create"},
-        )
+        _log("spark_session_create", "Creating new SparkSession for Fabric (no active context found)")
         return session
 
     def _resolve_platform_secret(self, name: str) -> str:

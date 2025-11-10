@@ -24,7 +24,7 @@ def _apply_common_writer(
     df: DataFrame,
     fmt: str,
     options: dict[str, Any],
-    mode: str,
+    mode: str | None,
     partition_by: list[str] | None,
     merge_schema: bool | None,
 ):
@@ -35,7 +35,8 @@ def _apply_common_writer(
         writer = writer.option("mergeSchema", str(merge_schema).lower())
     for key, value in options.items():
         writer = writer.option(key, value)
-    return writer.mode(mode)
+    resolved_mode = mode or "append"
+    return writer.mode(resolved_mode)
 
 
 def _log_managed_table(event: str, ref: FabricLakehouseReference, *, mode: str) -> None:
@@ -95,7 +96,7 @@ def write(
     merge_schema: bool | None = None,
 ) -> None:
     ref = parse_fabric_lakehouse_uri(uri)
-    normalized_mode = str(mode).lower()
+    normalized_mode = (mode or "").lower()
 
     if ref.is_lakehouse and ref.kind == "tables" and ref.full_table_name:
         writer = df.write.format(fmt)
@@ -107,21 +108,32 @@ def write(
             writer = writer.option(key, value)
         if normalized_mode == "overwrite":
             writer = writer.mode("overwrite").option("overwriteSchema", "true")
+            effective_mode = "overwrite"
+        elif normalized_mode == "append":
+            writer = writer.mode("append")
+            effective_mode = "append"
         elif normalized_mode:
             writer = writer.mode(mode)
+            effective_mode = normalized_mode
         else:
             writer = writer.mode("append")
-        _log_managed_table("fabric_save_as_managed_table", ref, mode=normalized_mode or mode)
+            effective_mode = "append"
+        _log_managed_table(
+            "fabric_save_as_managed_table",
+            ref,
+            mode=effective_mode,
+        )
         writer.saveAsTable(ref.full_table_name)
         return
 
     if ref.is_lakehouse and ref.kind == "files" and ref.lakehouse:
         resolved = resolve_fabric_files_path(ref)
+        effective_mode = normalized_mode or (mode or "append")
         writer = _apply_common_writer(
             df,
             fmt,
             options,
-            mode,
+            effective_mode,
             partition_by,
             merge_schema,
         )
@@ -132,7 +144,7 @@ def write(
                 "backend": "fabric",
                 "lakehouse": ref.lakehouse,
                 "resolved_path": resolved,
-                "mode": mode,
+                "mode": effective_mode,
             },
         )
         writer.save(resolved)

@@ -7,8 +7,7 @@ from dataclasses import dataclass
 from typing import Literal, Optional
 from urllib.parse import urlparse
 
-
-FabricUriKind = Literal["tables", "files", "unknown"]
+FabricUriKind = Literal["tables", "files"]
 
 
 def _default_schema() -> str:
@@ -22,7 +21,7 @@ class FabricLakehouseReference:
     raw_uri: str
     is_lakehouse: bool
     lakehouse: Optional[str]
-    kind: FabricUriKind
+    kind: Optional[FabricUriKind]
     schema: Optional[str]
     table: Optional[str]
     subpath: Optional[str]
@@ -43,7 +42,7 @@ def parse_fabric_lakehouse_uri(uri: str) -> FabricLakehouseReference:
             raw_uri=uri,
             is_lakehouse=False,
             lakehouse=None,
-            kind="unknown",
+            kind=None,
             schema=None,
             table=None,
             subpath=None,
@@ -51,7 +50,7 @@ def parse_fabric_lakehouse_uri(uri: str) -> FabricLakehouseReference:
 
     path_segments = [segment for segment in parsed.path.split("/") if segment]
     lakehouse = parsed.netloc or (path_segments.pop(0) if path_segments else None)
-    kind: FabricUriKind = "unknown"
+    kind: Optional[FabricUriKind] = None
     schema: Optional[str] = None
     table: Optional[str] = None
     subpath: Optional[str] = None
@@ -61,18 +60,20 @@ def parse_fabric_lakehouse_uri(uri: str) -> FabricLakehouseReference:
         lowered = candidate.lower()
         if lowered == "tables":
             kind = "tables"
-            remainder = path_segments
+            remainder = [segment for segment in path_segments if segment]
             if remainder:
                 if len(remainder) == 1:
                     item = remainder[0]
                     if "." in item:
-                        schema, table = item.split(".", 1)
+                        schema_part, table_part = item.split(".", 1)
+                        schema = schema_part or _default_schema()
+                        table = table_part or None
                     else:
                         schema = _default_schema()
                         table = item
                 else:
                     schema = remainder[0] or _default_schema()
-                    table = remainder[1] if len(remainder) > 1 else None
+                    table = remainder[-1]
         elif lowered == "files":
             kind = "files"
             remainder = [segment for segment in path_segments if segment]

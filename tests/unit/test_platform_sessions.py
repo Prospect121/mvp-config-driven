@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from datacore.core.engine import _prepare_spark
@@ -106,8 +108,6 @@ def test_fabric_platform_reuses_instantiated_session(monkeypatch):
 
 
 def test_fabric_platform_attaches_active_spark_context(monkeypatch):
-    attached_session = object()
-
     class GuardBuilder:
         def appName(self, _):  # pragma: no cover - should not be called
             raise AssertionError("appName should not be used when attaching")
@@ -117,6 +117,13 @@ def test_fabric_platform_attaches_active_spark_context(monkeypatch):
 
         def getOrCreate(self):  # pragma: no cover - should not be used
             raise AssertionError("builder.getOrCreate should not be called when attaching")
+
+    class DummyConf:
+        def __init__(self):
+            self.settings: dict[str, Any] = {}
+
+        def set(self, key, value):  # noqa: D401 - mimic Spark API
+            self.settings[key] = value
 
     class DummySparkSession:
         builder = GuardBuilder()
@@ -132,29 +139,37 @@ def test_fabric_platform_attaches_active_spark_context(monkeypatch):
             return None
 
         def __new__(cls, sc):
+            instance = object.__new__(cls)
+            instance.conf = DummyConf()
             cls.created_with = sc
-            return attached_session
+            return instance
 
     class DummySparkContext:
         _active_spark_context = object()
-        get_or_create_calls = 0
-        returned_context = object()
 
         @classmethod
-        def getOrCreate(cls):  # noqa: N802 - keep pyspark naming
-            cls.get_or_create_calls += 1
-            return cls.returned_context
+        def getActive(cls):  # noqa: N802 - keep pyspark naming
+            return cls._active_spark_context
+
+        @classmethod
+        def getOrCreate(cls):  # pragma: no cover - should not be used
+            raise AssertionError("getOrCreate should not be invoked when context is active")
 
     monkeypatch.setattr("datacore.platforms.fabric.SparkSession", DummySparkSession)
     monkeypatch.setattr("datacore.platforms.fabric.SparkContext", DummySparkContext)
 
-    platform = FabricPlatform(config={})
+    platform = FabricPlatform(
+        config={"extra_conf": {"spark.sql.adaptive.enabled": "true"}}
+    )
 
-    session = platform.build_spark_session({})
+    session = platform.build_spark_session({"spark.executor.instances": "3"})
 
-    assert session is attached_session
-    assert DummySparkContext.get_or_create_calls == 1
-    assert DummySparkSession.created_with is DummySparkContext.returned_context
+    assert isinstance(session, DummySparkSession)
+    assert DummySparkSession.created_with is DummySparkContext._active_spark_context
+    assert session.conf.settings == {
+        "spark.executor.instances": "3",
+        "spark.sql.adaptive.enabled": "true",
+    }
 
 
 def test_fabric_platform_creates_new_session_when_no_context(monkeypatch):
