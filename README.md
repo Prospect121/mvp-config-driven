@@ -38,24 +38,32 @@ Toda la documentación vive en `docs/`. Consulta `docs/architecture.md` para com
 
 ## Microsoft Fabric Lakehouse
 
-Para escribir en tablas administradas de Fabric sin generar carpetas "Unidentified", utiliza el backend `fabric` junto con una URI `lakehouse://<lakehouse>/tables/<esquema>/<tabla>`:
+Para leer y escribir tablas administradas de Fabric sin generar carpetas "Unidentified", utiliza el backend `fabric` junto con una URI `lakehouse://<lakehouse>/tables/<esquema>/<tabla>` y el motor resolverá automáticamente el catálogo de Fabric (`saveAsTable`/`spark.table`).
 
 ```yaml
-sink:
+source:
   type: storage
   backend: fabric
+  format: delta
   uri: "lakehouse://contoso-lh/tables/dbo/customers_raw"
-  options:
-    mode: overwrite
+
+sink:
+  type: storage
+  backend: fabric
+  format: delta
+  uri: "lakehouse://contoso-lh/tables/dbo/customers_curated"
+  mode: overwrite
 ```
 
-Si quieres dejar archivos en bruto dentro de OneLake, apunta a la ruta `Files/` y se mantendrá el comportamiento estilo archivos:
+Para trabajar con archivos crudos en `Files/`, también puedes usar el esquema `lakehouse://`. El motor los convertirá a la ruta física del Lakehouse adjunto antes de llamar a `.load`/`.save`:
 
 ```yaml
 sink:
   type: storage
   backend: fabric
-  uri: "https://onelake.dfs.fabric.microsoft.com/workspaces/<ws>/Lakehouses/<lh>/Files/raw/snapshot"
-  options:
-    mode: append
+  format: delta
+  uri: "lakehouse://contoso-lh/files/raw/sales/customers_delta"
+  mode: append
 ```
+
+> ⚠️ Si apuntas explícitamente a `https://onelake.dfs.fabric.microsoft.com/.../Tables/...` se realizará una escritura estilo archivos, lo que puede producir carpetas "Unidentified/Sin identificar" en Fabric. Usa `lakehouse://.../tables/...` para tablas administradas.

@@ -65,29 +65,49 @@ El módulo `datacore.providers.fabric.lakehouse` utiliza `delta-spark` para leer
 
 Los secretos referenciados como `secret://kv/<vault>/<secret>` se resuelven automáticamente mediante Azure Key Vault (`DefaultAzureCredential`). Para otros backends (`secret://sm/`, `secret://gcp/`) se delega en AWS Secrets Manager o Google Secret Manager respectivamente, devolviendo errores claros si las dependencias no están instaladas.
 
-### Escritura en tablas administradas
+### Tablas administradas
 
-Cuando el `sink` apunta a un Lakehouse de Fabric utilizando el backend `fabric` y la ruta `lakehouse://<nombre_lakehouse>/tables/<esquema>/<tabla>`, el motor escribe directamente con `saveAsTable`. Esto genera el layout Delta administrado que espera la UI de Fabric, sin carpetas intermedias "Unidentified/Sin identificar".
+Cuando un `source` o `sink` utiliza el backend `fabric` y la ruta `lakehouse://<lakehouse>/tables/<esquema>/<tabla>`, el motor resuelve automáticamente el catálogo de Fabric. Las escrituras se realizan con `saveAsTable` y las lecturas con `spark.table`, evitando el acceso directo a `Tables/` y las carpetas "Unidentified/Sin identificar".
 
 ```yaml
-sink:
+source:
   type: storage
   backend: fabric
+  format: delta
   uri: "lakehouse://contoso-lh/tables/dbo/customers_raw"
-  options:
-    mode: overwrite
-```
 
-Para rutas que apuntan a `Files/`, el comportamiento continúa siendo estilo archivos (`writer.save(path)`), útil para aterrizar datos crudos o stageados:
-
-```yaml
 sink:
   type: storage
   backend: fabric
-  uri: "https://onelake.dfs.fabric.microsoft.com/workspaces/<ws>/Lakehouses/<lh>/Files/landing/sales/"
-  options:
-    mode: append
+  format: delta
+  uri: "lakehouse://contoso-lh/tables/silver/customers_enriched"
+  mode: overwrite
 ```
+
+Si el esquema no se especifica en la URI se utilizará `dbo` por defecto o el valor definido en la variable de entorno `FABRIC_DEFAULT_SCHEMA`.
+
+### Archivos en `Files`
+
+Para trabajar con archivos crudos basta con apuntar a `lakehouse://<lakehouse>/files/<ruta>`. El conector traduce la URI al montaje del Lakehouse adjunto antes de invocar `.load`/`.save`.
+
+```yaml
+source:
+  type: storage
+  backend: fabric
+  format: csv
+  uri: "lakehouse://contoso-lh/files/raw/customers/customers.csv"
+  options:
+    header: true
+
+sink:
+  type: storage
+  backend: fabric
+  format: delta
+  uri: "lakehouse://contoso-lh/files/staging/customers_delta"
+  mode: append
+```
+
+> ⚠️ Las rutas `https://onelake.dfs.fabric.microsoft.com/.../Tables/...` se tratan como paths físicos. Usarlas puede volver a generar carpetas "Unidentified" en Fabric, por lo que se recomienda migrar a `lakehouse://.../tables/...`.
 
 ## Warehouse y SQL Endpoint
 
