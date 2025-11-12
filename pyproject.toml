@@ -41,6 +41,9 @@ prodi = "datacore.cli.main:main"
 where = ["."]
 include = ["datacore*"]
 
+[tool.setuptools.package-data]
+"datacore.config.schemas" = ["*.json"]
+
 [tool.black]
 line-length = 100
 

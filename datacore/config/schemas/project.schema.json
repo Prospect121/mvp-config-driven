@@ -6,7 +6,7 @@
   "properties": {
     "project": {"type": "string"},
     "environment": {"enum": ["dev", "test", "prod"]},
-    "platform": {"enum": ["azure", "aws", "gcp", "local"]},
+    "platform": {"enum": ["azure", "aws", "gcp", "local", "fabric"]},
     "spark": {
       "type": "object",
       "additionalProperties": false,

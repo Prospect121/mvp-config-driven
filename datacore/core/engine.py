@@ -486,16 +486,19 @@ def _handle_batch_dataset(
     if not handled:
         writers.write_batch(valid_df, platform, sink_to_use)
 
-    writers.write_metrics(
-        spark,
-        platform,
-        dataset["sink"],
-        layer=layer,
-        dataset=dataset["name"],
-        environment=environment,
-        run_id=run_id,
-        metrics=metrics,
-    )
+    # Permitir desactivar la escritura de métricas por configuración del sink
+    sink_cfg = dataset.get("sink", {})
+    if sink_cfg.get("metrics_enabled", True):
+        writers.write_metrics(
+            spark,
+            platform,
+            sink_cfg,
+            layer=layer,
+            dataset=dataset["name"],
+            environment=environment,
+            run_id=run_id,
+            metrics=metrics,
+        )
 
     return {
         "name": dataset["name"],
