@@ -1,24 +1,84 @@
-# Ejemplos por plataforma
+# Examples Directory
 
-Cada carpeta contiene pipelines de referencia raw→gold para Azure, AWS, GCP y escenarios streaming.
+This directory contains working examples for various use cases and cloud platforms.
 
-## Datos
-- `data/customers.csv`: dataset base utilizado en los ejemplos dev.
+## By Platform
 
-## Pipelines destacados
-- `azure/orders_pipeline.yaml`: ingesta multi-fuente (ABFS + API REST) → parquet silver → Synapse gold.
-- `aws/products_pipeline.yaml`: normalización JSON → parquet bronze → Redshift merge.
-- `gcp/customers_pipeline.yaml`: unión Parquet + GraphQL → parquet silver → BigQuery gold.
-- `endpoint_orders.yaml`: ingesta REST paginada con autenticación bearer hacia almacenamiento S3.
-- `jdbc_partitioned.yaml`: lectura JDBC paralelizada con pushdown hacia parquet raw.
-- `streaming/kafka_cosmos.yaml`: streaming Kafka → CosmosDB con watermark y checkpoint dedicado.
-- `streaming/orders_stream.yaml`: pipeline base para lecturas Kafka particionadas con watermark declarativo.
+### Azure ([azure/](azure/))
+- **[delta_merge.yaml](azure/delta_merge.yaml)**: Delta Lake merge with validation and quarantine
+- **[orders_pipeline.yaml](azure/orders_pipeline.yaml)**: Complete ETL pipeline
+- **[warehouse_load.yaml](azure/warehouse_load.yaml)**: Load aggregated data to Synapse Analytics
 
-## Ejecución local (Spark standalone)
+### AWS ([aws/](aws/))
+- **[glue_redshift.yaml](aws/glue_redshift.yaml)**: AWS Glue with S3 and Redshift integration
+- **[products_pipeline.yaml](aws/products_pipeline.yaml)**: Products ETL pipeline
+
+### GCP ([gcp/](gcp/))
+- **[bigquery_load.yaml](gcp/bigquery_load.yaml)**: Dataproc with GCS and BigQuery integration
+- **[customers_pipeline.yaml](gcp/customers_pipeline.yaml)**: Customers ETL pipeline
+
+### Microsoft Fabric ([fabric/](fabric/))
+- **[bronze_shortcut.yaml](fabric/bronze_shortcut.yaml)**: Lakehouse shortcut with orchestration
+- **[multicloud_passthrough.yaml](fabric/multicloud_passthrough.yaml)**: Multi-cloud data pass-through
+- **[silver_federation.yaml](fabric/silver_federation.yaml)**: Multi-source federation
+
+## By Feature
+
+### CDC (Change Data Capture) ([cdc/](cdc/))
+- **[orders_cdc.yaml](cdc/orders_cdc.yaml)**: PostgreSQL CDC with timestamp-based incremental load
+
+### Streaming ([streaming/](streaming/))
+- **[kafka_cosmos.yaml](streaming/kafka_cosmos.yaml)**: Kafka to CosmosDB streaming
+- **[orders_stream.yaml](streaming/orders_stream.yaml)**: Real-time order processing
+
+### Federation ([federation/](federation/))
+- **[customers_enriched.yaml](federation/customers_enriched.yaml)**: Multi-source join (API + JDBC)
+
+### Shortcuts ([shortcuts/](shortcuts/))
+- **[sales_shortcut.yaml](shortcuts/sales_shortcut.yaml)**: Fabric Lakehouse shortcuts
+
+### API Integration
+- **[endpoint_orders.yaml](endpoint_orders.yaml)**: REST API with pagination and authentication
+
+### JDBC
+- **[jdbc_partitioned.yaml](jdbc_partitioned.yaml)**: Parallel JDBC read with partitioning
+
+## Sample Data
+
+The [data/](data/) directory contains sample CSV files for local testing.
+
+## Running Examples
+
+### Local
 ```bash
-prodi validate --config examples/azure/orders_pipeline.yaml
-prodi plan --config examples/aws/products_pipeline.yaml
-prodi run --layer silver --config examples/gcp/customers_pipeline.yaml --dry-run
+prodi run --layer bronze --config examples/azure/orders_pipeline.yaml --platform local
 ```
 
-Para ejecuciones completas define las plataformas (`configs/platforms/*.yml`) y secretos necesarios (`${SECRET:...}`).
+### With Environment Variables
+```bash
+export KAFKA_BOOTSTRAP=localhost:9092
+export COSMOS_ENDPOINT=https://myaccount.documents.azure.com:443/
+prodi run --layer bronze --config examples/streaming/orders_stream.yaml --platform azure
+```
+
+### Dry Run (Plan Only)
+```bash
+prodi run --layer bronze --config examples/cdc/orders_cdc.yaml --dry-run
+```
+
+## Validating Examples
+
+All examples can be validated against schemas:
+
+```bash
+prodi validate --config examples/azure/delta_merge.yaml
+```
+
+## Contributing
+
+When adding new examples:
+1. Use meaningful project names
+2. Include comments explaining key configurations
+3. Use environment variables for secrets (${SECRET:KEY_NAME})
+4. Test against the schema before committing
+5. Update this README with a brief description

@@ -1,0 +1,55 @@
+project: delta-merge-demo
+environment: prod
+platform: azure
+datasets:
+  # Delta Lake merge example
+  - name: customers_delta_merge
+    layer: silver
+    source:
+      type: storage
+      backend: abfs
+      format: delta
+      uri: "abfs://bronze@storage.dfs.core.windows.net/customers/"
+    transform:
+      ops:
+        - normalize:
+            trim: [email, name]
+            lower: [email]
+        - cast:
+            total_purchases: decimal(18,2)
+            last_purchase_date: timestamp
+        - dedupe:
+            keys: [customer_id]
+            order_by: ["last_purchase_date DESC", "_ingestion_ts DESC"]
+    validation:
+      rules:
+        - check: expect_not_null
+          columns: [customer_id, email]
+          severity: error
+        - check: expect_unique
+          columns: [customer_id]
+          severity: error
+        - check: expect_regex
+          column: email
+          params:
+            pattern: "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"
+          severity: warn
+          on_fail: quarantine
+      quarantine_sink:
+        type: storage
+        backend: abfs
+        format: parquet
+        uri: "abfs://quarantine@storage.dfs.core.windows.net/customers/"
+        mode: append
+    incremental:
+      mode: merge
+      keys: [customer_id]
+      order_by: ["last_purchase_date DESC", "_ingestion_ts DESC"]
+    sink:
+      type: storage
+      backend: abfs
+      format: delta
+      uri: "abfs://silver@storage.dfs.core.windows.net/customers/"
+      mode: append
+      partition_by: [country]
+      merge_schema: true

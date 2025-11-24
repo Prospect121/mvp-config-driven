@@ -1,0 +1,53 @@
+# Pre-commit Configuration for Datacore
+
+repos:
+  # Validate YAML syntax
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-yaml
+        args: ['--safe']
+        exclude: '^(tests/|examples/data/)'
+      
+      - id: end-of-file-fixer
+        files: \.(yml|yaml|md|py)$
+      
+      - id: trailing-whitespace
+        files: \.(yml|yaml|md|py)$
+      
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+
+  # Python formatting and linting
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.6
+    hooks:
+      - id: ruff
+        args: [--fix]
+      
+      - id: ruff-format
+
+  # Validate datacore configurations
+  - repo: local
+    hooks:
+      - id: validate-configs
+        name: Validate configuration files
+        entry: bash -c 'for f in "$@"; do echo "Validating $f..."; prodi validate --config "$f" || exit 1; done' --
+        language: system
+        files: ^(configs|examples)/.*\.(yml|yaml)$
+        pass_filenames: true
+        verbose: true
+
+      - id: validate-schemas
+        name: Validate JSON schemas
+        entry: python -c "import json, sys; [json.load(open(f)) for f in sys.argv[1:]]"
+        language: system
+        files: ^datacore/config/schemas/.*\.json$
+        pass_filenames: true
+
+# Global configuration
+default_language_version:
+  python: python3.10
+
+# Stages
+stages: [commit, push]

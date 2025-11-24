@@ -9,6 +9,9 @@
 - [Conectores](docs/connectors.md)
 - [Validaciones](docs/validations.md)
 - [Incremental](docs/incremental.md)
+- **[Instalación](docs/installation.md)** ← Nuevo
+- **[Casos de Uso](docs/use_cases.md)** ← Nuevo
+- **[Solución de Problemas](docs/troubleshooting.md)** ← Nuevo
 - [Guías de despliegue](#guías-de-despliegue)
 - [Documentación adicional](#documentación-adicional)
 

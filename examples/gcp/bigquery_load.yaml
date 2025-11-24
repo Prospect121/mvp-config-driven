@@ -1,0 +1,47 @@
+project: dataproc-etl-demo
+environment: prod
+platform: gcp
+spark:
+  extra_conf:
+    spark.sql.adaptive.enabled: true
+datasets:
+  # GCP Dataproc example with GCS and BigQuery
+  - name: events_dataproc
+    layer: gold
+    source:
+      type: storage
+      backend: gcs
+      format: parquet
+      uri: "gs://silver-bucket/events/"
+    transform:
+      sql:
+        - >
+          SELECT
+            event_type,
+            DATE(event_timestamp) AS event_date,
+            COUNT(*) AS event_count,
+            COUNT(DISTINCT user_id) AS unique_users,
+            AVG(session_duration_sec) AS avg_session_duration
+          FROM _src
+          WHERE event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 30 DAY)
+          GROUP BY event_type, DATE(event_timestamp)
+    validation:
+      rules:
+        - check: expect_not_null
+          columns: [event_type, event_date]
+          severity: error
+    sink:
+      type: warehouse
+      engine: bigquery
+      table: analytics.event_summary
+      mode: overwrite
+      options:
+        project: "${GCP_PROJECT_ID}"
+        dataset: analytics
+        table: event_summary
+        temporaryGcsBucket: temp-bucket
+        intermediateFormat: parquet
+      write_options:
+        partitionField: event_date
+        partitionType: DAY
+        clusteredFields: event_type
