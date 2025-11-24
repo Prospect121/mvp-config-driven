@@ -1,0 +1,20 @@
+project: mvp-config-driven
+environment: prod
+platform: gcp
+layer: raw
+datasets:
+  - name: customers_raw
+    layer: raw
+    source:
+      type: storage
+      format: csv
+      uri: "gs://mvp-raw/customers/customers.csv"
+      options:
+        header: "true"
+    sink:
+      type: storage
+      format: parquet
+      uri: "gs://mvp-raw/customers/_landing/"
+      backend: gcp
+    incremental:
+      mode: append

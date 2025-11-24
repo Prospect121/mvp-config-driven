@@ -1,0 +1,566 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["project", "environment", "platform", "datasets"],
+  "additionalProperties": false,
+  "properties": {
+    "project": {"type": "string"},
+    "environment": {"enum": ["dev", "test", "prod"]},
+    "platform": {"enum": ["azure", "aws", "gcp", "local", "fabric"]},
+    "spark": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "shuffle_partitions": {"type": "integer"},
+        "extra_conf": {
+          "type": "object",
+          "additionalProperties": {"type": ["string", "number", "boolean"]}
+        }
+      }
+    },
+    "providers": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "fabric": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "workspace_id": {
+              "type": "string",
+              "pattern": "^(?:[A-Za-z0-9-]+|\\$\\{[A-Z0-9_]+\\})$"
+            },
+            "environment_id": {
+              "type": "string",
+              "pattern": "^(?:[A-Za-z0-9-]+|\\$\\{[A-Z0-9_]+\\})$"
+            },
+            "lakehouse_id": {
+              "type": "string",
+              "pattern": "^(?:[A-Za-z0-9-]+|\\$\\{[A-Z0-9_]+\\})$"
+            },
+            "warehouse_id": {
+              "type": "string",
+              "pattern": "^(?:[A-Za-z0-9-]+|\\$\\{[A-Z0-9_]+\\})$"
+            },
+            "eventhouse_id": {
+              "type": "string",
+              "pattern": "^(?:[A-Za-z0-9-]+|\\$\\{[A-Z0-9_]+\\})$"
+            },
+            "tenant_id": {
+              "type": "string",
+              "pattern": "^(?:[A-Za-z0-9-]+|\\$\\{[A-Z0-9_]+\\})$"
+            }
+          }
+        }
+      }
+    },
+    "datasets": {
+      "type": "array",
+      "items": {"$ref": "#/definitions/dataset"}
+    }
+  },
+  "definitions": {
+    "string_map": {
+      "type": "object",
+      "additionalProperties": {"type": ["string", "number", "boolean"]}
+    },
+    "string_array": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "source_common": {
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": true,
+      "properties": {
+        "id": {"type": "string"},
+        "type": {
+          "type": "string",
+          "enum": [
+            "storage",
+            "jdbc",
+            "endpoint",
+            "api_rest",
+            "api_graphql",
+            "kafka",
+            "event_hubs",
+            "nosql",
+            "shortcut"
+          ]
+        },
+        "format": {"type": "string"},
+        "backend": {"type": "string"},
+        "options": {"$ref": "#/definitions/string_map"},
+        "read_options": {"$ref": "#/definitions/string_map"}
+      }
+    },
+    "source_storage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {"type": "string"},
+        "type": {"const": "storage"},
+        "format": {"type": "string"},
+        "backend": {"type": "string"},
+        "uri": {"type": "string"},
+        "path": {"type": "string"},
+        "schema": {"type": ["object", "string"]},
+        "infer_schema": {"type": "boolean"},
+        "merge_schema": {"type": "boolean"},
+        "options": {"$ref": "#/definitions/string_map"},
+        "read_options": {"$ref": "#/definitions/string_map"}
+      },
+      "anyOf": [
+        {"required": ["uri"]},
+        {"required": ["path"]}
+      ]
+    },
+    "source_jdbc": {
+      "type": "object",
+      "required": ["type", "url"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {"type": "string"},
+        "type": {"const": "jdbc"},
+        "url": {"type": "string"},
+        "table": {"type": "string"},
+        "query": {"type": "string"},
+        "database": {"type": "string"},
+        "schema": {"type": "string"},
+        "options": {"$ref": "#/definitions/string_map"},
+        "partition_column": {"type": "string"},
+        "lower_bound": {"type": ["number", "integer"]},
+        "upper_bound": {"type": ["number", "integer"]},
+        "num_partitions": {"type": "integer", "minimum": 1},
+        "fetchsize": {"type": "integer", "minimum": 1},
+        "pushdown": {"type": "boolean"},
+        "predicate_pushdown": {"type": "boolean"},
+        "cdc": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "engine": {
+              "type": "string",
+              "enum": [
+                "sqlserver",
+                "postgres",
+                "mysql",
+                "oracle",
+                "snowflake",
+                "bigquery"
+              ]
+            },
+            "mode": {
+              "type": "string",
+              "enum": ["timestamp", "version_column", "log"]
+            },
+            "keys": {"$ref": "#/definitions/string_array"},
+            "watermark_column": {"type": "string"},
+            "poll_interval": {"type": "string"}
+          },
+          "required": ["mode"]
+        }
+      },
+      "anyOf": [
+        {"required": ["table"]},
+        {"required": ["query"]}
+      ]
+    },
+    "source_endpoint": {
+      "type": "object",
+      "required": ["type", "url"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {"type": "string"},
+        "type": {"const": "endpoint"},
+        "url": {"type": "string"},
+        "method": {"type": "string"},
+        "headers": {"$ref": "#/definitions/string_map"},
+        "body": {},
+        "format": {"type": "string", "enum": ["json", "csv"]},
+        "options": {"$ref": "#/definitions/string_map"},
+        "read_options": {"$ref": "#/definitions/string_map"},
+        "schema": {"type": ["object", "string"]},
+        "infer_schema": {"type": "boolean"},
+        "auth": {"type": "object"},
+        "pagination": {"type": "object"},
+        "record_path": {
+          "oneOf": [
+            {"type": "string"},
+            {"$ref": "#/definitions/string_array"}
+          ]
+        },
+        "flatten": {"type": "boolean"},
+        "flatten_depth": {"type": "integer", "minimum": 0}
+      }
+    },
+    "source_shortcut": {
+      "allOf": [
+        {
+          "type": "object",
+          "required": ["type", "name"],
+          "additionalProperties": true,
+          "properties": {
+            "type": {"const": "shortcut"},
+            "name": {"type": "string"},
+            "read_options": {"$ref": "#/definitions/string_map"}
+          }
+        },
+        {
+          "not": {
+            "anyOf": [
+              {"required": ["uri"]},
+              {"required": ["url"]},
+              {"required": ["path"]}
+            ]
+          }
+        }
+      ]
+    },
+    "source_api_rest": {
+      "type": "object",
+      "required": ["type", "url"],
+      "additionalProperties": true,
+      "properties": {
+        "type": {"const": "api_rest"},
+        "url": {"type": "string"},
+        "method": {"type": "string"},
+        "headers": {"$ref": "#/definitions/string_map"},
+        "params": {"$ref": "#/definitions/string_map"},
+        "body": {},
+        "format": {"type": "string"},
+        "record_path": {
+          "oneOf": [
+            {"type": "string"},
+            {"$ref": "#/definitions/string_array"}
+          ]
+        },
+        "flatten": {"type": "boolean"},
+        "flatten_depth": {"type": "integer", "minimum": 0},
+        "schema": {"type": ["object", "string"]},
+        "infer_schema": {"type": "boolean"},
+        "auth": {"type": "object"},
+        "pagination": {"type": "object"}
+      }
+    },
+    "source_api_graphql": {
+      "type": "object",
+      "required": ["type", "url", "query"],
+      "additionalProperties": true,
+      "properties": {
+        "type": {"const": "api_graphql"},
+        "url": {"type": "string"},
+        "query": {"type": "string"},
+        "operation_name": {"type": "string"},
+        "variables": {"type": "object"},
+        "headers": {"$ref": "#/definitions/string_map"},
+        "record_path": {
+          "oneOf": [
+            {"type": "string"},
+            {"$ref": "#/definitions/string_array"}
+          ]
+        },
+        "flatten": {"type": "boolean"},
+        "flatten_depth": {"type": "integer", "minimum": 0},
+        "schema": {"type": ["object", "string"]},
+        "infer_schema": {"type": "boolean"}
+      }
+    },
+    "source_kafka": {
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": true,
+      "properties": {
+        "type": {"const": "kafka"},
+        "brokers": {"type": "string"},
+        "topic": {"type": "string"},
+        "group_id": {"type": "string"},
+        "options": {"$ref": "#/definitions/string_map"},
+        "format": {"type": "string"},
+        "schema": {"type": ["object", "string"]}
+      }
+    },
+    "source_event_hubs": {
+      "type": "object",
+      "required": ["type", "namespace", "event_hub"],
+      "additionalProperties": true,
+      "properties": {
+        "type": {"const": "event_hubs"},
+        "namespace": {"type": "string"},
+        "event_hub": {"type": "string"},
+        "connection_string": {"type": "string"},
+        "consumer_group": {"type": "string"},
+        "options": {"$ref": "#/definitions/string_map"},
+        "format": {"type": "string"}
+      }
+    },
+    "source_nosql": {
+      "type": "object",
+      "required": ["type", "uri"],
+      "additionalProperties": true,
+      "properties": {
+        "type": {"const": "nosql"},
+        "uri": {"type": "string"},
+        "collection": {"type": "string"},
+        "database": {"type": "string"},
+        "options": {"$ref": "#/definitions/string_map"},
+        "schema": {"type": ["object", "string"]}
+      }
+    },
+    "source_def": {
+      "allOf": [
+        {"$ref": "#/definitions/source_common"},
+        {
+          "oneOf": [
+            {"$ref": "#/definitions/source_storage"},
+            {"$ref": "#/definitions/source_jdbc"},
+            {"$ref": "#/definitions/source_endpoint"},
+            {"$ref": "#/definitions/source_api_rest"},
+            {"$ref": "#/definitions/source_api_graphql"},
+            {"$ref": "#/definitions/source_kafka"},
+            {"$ref": "#/definitions/source_event_hubs"},
+            {"$ref": "#/definitions/source_nosql"},
+            {"$ref": "#/definitions/source_shortcut"}
+          ]
+        }
+      ]
+    },
+    "source_def_with_id": {
+      "allOf": [
+        {"$ref": "#/definitions/source_def"},
+        {
+          "type": "object",
+          "required": ["id"],
+          "properties": {"id": {"type": "string"}}
+        }
+      ]
+    },
+    "sink": {
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": true,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["storage", "warehouse", "nosql", "kafka", "event_hubs"]
+        },
+        "format": {"type": "string"},
+        "backend": {"type": "string"},
+        "uri": {"type": "string"},
+        "engine": {"type": "string"},
+        "table": {"type": "string"},
+        "mode": {"type": "string", "enum": ["append", "overwrite", "overwrite_partitions", "merge"]},
+        "partition_by": {"$ref": "#/definitions/string_array"},
+        "merge_schema": {"type": "boolean"},
+        "options": {"$ref": "#/definitions/string_map"},
+        "write_options": {"$ref": "#/definitions/string_map"},
+        "compression": {"type": "string"},
+        "coalesce": {"type": "integer", "minimum": 1},
+        "repartition": {
+          "oneOf": [
+            {"type": "integer", "minimum": 1},
+            {"$ref": "#/definitions/string_array"},
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "columns": {"$ref": "#/definitions/string_array"},
+                "numPartitions": {"type": "integer", "minimum": 1}
+              },
+              "required": ["columns"]
+            }
+          ]
+        },
+        "target_file_size_mb": {"type": "integer", "minimum": 1},
+        "file_size_mb": {"type": "integer", "minimum": 1},
+        "atomic": {"type": "boolean"},
+        "temporary_gcs_bucket": {"type": "string"},
+        "intermediate_format": {"type": "string"},
+        "checkpoint_location": {"type": "string"},
+        "reject_options": {"$ref": "#/definitions/string_map"},
+        "metrics_compression": {"type": "string"},
+        "batch_size": {"type": "integer", "minimum": 1},
+        "truncate_safe": {"type": "boolean"},
+        "isolation_level": {"type": "string"},
+        "create_table_options": {"type": "string"}
+      }
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["check"],
+            "properties": {
+              "check": {"type": "string"},
+              "columns": {"$ref": "#/definitions/string_array"},
+              "column": {"type": "string"},
+              "severity": {"enum": ["error", "warn"]},
+              "threshold": {"type": "number", "minimum": 0, "maximum": 1},
+              "params": {"type": "object"},
+              "on_fail": {"type": "string"}
+            },
+            "additionalProperties": true
+          }
+        },
+        "quarantine_sink": {"$ref": "#/definitions/sink"}
+      }
+    },
+    "incremental": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "mode": {"enum": ["full", "append", "merge"]},
+        "keys": {"$ref": "#/definitions/string_array"},
+        "order_by": {"$ref": "#/definitions/string_array"},
+        "watermark": {
+          "type": "object",
+          "properties": {
+            "column": {"type": "string"},
+            "delay_threshold": {"type": "string"}
+          },
+          "required": ["column"],
+          "additionalProperties": false
+        }
+      }
+    },
+    "streaming": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "trigger": {"type": "string"},
+        "checkpoint": {"type": "string"},
+        "checkpoint_location": {"type": "string"}
+      }
+    },
+    "dataset": {
+      "type": "object",
+      "required": ["name", "layer", "source", "sink"],
+      "additionalProperties": true,
+      "properties": {
+        "name": {"type": "string"},
+        "layer": {"enum": ["raw", "bronze", "silver", "gold"]},
+        "source": {
+          "oneOf": [
+            {"$ref": "#/definitions/source_def"},
+            {
+              "type": "array",
+              "minItems": 2,
+              "items": {"$ref": "#/definitions/source_def_with_id"}
+            }
+          ]
+        },
+        "transform": {
+          "type": "object",
+          "additionalProperties": true,
+          "not": {"required": ["validation"]},
+          "properties": {
+            "sql": {"type": "array", "items": {"type": "string"}},
+            "udf": {"type": "array", "items": {"type": "string"}},
+            "add_ingestion_ts": {"type": "boolean"},
+            "federate": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "strategy": {
+                  "type": "string",
+                  "enum": ["join", "union"]
+                },
+                "join": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "left": {"type": "string"},
+                    "right": {"type": "string"},
+                    "on": {
+                      "type": "array",
+                      "minItems": 1,
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": ["left", "right"],
+                        "properties": {
+                          "left": {"type": "string"},
+                          "right": {"type": "string"}
+                        }
+                      }
+                    },
+                    "join_type": {
+                      "type": "string",
+                      "enum": ["inner", "left", "right", "full"]
+                    },
+                    "select": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": ["expr"],
+                        "properties": {
+                          "expr": {"type": "string"},
+                          "as": {"type": "string"}
+                        }
+                      }
+                    }
+                  },
+                  "required": ["left", "right", "on", "join_type"]
+                },
+                "union": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "allow_missing_columns": {"type": "boolean"},
+                    "schema_mode": {
+                      "type": "string",
+                      "enum": ["by_name", "by_position"]
+                    }
+                  }
+                }
+              },
+              "required": ["strategy"]
+            },
+            "ops": {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {"type": "string"},
+                  {
+                    "type": "object",
+                    "minProperties": 1,
+                    "maxProperties": 1,
+                    "additionalProperties": true
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "validation": {"$ref": "#/definitions/validation"},
+        "sink": {"$ref": "#/definitions/sink"},
+        "incremental": {"$ref": "#/definitions/incremental"},
+        "streaming": {"$ref": "#/definitions/streaming"},
+        "merge_strategy": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "keys": {"$ref": "#/definitions/string_array"},
+            "prefer": {"enum": ["newest", "left", "coalesce"]},
+            "order_by": {"$ref": "#/definitions/string_array"}
+          }
+        },
+        "cache": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {"type": "boolean"},
+            "storage": {"type": "string"},
+            "ttl": {"type": "string"}
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,38 @@
+project: mvp-config-driven
+environment: test
+platform: aws
+spark:
+  shuffle_partitions: 4
+datasets:
+  - name: customers_raw
+    layer: raw
+    source:
+      type: storage
+      format: csv
+      uri: "s3://mvp-raw/customers/customers.csv"
+      options:
+        header: "true"
+    sink:
+      type: storage
+      format: parquet
+      uri: "s3://mvp-raw/customers/_landing/"
+      backend: aws
+  - name: customers_gold
+    layer: gold
+    source:
+      type: storage
+      format: parquet
+      uri: "s3://mvp-silver/customers/"
+      backend: aws
+    transform:
+      sql:
+        - "SELECT country, COUNT(DISTINCT id) AS customers, ROUND(SUM(amount), 2) AS total_amount FROM _src GROUP BY country"
+    sink:
+      type: warehouse
+      engine: redshift
+      url: "jdbc:redshift://redshift.amazonaws.com:5439/analytics"
+      table: analytics.customers_gold
+      mode: overwrite
+      options:
+        user: "${REDSHIFT_USER}"
+        password: "${REDSHIFT_PASSWORD}"

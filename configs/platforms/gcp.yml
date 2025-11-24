@@ -1,0 +1,4 @@
+platform: gcp
+checkpoint_base: "gs://mvp-checkpoints/datacore"
+extra_conf:
+  spark.hadoop.google.cloud.auth.service.account.enable: "true"

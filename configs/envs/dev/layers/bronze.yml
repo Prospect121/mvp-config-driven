@@ -1,0 +1,26 @@
+project: mvp-config-driven
+environment: dev
+platform: azure
+layer: bronze
+spark:
+  shuffle_partitions: 4
+datasets:
+  - name: customers_bronze
+    layer: bronze
+    source:
+      type: storage
+      format: parquet
+      uri: "abfss://raw@example.dfs.core.windows.net/customers/_landing/"
+      backend: azure
+    transform:
+      sql:
+        - "SELECT *, current_timestamp() AS _ingestion_ts FROM _src"
+      validation:
+        expect_not_null: ["id", "email"]
+    sink:
+      type: storage
+      format: parquet
+      uri: "abfss://bronze@example.dfs.core.windows.net/customers/"
+      backend: azure
+    incremental:
+      mode: append

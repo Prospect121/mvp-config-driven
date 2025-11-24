@@ -1,0 +1,22 @@
+project: mvp-config-driven
+environment: test
+platform: aws
+layer: silver
+datasets:
+  - name: customers_silver
+    layer: silver
+    source:
+      type: storage
+      format: parquet
+      uri: "s3://mvp-bronze/customers/"
+      backend: aws
+    transform:
+      sql:
+        - "SELECT id, name, email, country, CAST(amount AS DOUBLE) AS amount FROM _src"
+    sink:
+      type: storage
+      format: parquet
+      uri: "s3://mvp-silver/customers/"
+      backend: aws
+    incremental:
+      mode: append

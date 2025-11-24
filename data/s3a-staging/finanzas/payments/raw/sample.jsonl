@@ -1,3 +1,0 @@
-﻿{ "id": "PAY-ABCD1234-XYZ1", "amount": 123.45, "currency": "USD", "created_at": "2024-10-01T12:34:56Z" }
-{ "id": "PAY-EFGH5678-XYZ2", "amount": 67.89, "currency": "EUR", "created_at": "2024-10-02T08:12:00Z" }
-{ "id": "PAY-IJKL9012-XYZ3", "amount": 500.00, "currency": "COP", "created_at": "2024-10-03T16:45:10Z" }

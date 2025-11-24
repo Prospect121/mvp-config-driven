@@ -1,0 +1,20 @@
+project: mvp-config-driven
+environment: dev
+platform: azure
+layer: raw
+datasets:
+  - name: customers_raw
+    layer: raw
+    source:
+      type: storage
+      format: csv
+      uri: "abfss://raw@example.dfs.core.windows.net/customers/customers.csv"
+      options:
+        header: "true"
+    sink:
+      type: storage
+      format: parquet
+      uri: "abfss://raw@example.dfs.core.windows.net/customers/_landing/"
+      backend: azure
+    incremental:
+      mode: append
