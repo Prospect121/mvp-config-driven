@@ -266,11 +266,11 @@ def write_metrics(
     backend = sink.get("backend", platform.name)
     connector = _storage_connector(backend)
     metrics_json = json.dumps(metrics, ensure_ascii=False)
-    metrics_df = spark.read.json(spark.sparkContext.parallelize([metrics_json]))
+    metrics_df = spark.createDataFrame([(metrics_json,)], ["value"])  # texto plano JSON
     connector.write(
         metrics_df,
         platform.normalize_uri(metrics_uri),
-        "json",
+        "text",
         "overwrite",
         {"compression": sink.get("metrics_compression", "none")},
         partition_by=None,

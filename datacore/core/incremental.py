@@ -44,10 +44,12 @@ def _deduplicate(df: DataFrame, keys: list[str], order_by: list[str]) -> DataFra
     return ranked.filter(F.col("__dc_merge_rank") == 1).drop("__dc_merge_rank")
 
 
-def _path_exists(spark: SparkSession, path: str) -> bool:
-    jvm = spark._jvm
-    fs = jvm.org.apache.hadoop.fs.FileSystem.get(spark._jsc.hadoopConfiguration())
-    return fs.exists(jvm.org.apache.hadoop.fs.Path(path))
+def _path_exists(spark: SparkSession, path: str, fmt: str, options: dict[str, Any]) -> bool:
+    try:
+        spark.read.format(fmt).options(**options).load(path).limit(1).collect()
+        return True
+    except Exception:
+        return False
 
 
 def merge_storage(
@@ -64,7 +66,7 @@ def merge_storage(
         merge_delta(uri, df, keys)
         return
 
-    if not _path_exists(spark, uri):
+    if not _path_exists(spark, uri, fmt, options):
         df.write.format(fmt).mode("overwrite").options(**options).save(uri)
         return
 
