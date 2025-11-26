@@ -1,0 +1,68 @@
+name: Pre-commit Validation
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  pre-commit:
+    name: Run Pre-commit Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      
+      - name: Install dependencies
+        run: |
+          pip install pre-commit
+          pip install -e .
+      
+      - name: Get changed YAML files
+        id: changed-files
+        uses: tj-actions/changed-files@v40
+        with:
+          files: |
+            configs/**/*.{yml,yaml}
+            examples/**/*.{yml,yaml}
+      
+      - name: Validate changed YAML files
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          echo "Changed YAML files:"
+          echo "${{ steps.changed-files.outputs.all_changed_files }}"
+          
+          FAILED=0
+          for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+            echo "Validating: $file"
+            if ! prodi validate --config "$file"; then
+              echo "❌ FAILED: $file"
+              FAILED=$((FAILED + 1))
+            fi
+          done
+          
+          if [ $FAILED -gt 0 ]; then
+            echo "❌ $FAILED file(s) failed validation"
+            exit 1
+          fi
+          
+          echo "✅ All changed files are valid!"
+      
+      - name: Comment PR with validation results
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '❌ **Configuration validation failed**\n\nPlease check the workflow logs for details.'
+            })

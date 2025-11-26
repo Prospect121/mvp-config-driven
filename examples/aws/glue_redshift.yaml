@@ -1,0 +1,51 @@
+project: glue-etl-demo
+environment: prod
+platform: aws
+spark:
+  extra_conf:
+    spark.sql.adaptive.enabled: true
+    spark.sql.adaptive.coalescePartitions.enabled: true
+datasets:
+  # AWS Glue example with S3 and Redshift
+  - name: transactions_glue
+    layer: silver
+    source:
+      type: storage
+      backend: s3
+      format: parquet
+      uri: "s3://bronze-bucket/transactions/"
+    transform:
+      ops:
+        - cast:
+            transaction_date: timestamp
+            amount: decimal(18,2)
+        - filter: ["amount > 0"]
+        - dedupe:
+            keys: [transaction_id]
+            order_by: ["transaction_date DESC"]
+    validation:
+      rules:
+        - check: expect_not_null
+          columns: [transaction_id, customer_id, amount]
+          severity: error
+        - check: expect_range
+          column: amount
+          params:
+            min: 0.01
+            max: 1000000
+          severity: error
+    incremental:
+      mode: merge
+      keys: [transaction_id]
+      order_by: ["transaction_date DESC"]
+    sink:
+      type: warehouse
+      engine: redshift
+      table: analytics.transactions
+      options:
+        url: "${REDSHIFT_JDBC_URL}"
+        user: "${DB_USER}"
+        password: "${SECRET:REDSHIFT_PASSWORD}"
+        tempdir: "s3://temp-bucket/redshift-temp/"
+      batch_size: 50000
+      mode: append

@@ -1,6 +1,6 @@
 project: fabric-demo
 environment: dev
-platform: azure
+platform: fabric
 providers:
   fabric:
     workspace_id: "${FABRIC_WORKSPACE_ID}"
@@ -13,22 +13,23 @@ datasets:
     source:
       type: shortcut
       name: sales_onelake
-      target: "https://onelake.dfs.fabric.microsoft.com/contoso"
-      subpath: "/sales/"
-      labels: ["bronze", "external"]
+      read_options:
+        format: delta
     sink:
       type: storage
-      backend: delta
-      uri: "lakehouse://contoso-lh/tables/dbo/sales_shortcut"
+      backend: fabric
+      format: delta
+      uri: "lakehouse://contoso-lh/tables/dbo/sales_bronze"
+      mode: append
     incremental:
       mode: append
     orchestration:
       fabric:
-        create_items: [lakehouse, spark_job, pipeline, shortcut]
+        create_items: [lakehouse, spark_job, shortcut]
         spark_job:
-          name: "sales_shortcut-job"
-          entrypoint: "python -m datacore.cli run --layer bronze --config examples/fabric/bronze_shortcut.yaml"
-        pipeline:
-          name: "sales_shortcut-pipeline"
-          properties:
-            activities: []
+          name: "sales-shortcut-job"
+          entrypoint: "python -m datacore.cli.main run --layer bronze --config examples/fabric/bronze_shortcut.yaml"
+        shortcut:
+          target: "https://onelake.dfs.fabric.microsoft.com/workspace/lakehouse.Lakehouse/Files/sales/"
+          path: "Files/sales_shortcut"
+

@@ -50,11 +50,7 @@ jobs:
         run: python -m datacore.cli plan --config examples/federation/customers_enriched.yaml > plan.json
 
       - name: print plan (debug)
-        run: |
-          python - << 'PY'
-from pathlib import Path; import json
-p=Path("plan.json"); print(json.dumps(json.loads(p.read_text()), indent=2, ensure_ascii=False))
-PY
+        run: python -c "from pathlib import Path; import json; p=Path('plan.json'); print(json.dumps(json.loads(p.read_text()), indent=2, ensure_ascii=False))"
 
       - name: upload plan artifact
         uses: actions/upload-artifact@v4

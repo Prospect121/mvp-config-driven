@@ -28,4 +28,10 @@ datasets:
     sink:
       type: nosql
       engine: cosmosdb
+      options:
+        spark.cosmos.accountEndpoint: "${SECRET:COSMOS_ENDPOINT}"
+        spark.cosmos.accountKey: "${SECRET:COSMOS_KEY}"
+        spark.cosmos.database: retail
+        spark.cosmos.container: orders
       checkpoint_location: "abfss://chk@storage.dfs.core.windows.net/orders_stream/_chk/"
+

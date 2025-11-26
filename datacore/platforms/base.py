@@ -64,7 +64,8 @@ class PlatformBase(abc.ABC):
         return normalize_uri(uri)
 
     def checkpoint_dir(self, layer: str, dataset: str, env: str) -> str:
-        base = self.config.get("checkpoint_base", f"/tmp/datacore/{env}")
+        override = os.getenv("DATACORE_CHECKPOINT_BASE")
+        base = override or self.config.get("checkpoint_base") or f"/tmp/datacore/{env}"
         return f"{base}/{layer}/{dataset}"
 
     # Adaptadores opcionales para merges específicos de plataforma.

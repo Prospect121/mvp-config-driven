@@ -1,12 +1,25 @@
-dataset: sales_shortcut
-layer: bronze
-source:
-  type: shortcut
-  name: sales_s3
-sink:
-  type: storage
-  backend: azure
-  format: parquet
-  uri: "abfss://bronze@acme/data/sales/"
-incremental:
-  mode: append
+project: shortcuts-demo
+environment: dev
+platform: azure
+datasets:
+  - name: sales_shortcut
+    layer: bronze
+    source:
+      type: shortcut
+      name: sales_s3
+      read_options:
+        format: parquet
+    validation:
+      rules:
+        - check: expect_not_null
+          columns: [sale_id]
+          severity: error
+    sink:
+      type: storage
+      backend: abfs
+      format: parquet
+      uri: "abfss://bronze@acme/data/sales/"
+      mode: append
+    incremental:
+      mode: append
+

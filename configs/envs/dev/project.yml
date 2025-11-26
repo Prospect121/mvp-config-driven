@@ -30,8 +30,11 @@ datasets:
     transform:
       sql:
         - "SELECT id, name, email, country, amount, current_timestamp() AS ingestion_ts FROM _src"
-      validation:
-        expect_not_null: ["id", "email"]
+    validation:
+      rules:
+        - check: expect_not_null
+          columns: ["id", "email"]
+          severity: error
     sink:
       type: storage
       format: parquet
@@ -49,8 +52,11 @@ datasets:
     transform:
       sql:
         - "SELECT id, name, email, country, CAST(amount AS DOUBLE) AS amount, date(current_timestamp()) AS ingestion_date FROM _src"
-      validation:
-        expect_not_null: ["id", "email"]
+    validation:
+      rules:
+        - check: expect_not_null
+          columns: ["id", "email"]
+          severity: error
     sink:
       type: storage
       format: parquet
@@ -68,12 +74,16 @@ datasets:
     transform:
       sql:
         - "SELECT country, COUNT(DISTINCT id) AS customers, ROUND(SUM(amount), 2) AS total_amount FROM _src GROUP BY country"
-      validation:
-        expect_not_null: ["country"]
+    validation:
+      rules:
+        - check: expect_not_null
+          columns: ["country"]
+          severity: error
     sink:
       type: storage
       format: parquet
       uri: "./data/dev/gold/customers"
       backend: local
     incremental:
-      mode: overwrite
+      mode: full
+

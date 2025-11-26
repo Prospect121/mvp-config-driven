@@ -1,36 +1,54 @@
-dataset: orders_cdc
-layer: bronze
-source:
-  type: jdbc
-  url: "${PG_URL}"
-  table: "public.orders"
-  cdc:
-    engine: postgres
-    mode: timestamp
-    keys: ["order_id"]
-    watermark_column: "updated_at"
-    poll_interval: "60s"
-sink:
-  type: storage
-  backend: s3
-  format: parquet
-  uri: "s3://raw/orders_cdc/"
-incremental:
-  mode: append
----
-dataset: orders_upsert
-layer: silver
-source:
-  type: storage
-  backend: s3
-  format: parquet
-  uri: "s3://raw/orders_cdc/"
-incremental:
-  mode: merge
-  keys: ["order_id"]
-  order_by: ["_ingestion_ts DESC"]
-sink:
-  type: storage
-  backend: s3
-  format: parquet
-  uri: "s3://silver/orders/"
+project: cdc-demo
+environment: prod
+platform: aws
+datasets:
+  # Bronze: CDC from PostgreSQL
+  - name: orders_cdc
+    layer: bronze
+    source:
+      type: jdbc
+      url: "${PG_URL}"
+      table: "public.orders"
+      options:
+        driver: org.postgresql.Driver
+        user: "${DB_USER}"
+        password: "${SECRET:DB_PASSWORD}"
+      cdc:
+        engine: postgres
+        mode: timestamp
+        keys: ["order_id"]
+        watermark_column: "updated_at"
+        poll_interval: "60s"
+    sink:
+      type: storage
+      backend: s3
+      format: parquet
+      uri: "s3://bronze/orders_cdc/"
+      mode: append
+    incremental:
+      mode: append
+  
+  # Silver: Merge incremental data
+  - name: orders_upsert
+    layer: silver
+    source:
+      type: storage
+      backend: s3
+      format: parquet
+      uri: "s3://bronze/orders_cdc/"
+    validation:
+      rules:
+        - check: expect_not_null
+          columns: ["order_id"]
+          severity: error
+    incremental:
+      mode: merge
+      keys: ["order_id"]
+      order_by: ["_ingestion_ts DESC"]
+    sink:
+      type: storage
+      backend: s3
+      format: delta
+      uri: "s3://silver/orders/"
+      mode: append
+

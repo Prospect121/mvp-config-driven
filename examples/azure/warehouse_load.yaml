@@ -1,0 +1,49 @@
+project: warehouse-load-demo
+environment: prod
+platform: azure
+datasets:
+  # Load aggregated data to Synapse Analytics
+  - name: sales_summary_warehouse
+    layer: gold
+    source:
+      type: storage
+      backend: abfs
+      format: delta
+      uri: "abfs://silver@storage.dfs.core.windows.net/sales/"
+    transform:
+      sql:
+        - >
+          SELECT
+            product_category,
+            DATE_TRUNC('month', sale_date) AS month,
+            SUM(total_amount) AS revenue,
+            COUNT(DISTINCT customer_id) AS unique_customers,
+            COUNT(*) AS total_transactions,
+            AVG(total_amount) AS avg_transaction_value
+          FROM _src
+          WHERE sale_date >= DATE_SUB(CURRENT_DATE(), 90)
+          GROUP BY product_category, DATE_TRUNC('month', sale_date)
+    validation:
+      rules:
+        - check: expect_not_null
+          columns: [product_category, month, revenue]
+          severity: error
+        - check: expect_range
+          column: revenue
+          params:
+            min: 0
+          severity: error
+    sink:
+      type: warehouse
+      engine: synapse
+      table: analytics.sales_monthly_summary
+      mode: overwrite
+      options:
+        url: "${SYNAPSE_JDBC_URL}"
+        user: "${DB_USER}"
+        password: "${SECRET:SYNAPSE_PASSWORD}"
+        dbtable: analytics.sales_monthly_summary
+      batch_size: 10000
+      isolation_level: READ_COMMITTED
+      truncate_safe: true
+      create_table_options: "DISTRIBUTION = HASH(product_category), CLUSTERED COLUMNSTORE INDEX"

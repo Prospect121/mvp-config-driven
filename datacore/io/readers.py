@@ -94,7 +94,7 @@ def _read_storage(
     merged_options = _merge_format_options(fmt, options, infer_schema)
     backend = source.get("backend", platform.name)
     uri = platform.normalize_uri(source["uri"])
-    cache_path = _schema_cache_path(platform, layer, dataset, environment)
+    cache_path = _schema_cache_path(platform, layer, dataset, environment) if infer_schema else None
     cached_schema = _load_schema(cache_path) if infer_schema else None
     connector = _storage_connector(backend)
     df = connector.read(spark, uri, fmt, merged_options, schema=cached_schema)
