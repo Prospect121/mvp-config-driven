@@ -372,7 +372,14 @@ def apply_validation(df: DataFrame, rules: dict[str, Any]) -> ValidationResult:
         quarantine_df = enriched.limit(0)
 
     drop_columns = [col for _, col in runtime]
-    valid_df = enriched.filter(F.col("__dc_valid")).drop(*drop_columns, "__dc_valid", "__dc_reasons")
+    valid_df = (
+        enriched.filter(F.col("__dc_valid")).drop(
+            *drop_columns,
+            "__dc_valid",
+            "__dc_reasons",
+            "_reject_reason",
+        )
+    )
     invalid_df = enriched.filter(~F.col("__dc_valid")).drop(*drop_columns, "__dc_valid", "__dc_reasons")
     quarantine_df = quarantine_df.drop(*drop_columns, "__dc_valid", "__dc_reasons")
 
