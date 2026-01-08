@@ -54,6 +54,21 @@ pip install -e ".[fabric]"
 
 Incluye: `azure-identity`, `azure-keyvault-secrets`, `delta-spark`, `azure-kusto-data`, `azure-kusto-ingest`, `pyodbc`
 
+#### Para GCP (SDK de Storage, PGP remoto)
+
+```bash
+pip install -e ".[gcp]"
+```
+
+Incluye: `google-cloud-storage`
+
+#### Requisitos para cifrado PGP remoto (S3/GCS/ABFS)
+
+- `gpg` instalado y disponible en `PATH`
+- **S3 (AWS)**: `boto3` ya viene incluido en dependencias base; credenciales por entorno/perfil
+- **GCS (Google Cloud)**: instalar `.[gcp]` y configurar `GOOGLE_APPLICATION_CREDENTIALS`
+- **ABFS/ADLS (Azure)**: instalar `.[fabric]` para incluir `azure-storage-blob` y definir `connectionString` en `sink.options`
+
 ### 5. Verificar instalación
 
 ```bash

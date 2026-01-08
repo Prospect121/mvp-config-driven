@@ -32,6 +32,10 @@ fabric = [
   "azure-kusto-data>=4.5; python_version >= '3.9'",
   "azure-kusto-ingest>=4.5; python_version >= '3.9'",
   "pyodbc>=5.0; platform_system=='Windows' or platform_system=='Linux'",
+  "azure-storage-blob>=12.19",
+]
+gcp = [
+  "google-cloud-storage>=2.14",
 ]
 
 [project.scripts]

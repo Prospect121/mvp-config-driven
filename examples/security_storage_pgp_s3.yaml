@@ -1,0 +1,32 @@
+project: retail360
+environment: dev
+platform: aws
+spark:
+  shuffle_partitions: 2
+datasets:
+  - name: customers_pgp_s3
+    layer: bronze
+    source:
+      type: storage
+      format: csv
+      uri: s3://landing/retail/customers/
+      options:
+        header: true
+        inferSchema: true
+    transform:
+      ops:
+        - normalize:
+            trim: [email]
+    sink:
+      type: storage
+      backend: aws
+      format: parquet
+      uri: s3://bronze/retail/customers_pgp/
+      merge_schema: true
+      encryption:
+        type: pgp
+        recipient: ${SECRET:PGP_RECIPIENT}
+      options:
+        # opcional: SSE adicional sobre el objeto cifrado
+        serverSideEncryption: aws:kms
+        sseKmsKeyId: ${SECRET:KMS_KEY_ARN}
