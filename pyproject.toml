@@ -8,13 +8,14 @@ version = "1.0.0"
 description = "Multicloud config-driven ETL/ELT framework"
 authors = [{name = "Prospect121"}]
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.8"
 dependencies = [
   "pyspark>=3.4.0",
   "pyyaml>=6.0",
   "jsonschema>=4.20",
   "requests>=2.31",
   "boto3>=1.34",
+  "importlib_resources>=5.0; python_version < '3.9'",
 ]
 
 [project.optional-dependencies]

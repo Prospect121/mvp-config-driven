@@ -1,0 +1,86 @@
+# ============================================================================
+# DATACORE PIPELINE - Integrado con Lakehouse Infrastructure
+# ============================================================================
+# Este docker-compose solo instala la librería datacore.
+# La orquestación se hace desde Airflow (ya desplegado).
+# El procesamiento se hace en el cluster Spark (ya desplegado).
+#
+# PRERREQUISITOS:
+# 1. La red 'lakehouse-net' debe existir (creada por minio/docker-compose.yml)
+# 2. MinIO, Spark, Airflow deben estar corriendo
+#
+# USO:
+#   docker compose -f docker-compose.lakehouse.yml up -d
+# ============================================================================
+
+services:
+  # ============================================================================
+  # DATACORE INIT - Solo instala dependencias (contenedor efímero)
+  # ============================================================================
+  datacore-init:
+    image: python:3.11-slim
+    container_name: datacore-init
+    working_dir: /app
+    volumes:
+      - .:/app
+      - datacore-data:/app/data
+    environment:
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      PIP_NO_CACHE_DIR: "1"
+    command: >
+      bash -c "
+        echo '=== Instalando dependencias de datacore ===' &&
+        pip install --upgrade pip &&
+        pip install -e /app[dev] &&
+        pip install delta-spark==3.2.1 boto3 pyyaml jsonschema requests &&
+        echo '=== Instalación completada ===' &&
+        pip list | grep -E 'datacore|pyspark|delta|boto3'
+      "
+    networks:
+      - lakehouse-net
+
+  # ============================================================================
+  # DATACORE RUNNER - Contenedor para ejecutar pipelines manualmente
+  # ============================================================================
+  # Usa este contenedor para pruebas manuales. Para producción usa Airflow.
+  datacore-runner:
+    image: python:3.11-slim
+    container_name: datacore-runner
+    hostname: datacore-runner
+    working_dir: /app
+    volumes:
+      - .:/app
+      - datacore-data:/app/data
+    environment:
+      # MinIO (S3-compatible)
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin
+      AWS_ENDPOINT_URL: http://minio:9000
+      # Datacore
+      DATACORE_ENV: onpremise
+      DATACORE_LOG_LEVEL: INFO
+
+    entrypoint: ["tail", "-f", "/dev/null"]
+
+    depends_on:
+      datacore-init:
+        condition: service_completed_successfully
+
+    networks:
+      - lakehouse-net
+
+    restart: unless-stopped
+
+# ============================================================================
+# VOLUMES
+# ============================================================================
+volumes:
+  datacore-data:
+    name: datacore-data
+
+# ============================================================================
+# NETWORKS - Usa la red compartida de la infraestructura existente
+# ============================================================================
+networks:
+  lakehouse-net:
+    external: true
