@@ -53,7 +53,7 @@ prodi run --layer bronze --config configs/sales_bronze.yml --platform azure
 
 **Resultado esperado**: Archivos Delta particionados por año/mes en `abfs://bronze/sales/`.
 
-> 💡 **Ejemplo completo**: Ver [examples/azure/delta_merge.yaml](file:///c:/Users/erick/Documents/work/Prodigio/a_ruta_pass/mvp-config-driven/examples/azure/delta_merge.yaml) para un ejemplo con validación y cuarentena.
+> 💡 **Ejemplo completo**: Ver [examples/azure/delta_merge.yaml](../examples/azure/delta_merge.yaml) para un ejemplo con validación y cuarentena.
 
 ---
 
@@ -189,7 +189,7 @@ Solo cargará registros con `updated_at > '2025-11-24 12:00:00'`.
 
 **Resultado esperado**: Carga incremental eficiente sin duplicados.
 
-> 💡 **Ejemplo completo**: Ver [examples/cdc/orders_cdc.yaml](file:///c:/Users/erick/Documents/work/Prodigio/a_ruta_pass/mvp-config-driven/examples/cdc/orders_cdc.yaml)
+> 💡 **Ejemplo completo**: Ver [examples/cdc/orders_cdc.yaml](../examples/cdc/orders_cdc.yaml)
 
 ---
 
@@ -313,7 +313,7 @@ prodi run --layer bronze --config configs/streaming.yml --platform fabric
 
 **Resultado esperado**: Stream continuo procesando eventos con watermark de 10 minutos.
 
-> 💡 **Ejemplo completo**: Ver [examples/streaming/orders_stream.yaml](file:///c:/Users/erick/Documents/work/Prodigio/a_ruta_pass/mvp-config-driven/examples/streaming/orders_stream.yaml)
+> 💡 **Ejemplo completo**: Ver [examples/streaming/orders_stream.yaml](../examples/streaming/orders_stream.yaml)
 
 ---
 
@@ -383,7 +383,7 @@ prodi run --layer silver --config configs/customers_validation.yml
 - Registros inválidos → `abfs://quarantine/customers/`
 - Métricas JSON con conteo de rechazos
 
-> 💡 **Ejemplo completo**: Ver [examples/azure/delta_merge.yaml](file:///c:/Users/erick/Documents/work/Prodigio/a_ruta_pass/mvp-config-driven/examples/azure/delta_merge.yaml)
+> 💡 **Ejemplo completo**: Ver [examples/azure/delta_merge.yaml](../examples/azure/delta_merge.yaml)
 
 ---
 
@@ -438,7 +438,7 @@ prodi run --layer gold --config configs/synapse_sales.yml
 
 **Resultado esperado**: Tabla `analytics.sales_monthly` creada/actualizada en Synapse.
 
-> 💡 **Ejemplo completo**: Ver [examples/azure/warehouse_load.yaml](file:///c:/Users/erick/Documents/work/Prodigio/a_ruta_pass/mvp-config-driven/examples/azure/warehouse_load.yaml)
+> 💡 **Ejemplo completo**: Ver [examples/azure/warehouse_load.yaml](../examples/azure/warehouse_load.yaml)
 
 ---
 
@@ -466,8 +466,8 @@ prodi run --layer gold --config configs/synapse_sales.yml
 
 ## Próximos pasos
 
-- Explora más ejemplos en [examples/](file:///c:/Users/erick/Documents/work/Prodigio/a_ruta_pass/mvp-config-driven/examples/) - ver [examples/README.md](file:///c:/Users/erick/Documents/work/Prodigio/a_ruta_pass/mvp-config-driven/examples/README.md)
+- Explora más ejemplos en [examples/](../examples/) - ver [examples/README.md](../examples/README.md)
 - Lee [troubleshooting.md](troubleshooting.md) para soluciones detalladas
 - Consulta [connectors.md](connectors.md) para opciones específicas de cada conector
-- Revisa [federation/customers_enriched.yaml](file:///c:/Users/erick/Documents/work/Prodigio/a_ruta_pass/mvp-config-driven/examples/federation/customers_enriched.yaml) para federación multi-fuente
-- Revisa [endpoint_orders.yaml](file:///c:/Users/erick/Documents/work/Prodigio/a_ruta_pass/mvp-config-driven/examples/endpoint_orders.yaml) para integración con APIs REST
+- Revisa [federation/customers_enriched.yaml](../examples/federation/customers_enriched.yaml) para federación multi-fuente
+- Revisa [endpoint_orders.yaml](../examples/endpoint_orders.yaml) para integración con APIs REST
