@@ -1,0 +1,28 @@
+project: retail360
+environment: dev
+platform: local
+spark:
+  shuffle_partitions: 2
+datasets:
+  - name: customers_pgp_files
+    layer: bronze
+    source:
+      type: storage
+      format: csv
+      uri: ./examples/data/customers.csv
+      options:
+        header: true
+        inferSchema: true
+    transform:
+      ops:
+        - normalize:
+            trim: [email]
+    sink:
+      type: storage
+      backend: local
+      format: parquet
+      uri: ./tmp/customers_pgp/
+      merge_schema: true
+      encryption:
+        type: pgp
+        recipient: ${SECRET:PGP_RECIPIENT}

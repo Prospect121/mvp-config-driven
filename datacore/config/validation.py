@@ -3,10 +3,16 @@
 from __future__ import annotations
 
 import json
-from importlib import resources
+import sys
 from typing import Any
 
 from jsonschema import Draft7Validator
+
+# Compatibilidad con Python 3.8
+if sys.version_info >= (3, 9):
+    from importlib import resources
+else:
+    import importlib_resources as resources
 
 SCHEMAS = {
     "project": "project.schema.json",

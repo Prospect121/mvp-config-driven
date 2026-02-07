@@ -1,0 +1,249 @@
+# ============================================================================
+# PIPELINE LOCAL DE PRUEBA - Sin dependencias externas
+# ============================================================================
+# Este archivo configura un pipeline ETL completo usando almacenamiento local.
+# Perfecto para probar la funcionalidad del framework sin infraestructura cloud.
+#
+# USO:
+#   prodi validate --config examples/local_test_pipeline.yaml
+#   prodi run --layer raw --config examples/local_test_pipeline.yaml --platform local
+#   prodi run --layer bronze --config examples/local_test_pipeline.yaml --platform local
+#   prodi run --layer silver --config examples/local_test_pipeline.yaml --platform local
+#   prodi run --layer gold --config examples/local_test_pipeline.yaml --platform local
+# ============================================================================
+
+project: local-test-pipeline
+environment: dev
+platform: local
+
+spark:
+  shuffle_partitions: 2
+
+datasets:
+  # ==========================================================================
+  # CAPA RAW - Ingesta de datos crudos desde CSV
+  # ==========================================================================
+  - name: customers_raw
+    layer: raw
+    source:
+      type: storage
+      backend: local
+      format: csv
+      uri: "examples/data/customers.csv"
+      options:
+        header: "true"
+        inferSchema: "true"
+    transform:
+      add_ingestion_ts: true
+    sink:
+      type: storage
+      backend: local
+      format: parquet
+      uri: "/tmp/datacore_test/raw/customers/"
+      mode: overwrite
+    incremental:
+      mode: full
+
+  - name: orders_raw
+    layer: raw
+    source:
+      type: storage
+      backend: local
+      format: csv
+      uri: "examples/data/orders.csv"
+      options:
+        header: "true"
+        inferSchema: "true"
+    transform:
+      add_ingestion_ts: true
+    sink:
+      type: storage
+      backend: local
+      format: parquet
+      uri: "/tmp/datacore_test/raw/orders/"
+      mode: overwrite
+    incremental:
+      mode: full
+
+  # ==========================================================================
+  # CAPA BRONZE - Limpieza y tipado
+  # ==========================================================================
+  - name: customers_bronze
+    layer: bronze
+    source:
+      type: storage
+      backend: local
+      format: parquet
+      uri: "/tmp/datacore_test/raw/customers/"
+    transform:
+      sql:
+        - |
+          SELECT
+            CAST(customer_id AS INT) AS customer_id,
+            CONCAT(TRIM(first_name), ' ', TRIM(last_name)) AS customer_name,
+            LOWER(TRIM(email)) AS email,
+            CAST(age AS INT) AS age,
+            current_timestamp() AS bronze_ts
+          FROM _src
+      add_ingestion_ts: true
+    validation:
+      rules:
+        - check: expect_not_null
+          columns: ["customer_id", "email"]
+          severity: error
+        - check: expect_regex
+          columns: ["email"]
+          pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+          severity: warn
+    sink:
+      type: storage
+      backend: local
+      format: parquet
+      uri: "/tmp/datacore_test/bronze/customers/"
+      mode: overwrite
+    incremental:
+      mode: full
+
+  - name: orders_bronze
+    layer: bronze
+    source:
+      type: storage
+      backend: local
+      format: parquet
+      uri: "/tmp/datacore_test/raw/orders/"
+    transform:
+      sql:
+        - |
+          SELECT
+            CAST(order_id AS INT) AS order_id,
+            CAST(customer_id AS INT) AS customer_id,
+            TRIM(product) AS product_name,
+            CAST(quantity AS INT) AS quantity,
+            CAST(unit_price AS DOUBLE) AS unit_price,
+            CAST(quantity * unit_price AS DOUBLE) AS total_amount,
+            TO_DATE(order_date) AS order_date,
+            current_timestamp() AS bronze_ts
+          FROM _src
+      add_ingestion_ts: true
+    validation:
+      rules:
+        - check: expect_not_null
+          columns: ["order_id", "customer_id"]
+          severity: error
+        - check: expect_range
+          column: quantity
+          min: 1
+          max: 100
+          severity: warn
+    sink:
+      type: storage
+      backend: local
+      format: parquet
+      uri: "/tmp/datacore_test/bronze/orders/"
+      mode: overwrite
+    incremental:
+      mode: full
+
+  # ==========================================================================
+  # CAPA SILVER - Enriquecimiento con JOIN
+  # ==========================================================================
+  - name: orders_enriched_silver
+    layer: silver
+    source:
+      - id: orders
+        type: storage
+        backend: local
+        format: parquet
+        uri: "/tmp/datacore_test/bronze/orders/"
+      - id: customers
+        type: storage
+        backend: local
+        format: parquet
+        uri: "/tmp/datacore_test/bronze/customers/"
+    transform:
+      federate:
+        strategy: join
+        join:
+          left: orders
+          right: customers
+          'on':
+            - { left: "customer_id", right: "customer_id" }
+          join_type: left
+          select:
+            - { expr: "orders.order_id", as: "order_id" }
+            - { expr: "orders.customer_id", as: "customer_id" }
+            - { expr: "customers.customer_name", as: "customer_name" }
+            - { expr: "customers.email", as: "customer_email" }
+            - { expr: "orders.product_name", as: "product_name" }
+            - { expr: "orders.quantity", as: "quantity" }
+            - { expr: "orders.unit_price", as: "unit_price" }
+            - { expr: "orders.total_amount", as: "total_amount" }
+            - { expr: "orders.order_date", as: "order_date" }
+      sql:
+        - |
+          SELECT
+            *,
+            CASE
+              WHEN total_amount >= 500 THEN 'HIGH'
+              WHEN total_amount >= 100 THEN 'MEDIUM'
+              ELSE 'LOW'
+            END AS order_tier,
+            current_timestamp() AS silver_ts
+          FROM _src_0
+      add_ingestion_ts: true
+    validation:
+      rules:
+        - check: expect_not_null
+          columns: ["order_id", "customer_id"]
+          severity: error
+        - check: expect_set
+          column: order_tier
+          values: ["HIGH", "MEDIUM", "LOW"]
+          severity: error
+    sink:
+      type: storage
+      backend: local
+      format: parquet
+      uri: "/tmp/datacore_test/silver/orders_enriched/"
+      mode: overwrite
+    incremental:
+      mode: full
+
+  # ==========================================================================
+  # CAPA GOLD - Agregaciones para Analytics
+  # ==========================================================================
+  - name: sales_summary_gold
+    layer: gold
+    source:
+      type: storage
+      backend: local
+      format: parquet
+      uri: "/tmp/datacore_test/silver/orders_enriched/"
+    transform:
+      sql:
+        - |
+          SELECT
+            order_tier,
+            COUNT(order_id) AS total_orders,
+            COUNT(DISTINCT customer_id) AS unique_customers,
+            ROUND(SUM(total_amount), 2) AS total_revenue,
+            ROUND(AVG(total_amount), 2) AS avg_order_value,
+            SUM(quantity) AS total_units_sold,
+            current_timestamp() AS gold_refresh_ts
+          FROM _src
+          GROUP BY order_tier
+          ORDER BY total_revenue DESC
+      add_ingestion_ts: true
+    validation:
+      rules:
+        - check: expect_not_null
+          columns: ["order_tier", "total_revenue"]
+          severity: error
+    sink:
+      type: storage
+      backend: local
+      format: parquet
+      uri: "/tmp/datacore_test/gold/sales_summary/"
+      mode: overwrite
+    incremental:
+      mode: full

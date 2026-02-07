@@ -43,6 +43,9 @@ This directory contains working examples for various use cases and cloud platfor
 ### JDBC
 - **[jdbc_partitioned.yaml](jdbc_partitioned.yaml)**: Parallel JDBC read with partitioning
 
+### Local Testing
+- **[local_test_pipeline.yaml](local_test_pipeline.yaml)**: Complete local pipeline (raw → bronze → silver → gold) using sample CSV data
+
 ## Sample Data
 
 The [data/](data/) directory contains sample CSV files for local testing.

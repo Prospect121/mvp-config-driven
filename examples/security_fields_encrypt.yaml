@@ -1,0 +1,31 @@
+project: retail360
+environment: dev
+platform: local
+spark:
+  shuffle_partitions: 4
+datasets:
+  - name: customers_encrypted
+    layer: silver
+    source:
+      type: storage
+      format: csv
+      uri: ./examples/data/customers.csv
+      options:
+        header: true
+        inferSchema: true
+    transform:
+      ops:
+        - encrypt_fields:
+            cols: [email]
+            algo: aes-gcm
+            key_ref: ${SECRET:APP_DATA_KEY}
+    validation:
+      rules:
+        - check: expect_not_null
+          columns: [email]
+    sink:
+      type: storage
+      backend: local
+      format: parquet
+      uri: ./tmp/customers_encrypted/
+      merge_schema: true

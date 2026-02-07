@@ -119,6 +119,8 @@ def _apply_transformations(df: DataFrame, transform_config: dict[str, Any]) -> D
     for idx, statement in enumerate(sql_steps):
         view_name = f"_src_{idx}"
         df.createOrReplaceTempView(view_name)
+        # También crear vista _src como alias conveniente (el primero o el más reciente)
+        df.createOrReplaceTempView("_src")
         df = df.sparkSession.sql(statement)
     add_ingestion = transform_config.get("add_ingestion_ts", True)
     if add_ingestion and "_ingestion_ts" not in df.columns:
@@ -146,7 +148,9 @@ def _merge_strategy(df: DataFrame, strategy: dict[str, Any]) -> DataFrame:
         return df.groupBy(*keys).agg(*aggregations)
     if prefer == "left":
         order_by = ["__dc_source_ordinal ASC", *order_by]
-    window = Window.partitionBy(*[F.col(key) for key in keys]).orderBy(*[F.expr(expr) for expr in order_by])
+    window = Window.partitionBy(*[F.col(key) for key in keys]).orderBy(
+        *[F.expr(expr) for expr in order_by]
+    )
     ranked = df.withColumn("__dc_union_rank", F.row_number().over(window))
     return ranked.filter(F.col("__dc_union_rank") == 1).drop("__dc_union_rank")
 
@@ -229,13 +233,21 @@ def _combine_sources(
         raise ValueError("No se encontraron fuentes para el dataset")
     if len(frames) == 1:
         combined = frames[0]
-        return combined.drop("__dc_source_ordinal") if "__dc_source_ordinal" in combined.columns else combined
+        return (
+            combined.drop("__dc_source_ordinal")
+            if "__dc_source_ordinal" in combined.columns
+            else combined
+        )
     combined = frames[0]
     for frame in frames[1:]:
         combined = combined.unionByName(frame, allowMissingColumns=True)
     if dataset.get("merge_strategy"):
         combined = _merge_strategy(combined, dataset["merge_strategy"])
-    return combined.drop("__dc_source_ordinal") if "__dc_source_ordinal" in combined.columns else combined
+    return (
+        combined.drop("__dc_source_ordinal")
+        if "__dc_source_ordinal" in combined.columns
+        else combined
+    )
 
 
 def _build_sources_map(
@@ -284,7 +296,14 @@ def _detect_dataset_issues(dataset: dict[str, Any]) -> list[str]:
     if isinstance(dataset.get("source"), list) and not dataset.get("merge_strategy"):
         issues.append("source múltiple requiere merge_strategy para resolver duplicados")
     sink = dataset.get("sink", {})
-    if sink.get("type") == "storage" and sink.get("format") not in {"delta", "parquet", "csv", "json", "avro", "orc"}:
+    if sink.get("type") == "storage" and sink.get("format") not in {
+        "delta",
+        "parquet",
+        "csv",
+        "json",
+        "avro",
+        "orc",
+    }:
         issues.append(f"Formato de sink {sink.get('format')} no soportado para storage")
     if mode == "merge" and sink.get("type") not in {"storage", "warehouse", "nosql"}:
         issues.append("incremental.merge requiere un sink de tipo storage/warehouse/nosql")
@@ -339,16 +358,17 @@ def _build_plan(dataset: dict[str, Any]) -> dict[str, Any]:
         "compression": sink_conf.get("compression"),
         "coalesce": sink_conf.get("coalesce"),
         "repartition": sink_conf.get("repartition"),
-        "target_file_size_mb": sink_conf.get("target_file_size_mb") or sink_conf.get("file_size_mb"),
+        "target_file_size_mb": sink_conf.get("target_file_size_mb")
+        or sink_conf.get("file_size_mb"),
         "checkpoint_location": sink_conf.get("checkpoint_location"),
         "options": _sanitize_options(sink_conf.get("options")),
     }
     if sink_conf.get("write_options"):
         sink_summary["write_options"] = _sanitize_options(sink_conf.get("write_options"))
     if sink_conf.get("temporary_gcs_bucket") or sink_conf.get("temporaryGcsBucket"):
-        sink_summary["temporary_gcs_bucket"] = sink_conf.get("temporary_gcs_bucket") or sink_conf.get(
-            "temporaryGcsBucket"
-        )
+        sink_summary["temporary_gcs_bucket"] = sink_conf.get(
+            "temporary_gcs_bucket"
+        ) or sink_conf.get("temporaryGcsBucket")
     if sink_conf.get("intermediate_format") or sink_conf.get("intermediateFormat"):
         sink_summary["intermediate_format"] = sink_conf.get("intermediate_format") or sink_conf.get(
             "intermediateFormat"
@@ -383,8 +403,7 @@ def _build_plan(dataset: dict[str, Any]) -> dict[str, Any]:
             "trigger": streaming_cfg.get("trigger"),
             "checkpoint_location": streaming_cfg.get("checkpoint_location")
             or streaming_cfg.get("checkpoint"),
-            "watermark": streaming_cfg.get("watermark")
-            or incremental_cfg.get("watermark"),
+            "watermark": streaming_cfg.get("watermark") or incremental_cfg.get("watermark"),
         },
         "sink_plan": sink_summary,
         "cache_plan": dataset.get("cache", {}),
@@ -566,7 +585,9 @@ def _process_dataset(
     start_time = perf_counter()
     try:
         if streaming_cfg.get("enabled"):
-            result = _handle_streaming_dataset(layer, dataset_cfg, platform, environment, spark, run_id)
+            result = _handle_streaming_dataset(
+                layer, dataset_cfg, platform, environment, spark, run_id
+            )
         else:
             result = _handle_batch_dataset(layer, dataset_cfg, platform, environment, spark, run_id)
         duration = perf_counter() - start_time

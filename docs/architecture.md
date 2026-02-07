@@ -120,7 +120,7 @@ Formatos soportados: `csv`, `json`, `parquet`, `avro`, `orc`, `delta`
 
 #### APIs
 - **REST** (`api/rest.py`): Paginación cursor/offset/page, autenticación bearer/basic
-- **GraphQL** (`graphql.py`): Queries parametrizadas
+- **GraphQL** (`api/graphql.py`): Queries parametrizadas
 - **HTTP** (`http.py`): Endpoint genérico con reintentos exponenciales
 
 #### Bases de datos
@@ -130,8 +130,9 @@ Formatos soportados: `csv`, `json`, `parquet`, `avro`, `orc`, `delta`
 - Upserts transaccionales para sinks
 
 #### Streaming
-- **Kafka** (`streaming/kafka.py`): Apache Kafka
-- **Event Hubs** (`streaming/event_hubs.py`): Azure Event Hubs
+El soporte de streaming está integrado directamente en `datacore.io.readers` y `datacore.io.writers`:
+- **Kafka**: Lectura/escritura mediante Spark Structured Streaming
+- **Event Hubs**: Lectura/escritura mediante conector Azure Event Hubs
 - Soporte para watermark y triggers configurables
 
 ### Plataformas (`datacore.platforms`)
@@ -239,7 +240,7 @@ El motor registra operaciones puras en `datacore.core.ops`:
 
 ### CDC (Change Data Capture)
 - Fuentes JDBC con bloque `source.cdc` realizan lecturas incrementales
-- Modos: `timestamp`, `version_column`, `log`
+- Modo soportado: `timestamp` (lectura por columna de tiempo)
 - Persiste watermark en checkpoint del dataset
 - Evita re-procesar datos ya ingestados
 

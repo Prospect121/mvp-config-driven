@@ -181,8 +181,10 @@ CANONICAL_ORDER = [
     "rename",
     "cast",
     "normalize",
+    "encrypt_fields",
     "filter",
     "dedupe",
+    "decrypt_fields",
     "flatten",
     "explode",
     "sql",
@@ -267,3 +269,95 @@ def apply_ops(df: DataFrame, ops: list[dict[str, Any] | str]) -> DataFrame:
         result = result.sql_ctx.sql(statement)
 
     return result
+
+def _derive_key_bytes(key: str) -> bytes:
+    try:
+        import base64
+        return base64.b64decode(key)
+    except Exception:
+        pass
+    try:
+        import binascii
+        return binascii.unhexlify(key)
+    except Exception:
+        pass
+    import hashlib
+    return hashlib.sha256(key.encode("utf-8")).digest()
+
+def _aesgcm_encrypt_udf(key: str):
+    try:
+        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+    except Exception as exc:
+        raise RuntimeError("cryptography es requerido para aes-gcm") from exc
+    import os
+    import base64
+    key_bytes = _derive_key_bytes(key)
+    aesgcm = AESGCM(key_bytes)
+    def _enc(value: str | None) -> str | None:
+        if value is None:
+            return None
+        nonce = os.urandom(12)
+        ct = aesgcm.encrypt(nonce, value.encode("utf-8"), None)
+        payload = nonce + ct
+        return base64.b64encode(payload).decode("ascii")
+    from pyspark.sql.functions import udf
+    return udf(_enc, "string")  # type: ignore[misc]
+
+def _aesgcm_decrypt_udf(key: str):
+    try:
+        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+    except Exception as exc:
+        raise RuntimeError("cryptography es requerido para aes-gcm") from exc
+    import base64
+    key_bytes = _derive_key_bytes(key)
+    aesgcm = AESGCM(key_bytes)
+    def _dec(value: str | None) -> str | None:
+        if value is None:
+            return None
+        raw = base64.b64decode(value.encode("ascii"))
+        nonce, ct = raw[:12], raw[12:]
+        pt = aesgcm.decrypt(nonce, ct, None)
+        return pt.decode("utf-8")
+    from pyspark.sql.functions import udf
+    return udf(_dec, "string")  # type: ignore[misc]
+
+def op_encrypt_fields(df: DataFrame, config: dict[str, Any]) -> DataFrame:
+    cols = _ensure_iterable(config.get("cols"))
+    if not cols:
+        return df
+    algo = str(config.get("algo", "aes-gcm")).lower()
+    key = str(config.get("key") or config.get("key_ref") or "")
+    if not key:
+        raise ValueError("encrypt_fields requiere 'key' o 'key_ref'")
+    if algo != "aes-gcm":
+        raise ValueError(f"Algo de cifrado no soportado: {algo}")
+    fn = _aesgcm_encrypt_udf(key)
+    result = df
+    from pyspark.sql import functions as F
+    for column in cols:
+        result = result.withColumn(column, fn(F.col(column)))
+    return result
+
+def op_decrypt_fields(df: DataFrame, config: dict[str, Any]) -> DataFrame:
+    cols = _ensure_iterable(config.get("cols"))
+    if not cols:
+        return df
+    algo = str(config.get("algo", "aes-gcm")).lower()
+    key = str(config.get("key") or config.get("key_ref") or "")
+    if not key:
+        raise ValueError("decrypt_fields requiere 'key' o 'key_ref'")
+    if algo != "aes-gcm":
+        raise ValueError(f"Algo de cifrado no soportado: {algo}")
+    fn = _aesgcm_decrypt_udf(key)
+    result = df
+    from pyspark.sql import functions as F
+    for column in cols:
+        result = result.withColumn(column, fn(F.col(column)))
+    return result
+
+OPERATIONS.update(
+    {
+        "encrypt_fields": op_encrypt_fields,
+        "decrypt_fields": op_decrypt_fields,
+    }
+)

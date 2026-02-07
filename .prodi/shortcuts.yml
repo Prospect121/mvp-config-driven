@@ -1,9 +1,0 @@
-sales_s3:
-  provider: storage
-  backend: azure
-  target_uri: "abfss://bronze@acme/data/sales/"
-  format: parquet
-customers_api:
-  provider: endpoint
-  url: "https://api.example.com/customers"
-  method: GET

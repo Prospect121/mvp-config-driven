@@ -1,0 +1,424 @@
+# ============================================================================
+# PROYECTO DATACORE - Configuración OnPremise con Lakehouse Infrastructure
+# ============================================================================
+# Este archivo configura el proyecto para ejecutar pipelines ETL usando:
+# - MinIO como storage S3-compatible (raw, bronze, silver, gold buckets)
+# - Spark cluster (1 master + 2 workers)
+# - Iceberg REST Catalog
+# - Delta Lake format
+#
+# USO:
+#   prodi validate --config configs/envs/onpremise/project.yml
+#   prodi run --layer raw --config configs/envs/onpremise/project.yml
+#   prodi run --layer bronze --config configs/envs/onpremise/project.yml
+#   prodi run --layer silver --config configs/envs/onpremise/project.yml
+#   prodi run --layer gold --config configs/envs/onpremise/project.yml
+# ============================================================================
+
+project: lakehouse-pipeline
+environment: dev
+platform: local
+
+# ============================================================================
+# Configuración de Spark
+# ============================================================================
+spark:
+  shuffle_partitions: 4
+  extra_conf:
+    # Hadoop AWS JARs para S3A (compatible con PySpark 4.x / Hadoop 3.4.x)
+    spark.jars.packages: "org.apache.hadoop:hadoop-aws:3.4.0,com.amazonaws:aws-java-sdk-bundle:1.12.262"
+    
+    # S3/MinIO Configuration
+    spark.hadoop.fs.s3a.endpoint: "http://lakehouse-minio:9000"
+    spark.hadoop.fs.s3a.access.key: "admin"
+    spark.hadoop.fs.s3a.secret.key: "admin123"
+    spark.hadoop.fs.s3a.path.style.access: "true"
+    spark.hadoop.fs.s3a.impl: "org.apache.hadoop.fs.s3a.S3AFileSystem"
+    spark.hadoop.fs.s3a.connection.ssl.enabled: "false"
+    spark.hadoop.fs.s3a.aws.credentials.provider: "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider"
+    
+    # Delta Lake
+    # spark.sql.extensions: "io.delta.sql.DeltaSparkSessionExtension"  # Deshabilitado - JAR no disponible
+    # spark.sql.catalog.spark_catalog: "org.apache.spark.sql.delta.catalog.DeltaCatalog"  # Deshabilitado
+    
+    # Iceberg REST Catalog
+    spark.sql.catalog.iceberg: "org.apache.iceberg.spark.SparkCatalog"
+    spark.sql.catalog.iceberg.type: "rest"
+    spark.sql.catalog.iceberg.uri: "http://iceberg-rest:8181"
+    spark.sql.catalog.iceberg.warehouse: "s3a://warehouse/"
+    spark.sql.catalog.iceberg.io-impl: "org.apache.iceberg.aws.s3.S3FileIO"
+    spark.sql.catalog.iceberg.s3.endpoint: "http://lakehouse-minio:9000"
+    spark.sql.catalog.iceberg.s3.access-key-id: "admin"
+    spark.sql.catalog.iceberg.s3.secret-access-key: "admin123"
+    spark.sql.catalog.iceberg.s3.path-style-access: "true"
+
+# ============================================================================
+# DATASETS - Pipeline completo raw → bronze → silver → gold
+# ============================================================================
+datasets:
+  # ==========================================================================
+  # CAPA RAW - Ingesta de datos crudos
+  # ==========================================================================
+  - name: customers_raw
+    layer: raw
+    description: "Ingesta de datos de clientes desde CSV"
+    source:
+      type: storage
+      backend: s3
+      format: csv
+      uri: "s3a://raw/input/customers.csv"
+      options:
+        header: "true"
+        inferSchema: "true"
+    sink:
+      type: storage
+      backend: s3
+      format: parquet
+      uri: "s3a://raw/customers/"
+      mode: overwrite
+    incremental:
+      mode: full
+
+  - name: orders_raw
+    layer: raw
+    description: "Ingesta de datos de órdenes (ejemplo placeholder)"
+    source:
+      type: storage
+      backend: s3
+      format: csv
+      uri: "s3a://raw/input/orders.csv"
+      options:
+        header: "true"
+        inferSchema: "true"
+    sink:
+      type: storage
+      backend: s3
+      format: parquet
+      uri: "s3a://raw/orders/"
+      mode: overwrite
+    incremental:
+      mode: full
+
+  # ==========================================================================
+  # CAPA BRONZE - Limpieza inicial y tipado
+  # ==========================================================================
+  - name: customers_bronze
+    layer: bronze
+    description: "Limpieza y tipado de datos de clientes"
+    source:
+      type: storage
+      backend: s3
+      format: parquet
+      uri: "s3a://raw/customers/"
+    transform:
+      sql:
+        - |
+          SELECT 
+            CAST(customer_id AS INT) AS customer_id,
+            CONCAT(TRIM(first_name), ' ', TRIM(last_name)) AS customer_name,
+            LOWER(TRIM(email)) AS email,
+            'MX' AS country_code,
+            CAST(age AS INT) AS age,
+            current_timestamp() AS bronze_ingestion_ts
+          FROM _src
+      add_ingestion_ts: true
+    validation:
+      rules:
+        - check: expect_not_null
+          columns: ["customer_id", "email"]
+          severity: error
+        - check: expect_regex
+          columns: ["email"]
+          pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+          severity: warn
+    sink:
+      type: storage
+      backend: s3
+      format: parquet
+      uri: "s3a://bronze/customers/"
+      mode: overwrite
+      merge_schema: true
+    incremental:
+      mode: full
+
+  - name: orders_bronze
+    layer: bronze
+    description: "Limpieza y tipado de datos de órdenes"
+    source:
+      type: storage
+      backend: s3
+      format: parquet
+      uri: "s3a://raw/orders/"
+    transform:
+      sql:
+        - |
+          SELECT 
+            CAST(order_id AS INT) AS order_id,
+            CAST(customer_id AS INT) AS customer_id,
+            TRIM(product) AS product_name,
+            CAST(quantity AS INT) AS quantity,
+            CAST(unit_price AS DOUBLE) AS unit_price,
+            CAST(quantity * unit_price AS DOUBLE) AS total_amount,
+            TO_DATE(order_date) AS order_date,
+            current_timestamp() AS bronze_ingestion_ts
+          FROM _src
+      add_ingestion_ts: true
+    validation:
+      rules:
+        - check: expect_not_null
+          columns: ["order_id", "customer_id"]
+          severity: error
+        - check: expect_range
+          column: quantity
+          min: 1
+          max: 10000
+          severity: warn
+    sink:
+      type: storage
+      backend: s3
+      format: parquet
+      uri: "s3a://bronze/orders/"
+      mode: overwrite
+      merge_schema: true
+    incremental:
+      mode: full
+
+  # ==========================================================================
+  # CAPA SILVER - Enriquecimiento y joins
+  # ==========================================================================
+  - name: orders_enriched_silver
+    layer: silver
+    description: "Órdenes enriquecidas con datos de clientes"
+    source:
+      - id: orders
+        type: storage
+        backend: s3
+        format: parquet
+        uri: "s3a://bronze/orders/"
+      - id: customers
+        type: storage
+        backend: s3
+        format: parquet
+        uri: "s3a://bronze/customers/"
+    transform:
+      federate:
+        strategy: join
+        join:
+          left: orders
+          right: customers
+          'on':
+            - { left: "customer_id", right: "customer_id" }
+          join_type: left
+          select:
+            - { expr: "orders.order_id", as: "order_id" }
+            - { expr: "orders.customer_id", as: "customer_id" }
+            - { expr: "customers.customer_name", as: "customer_name" }
+            - { expr: "customers.email", as: "customer_email" }
+            - { expr: "customers.country_code", as: "country_code" }
+            - { expr: "orders.product_name", as: "product_name" }
+            - { expr: "orders.quantity", as: "quantity" }
+            - { expr: "orders.unit_price", as: "unit_price" }
+            - { expr: "orders.total_amount", as: "total_amount" }
+            - { expr: "orders.order_date", as: "order_date" }
+      sql:
+        - |
+          SELECT 
+            *,
+            CASE 
+              WHEN total_amount >= 1000 THEN 'HIGH'
+              WHEN total_amount >= 100 THEN 'MEDIUM'
+              ELSE 'LOW'
+            END AS order_tier,
+            current_timestamp() AS silver_processing_ts
+          FROM _src_0
+      add_ingestion_ts: true
+    validation:
+      rules:
+        - check: expect_not_null
+          columns: ["order_id", "customer_id"]
+          severity: error
+        - check: expect_set
+          column: order_tier
+          values: ["HIGH", "MEDIUM", "LOW"]
+          severity: error
+    sink:
+      type: storage
+      backend: s3
+      format: parquet
+      uri: "s3a://silver/orders_enriched/"
+      mode: overwrite
+      merge_schema: true
+      partition_by:
+        - country_code
+    incremental:
+      mode: full
+
+  - name: customers_silver
+    layer: silver
+    description: "Datos de clientes con métricas calculadas"
+    source:
+      type: storage
+      backend: s3
+      format: parquet
+      uri: "s3a://bronze/customers/"
+    transform:
+      sql:
+        - |
+          SELECT 
+            customer_id,
+            customer_name,
+            email,
+            country_code,
+            age,
+            CASE 
+              WHEN age >= 60 THEN 'SENIOR'
+              WHEN age >= 30 THEN 'ADULT'
+              WHEN age >= 18 THEN 'YOUNG_ADULT'
+              ELSE 'MINOR'
+            END AS age_group,
+            current_timestamp() AS silver_processing_ts
+          FROM _src
+      add_ingestion_ts: true
+    validation:
+      rules:
+        - check: expect_not_null
+          columns: ["customer_id", "email"]
+          severity: error
+        - check: expect_unique
+          columns: ["customer_id"]
+          severity: warn
+        - check: expect_set
+          column: age_group
+          values: ["SENIOR", "ADULT", "YOUNG_ADULT", "MINOR"]
+          severity: error
+    sink:
+      type: storage
+      backend: s3
+      format: parquet
+      uri: "s3a://silver/customers/"
+      mode: overwrite
+      merge_schema: true
+    incremental:
+      mode: full
+
+  # ==========================================================================
+  # CAPA GOLD - Agregaciones para BI/Analytics
+  # ==========================================================================
+  - name: sales_by_country_gold
+    layer: gold
+    description: "Resumen de ventas por país"
+    source:
+      type: storage
+      backend: s3
+      format: parquet
+      uri: "s3a://silver/orders_enriched/"
+    transform:
+      sql:
+        - |
+          SELECT 
+            country_code,
+            COUNT(DISTINCT customer_id) AS unique_customers,
+            COUNT(order_id) AS total_orders,
+            ROUND(SUM(total_amount), 2) AS total_revenue,
+            ROUND(AVG(total_amount), 2) AS avg_order_value,
+            MIN(order_date) AS first_order_date,
+            MAX(order_date) AS last_order_date,
+            current_timestamp() AS gold_refresh_ts
+          FROM _src
+          GROUP BY country_code
+          ORDER BY total_revenue DESC
+      add_ingestion_ts: true
+    validation:
+      rules:
+        - check: expect_not_null
+          columns: ["country_code", "total_revenue"]
+          severity: error
+    sink:
+      type: storage
+      backend: s3
+      format: parquet
+      uri: "s3a://gold/sales_by_country/"
+      mode: overwrite
+    incremental:
+      mode: full
+
+  - name: customer_summary_gold
+    layer: gold
+    description: "Resumen de métricas de clientes por grupo de edad"
+    source:
+      type: storage
+      backend: s3
+      format: parquet
+      uri: "s3a://silver/customers/"
+    transform:
+      sql:
+        - |
+          SELECT 
+            country_code,
+            age_group,
+            COUNT(*) AS customer_count,
+            ROUND(AVG(age), 1) AS avg_age,
+            MIN(age) AS min_age,
+            MAX(age) AS max_age,
+            current_timestamp() AS gold_refresh_ts
+          FROM _src
+          GROUP BY country_code, age_group
+          ORDER BY country_code, age_group
+      add_ingestion_ts: true
+    validation:
+      rules:
+        - check: expect_not_null
+          columns: ["country_code", "age_group"]
+          severity: error
+    sink:
+      type: storage
+      backend: s3
+      format: parquet
+      uri: "s3a://gold/customer_summary/"
+      mode: overwrite
+    incremental:
+      mode: full
+
+  - name: daily_sales_gold
+    layer: gold
+    description: "Ventas diarias para dashboards"
+    source:
+      type: storage
+      backend: s3
+      format: parquet
+      uri: "s3a://silver/orders_enriched/"
+    transform:
+      sql:
+        - |
+          SELECT 
+            order_date,
+            country_code,
+            order_tier,
+            COUNT(order_id) AS order_count,
+            COUNT(DISTINCT customer_id) AS unique_customers,
+            ROUND(SUM(total_amount), 2) AS daily_revenue,
+            ROUND(AVG(total_amount), 2) AS avg_order_value,
+            SUM(quantity) AS total_units_sold,
+            current_timestamp() AS gold_refresh_ts
+          FROM _src
+          GROUP BY order_date, country_code, order_tier
+          ORDER BY order_date DESC, daily_revenue DESC
+      add_ingestion_ts: true
+    validation:
+      rules:
+        - check: expect_not_null
+          columns: ["order_date"]
+          severity: error
+    sink:
+      type: storage
+      backend: s3
+      format: parquet
+      uri: "s3a://gold/daily_sales/"
+      mode: overwrite
+      partition_by:
+        - order_date
+    incremental:
+      mode: full
+
+
+

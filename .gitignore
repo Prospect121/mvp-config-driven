@@ -7,3 +7,5 @@ build/
 .env
 .sparkStaging/
 .docs-cache/
+
+/tmp

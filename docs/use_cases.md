@@ -7,6 +7,7 @@ Esta guía documenta casos de uso reales con ejemplos prácticos y configuracion
 **Escenario**: Ingerir archivos CSV desde almacenamiento cloud a Delta Lake para análisis.
 
 **Requisitos previos**:
+
 - Archivos CSV en S3/ABFS/GCS
 - Permisos de lectura/escritura en storage
 
@@ -52,7 +53,7 @@ prodi run --layer bronze --config configs/sales_bronze.yml --platform azure
 
 **Resultado esperado**: Archivos Delta particionados por año/mes en `abfs://bronze/sales/`.
 
-> 💡 **Ejemplo completo**: Ver [examples/azure/delta_merge.yaml](file:///c:/Users/erick/Documents/work/Prodigio/a_ruta_pass/mvp-config-driven/examples/azure/delta_merge.yaml) para un ejemplo con validación y cuarentena.
+> 💡 **Ejemplo completo**: Ver [examples/azure/delta_merge.yaml](../examples/azure/delta_merge.yaml) para un ejemplo con validación y cuarentena.
 
 ---
 
@@ -61,6 +62,7 @@ prodi run --layer bronze --config configs/sales_bronze.yml --platform azure
 **Escenario**: Combinar datos de ERP (PostgreSQL) y CRM (MySQL) mediante un JOIN.
 
 **Requisitos previos**:
+
 - Acceso JDBC a ambas bases de datos
 - Variables de entorno `ERP_JDBC_URL`, `CRM_JDBC_URL`
 
@@ -99,10 +101,10 @@ datasets:
             - { left: email, right: email }
           join_type: left
           select:
-            - { expr: "left.customer_id", as: "customer_id" }
-            - { expr: "left.email", as: "email" }
-            - { expr: "left.country", as: "country" }
-            - { expr: "coalesce(right.segment, 'UNCLASSIFIED')", as: "segment" }
+            - { expr: "erp.customer_id", as: "customer_id" }
+            - { expr: "erp.email", as: "email" }
+            - { expr: "erp.country", as: "country" }
+            - { expr: "coalesce(crm.segment, 'UNCLASSIFIED')", as: "segment" }
       ops:
         - trim: [email]
         - lowercase: [email]
@@ -135,6 +137,7 @@ prodi run --layer raw --config configs/customer_federation.yml
 **Escenario**: Leer solo registros nuevos/actualizados de SQL Server usando timestamp.
 
 **Requisitos previos**:
+
 - Tabla con columna `updated_at` (timestamp)
 - Permisos de lectura en SQL Server
 
@@ -169,6 +172,7 @@ datasets:
 ```
 
 **Primera ejecución**:
+
 ```bash
 prodi run --layer bronze --config configs/orders_cdc.yml
 ```
@@ -176,6 +180,7 @@ prodi run --layer bronze --config configs/orders_cdc.yml
 Cargará todos los registros y almacenará el watermark (ej. `2025-11-24 12:00:00`).
 
 **Segunda ejecución**:
+
 ```bash
 prodi run --layer bronze --config configs/orders_cdc.yml
 ```
@@ -184,7 +189,7 @@ Solo cargará registros con `updated_at > '2025-11-24 12:00:00'`.
 
 **Resultado esperado**: Carga incremental eficiente sin duplicados.
 
-> 💡 **Ejemplo completo**: Ver [examples/cdc/orders_cdc.yaml](file:///c:/Users/erick/Documents/work/Prodigio/a_ruta_pass/mvp-config-driven/examples/cdc/orders_cdc.yaml)
+> 💡 **Ejemplo completo**: Ver [examples/cdc/orders_cdc.yaml](../examples/cdc/orders_cdc.yaml)
 
 ---
 
@@ -193,6 +198,7 @@ Solo cargará registros con `updated_at > '2025-11-24 12:00:00'`.
 **Escenario**: Ingestar pedidos desde API REST paginada y escribir a Delta.
 
 **Requisitos previos**:
+
 - API accesible con autenticación bearer
 - Token almacenado en `API_TOKEN` (env var)
 
@@ -257,6 +263,7 @@ prodi run --layer bronze --config configs/api_orders.yml --platform aws
 **Escenario**: Procesar eventos en tiempo real desde Kafka y escribir a Event Hubs.
 
 **Requisitos previos**:
+
 - Kafka cluster accesible
 - Event Hubs connection string
 
@@ -306,7 +313,7 @@ prodi run --layer bronze --config configs/streaming.yml --platform fabric
 
 **Resultado esperado**: Stream continuo procesando eventos con watermark de 10 minutos.
 
-> 💡 **Ejemplo completo**: Ver [examples/streaming/orders_stream.yaml](file:///c:/Users/erick/Documents/work/Prodigio/a_ruta_pass/mvp-config-driven/examples/streaming/orders_stream.yaml)
+> 💡 **Ejemplo completo**: Ver [examples/streaming/orders_stream.yaml](../examples/streaming/orders_stream.yaml)
 
 ---
 
@@ -315,6 +322,7 @@ prodi run --layer bronze --config configs/streaming.yml --platform fabric
 **Escenario**: Validar datos de clientes y enviar registros inválidos a cuarentena.
 
 **Requisitos previos**:
+
 - Source con datos potencialmente inválidos
 
 **Configuración**:
@@ -370,11 +378,12 @@ prodi run --layer silver --config configs/customers_validation.yml
 ```
 
 **Resultado esperado**:
+
 - Registros válidos → `abfs://silver/customers/`
 - Registros inválidos → `abfs://quarantine/customers/`
 - Métricas JSON con conteo de rechazos
 
-> 💡 **Ejemplo completo**: Ver [examples/azure/delta_merge.yaml](file:///c:/Users/erick/Documents/work/Prodigio/a_ruta_pass/mvp-config-driven/examples/azure/delta_merge.yaml)
+> 💡 **Ejemplo completo**: Ver [examples/azure/delta_merge.yaml](../examples/azure/delta_merge.yaml)
 
 ---
 
@@ -383,6 +392,7 @@ prodi run --layer silver --config configs/customers_validation.yml
 **Escenario**: Cargar datos transformados a Azure Synapse Analytics.
 
 **Requisitos previos**:
+
 - Synapse workspace configurado
 - Credenciales JDBC
 
@@ -428,32 +438,36 @@ prodi run --layer gold --config configs/synapse_sales.yml
 
 **Resultado esperado**: Tabla `analytics.sales_monthly` creada/actualizada en Synapse.
 
-> 💡 **Ejemplo completo**: Ver [examples/azure/warehouse_load.yaml](file:///c:/Users/erick/Documents/work/Prodigio/a_ruta_pass/mvp-config-driven/examples/azure/warehouse_load.yaml)
+> 💡 **Ejemplo completo**: Ver [examples/azure/warehouse_load.yaml](../examples/azure/warehouse_load.yaml)
 
 ---
 
 ## Errores comunes
 
 ### Error: "Table not found"
+
 - **Causa**: Tabla JDBC no existe o nombre incorrecto
 - **Solución**: Verificar nombre de tabla y esquema
 
 ### Error: "Invalid JSON"
+
 - **Causa**: Payload de API/Kafka no es JSON válido
 - **Solución**: Verificar `payload_format` y estructura de respuesta
 
 ### Error: "Watermark column not found"
+
 - **Causa**: Columna de watermark no existe en streaming
 - **Solución**: Asegurar que la columna existe en el schema de entrada
 
 ### Error: "Merge without keys"
+
 - **Causa**: `incremental.mode: merge` sin definir `keys`
 - **Solución**: Agregar `keys: [primary_key]` en sección `incremental`
 
 ## Próximos pasos
 
-- Explora más ejemplos en [examples/](file:///c:/Users/erick/Documents/work/Prodigio/a_ruta_pass/mvp-config-driven/examples/) - ver [examples/README.md](file:///c:/Users/erick/Documents/work/Prodigio/a_ruta_pass/mvp-config-driven/examples/README.md)
+- Explora más ejemplos en [examples/](../examples/) - ver [examples/README.md](../examples/README.md)
 - Lee [troubleshooting.md](troubleshooting.md) para soluciones detalladas
 - Consulta [connectors.md](connectors.md) para opciones específicas de cada conector
-- Revisa [federation/customers_enriched.yaml](file:///c:/Users/erick/Documents/work/Prodigio/a_ruta_pass/mvp-config-driven/examples/federation/customers_enriched.yaml) para federación multi-fuente
-- Revisa [endpoint_orders.yaml](file:///c:/Users/erick/Documents/work/Prodigio/a_ruta_pass/mvp-config-driven/examples/endpoint_orders.yaml) para integración con APIs REST
+- Revisa [federation/customers_enriched.yaml](../examples/federation/customers_enriched.yaml) para federación multi-fuente
+- Revisa [endpoint_orders.yaml](../examples/endpoint_orders.yaml) para integración con APIs REST
