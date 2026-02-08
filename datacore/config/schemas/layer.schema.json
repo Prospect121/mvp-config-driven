@@ -85,7 +85,8 @@
             "kafka",
             "event_hubs",
             "nosql",
-            "shortcut"
+            "shortcut",
+            "iceberg"
           ]
         },
         "format": {"type": "string"},
@@ -307,6 +308,21 @@
         "schema": {"type": ["object", "string"]}
       }
     },
+    "source_iceberg": {
+      "type": "object",
+      "required": ["type", "namespace", "table"],
+      "additionalProperties": true,
+      "properties": {
+        "type": {"const": "iceberg"},
+        "catalog": {"type": "string"},
+        "namespace": {"type": "string"},
+        "table": {"type": "string"},
+        "snapshot_id": {"type": "integer"},
+        "as_of_timestamp": {"type": "string"},
+        "options": {"$ref": "#/definitions/string_map"},
+        "read_options": {"$ref": "#/definitions/string_map"}
+      }
+    },
     "source_def": {
       "allOf": [
         {"$ref": "#/definitions/source_common"},
@@ -320,7 +336,8 @@
             {"$ref": "#/definitions/source_kafka"},
             {"$ref": "#/definitions/source_event_hubs"},
             {"$ref": "#/definitions/source_nosql"},
-            {"$ref": "#/definitions/source_shortcut"}
+            {"$ref": "#/definitions/source_shortcut"},
+            {"$ref": "#/definitions/source_iceberg"}
           ]
         }
       ]
@@ -342,7 +359,7 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["storage", "warehouse", "nosql", "kafka", "event_hubs"]
+          "enum": ["storage", "warehouse", "nosql", "kafka", "event_hubs", "iceberg"]
         },
         "format": {"type": "string"},
         "backend": {"type": "string"},
@@ -382,7 +399,10 @@
         "batch_size": {"type": "integer", "minimum": 1},
         "truncate_safe": {"type": "boolean"},
         "isolation_level": {"type": "string"},
-        "create_table_options": {"type": "string"}
+        "create_table_options": {"type": "string"},
+        "catalog": {"type": "string"},
+        "namespace": {"type": "string"},
+        "table_properties": {"$ref": "#/definitions/string_map"}
       }
     },
     "validation": {

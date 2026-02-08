@@ -25,8 +25,8 @@ platform: local
 spark:
   shuffle_partitions: 4
   extra_conf:
-    # Hadoop AWS JARs para S3A (compatible con PySpark 4.x / Hadoop 3.4.x)
-    spark.jars.packages: "org.apache.hadoop:hadoop-aws:3.4.0,com.amazonaws:aws-java-sdk-bundle:1.12.262"
+    # Hadoop AWS JARs para S3A (compatible con PySpark 4.x / Hadoop 3.3.x)
+    # spark.jars.packages: "org.apache.hadoop:hadoop-aws:3.3.4,com.amazonaws:aws-java-sdk-bundle:1.12.262"
     
     # S3/MinIO Configuration
     spark.hadoop.fs.s3a.endpoint: "http://lakehouse-minio:9000"
@@ -44,7 +44,7 @@ spark:
     # Iceberg REST Catalog
     spark.sql.catalog.iceberg: "org.apache.iceberg.spark.SparkCatalog"
     spark.sql.catalog.iceberg.type: "rest"
-    spark.sql.catalog.iceberg.uri: "http://iceberg-rest:8181"
+    spark.sql.catalog.iceberg.uri: "http://lakehouse-iceberg-rest:8181"
     spark.sql.catalog.iceberg.warehouse: "s3a://warehouse/"
     spark.sql.catalog.iceberg.io-impl: "org.apache.iceberg.aws.s3.S3FileIO"
     spark.sql.catalog.iceberg.s3.endpoint: "http://lakehouse-minio:9000"

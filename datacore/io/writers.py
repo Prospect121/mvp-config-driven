@@ -13,6 +13,7 @@ except ImportError:  # pragma: no cover - entornos sin boto3
 
 from pyspark.sql import DataFrame
 
+from datacore.connectors.catalog import iceberg as iceberg_connector
 from datacore.connectors.db import jdbc
 from datacore.connectors.storage import abfs, fabric, gcs, local, s3
 from datacore.platforms.base import PlatformBase
@@ -143,6 +144,22 @@ def write_batch(df: DataFrame, platform: PlatformBase, sink: dict[str, Any]) -> 
 
     if sink_type == "nosql":
         _write_nosql(prepared_df, sink)
+        return
+
+    if sink_type == "iceberg":
+        catalog = sink.get("catalog", "iceberg")
+        namespace = sink["namespace"]
+        table = sink["table"]
+        properties = sink.get("table_properties", {})
+        iceberg_connector.write(
+            prepared_df,
+            catalog=catalog,
+            namespace=namespace,
+            table=table,
+            mode=mode,
+            partition_by=partition_by,
+            properties=properties,
+        )
         return
 
     raise ValueError(f"Tipo de destino no soportado: {sink_type}")
@@ -530,8 +547,17 @@ def write_rejects(
     layer: str,
     dataset: str,
     environment: str,
+    run_id: str = "",
     fmt: str = "parquet",
 ) -> None:
+    # Si es sink Iceberg, usar tabla de rejects
+    if sink.get("type") == "iceberg":
+        catalog = sink.get("catalog", "iceberg")
+        namespace = sink["namespace"]
+        source_table = sink["table"]
+        iceberg_connector.write_rejects(df, catalog, namespace, source_table, run_id)
+        return
+
     if "uri" not in sink:
         LOGGER.warning("No se pueden almacenar rejects para un sink sin URI explícita")
         return
@@ -562,6 +588,13 @@ def write_metrics(
     run_id: str,
     metrics: dict[str, Any],
 ) -> None:
+    # Si es sink Iceberg, usar tabla de métricas centralizada
+    if sink.get("type") == "iceberg":
+        catalog = sink.get("catalog", "iceberg")
+        namespace = sink["namespace"]
+        iceberg_connector.write_metrics(spark, catalog, namespace, metrics)
+        return
+
     if "uri" not in sink:
         LOGGER.warning("No se pueden almacenar métricas para un sink sin URI explícita")
         return

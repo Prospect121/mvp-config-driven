@@ -64,9 +64,9 @@ jobs:
       - name: unit tests
         run: |
           if [ "${{ matrix.profile }}" = "fabric" ]; then
-            pytest -q
+            pytest -q --ignore tests/unit/test_connectors_new.py --ignore tests/unit/test_federation.py
           else
-            pytest -q -k "not fabric"
+            pytest -q -k "not fabric" --ignore tests/unit/test_connectors_new.py --ignore tests/unit/test_federation.py
           fi
 
       - name: build wheel

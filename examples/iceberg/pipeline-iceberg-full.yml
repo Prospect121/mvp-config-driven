@@ -1,0 +1,281 @@
+project: iceberg-lakehouse
+environment: dev
+platform: local
+
+spark:
+  shuffle_partitions: 4
+  extra_conf:
+    # Iceberg Runtime JAR
+    # spark.jars.packages: "org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.4.3,org.apache.hadoop:hadoop-aws:3.3.4,com.amazonaws:aws-java-sdk-bundle:1.12.262"
+    spark.jars.packages: "org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.4.3,org.apache.iceberg:iceberg-aws-bundle:1.4.3,org.apache.hadoop:hadoop-aws:3.3.4,com.amazonaws:aws-java-sdk-bundle:1.12.262"
+
+    # Iceberg Spark Extensions (requerido para MERGE INTO y DDL)
+    spark.sql.extensions: "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions"
+
+    # Iceberg REST Catalog
+    spark.sql.catalog.iceberg: "org.apache.iceberg.spark.SparkCatalog"
+    spark.sql.catalog.iceberg.type: "rest"
+    spark.sql.catalog.iceberg.uri: "http://lakehouse-iceberg-rest:8181"
+    spark.sql.catalog.iceberg.warehouse: "s3a://warehouse/"
+    spark.sql.catalog.iceberg.io-impl: "org.apache.iceberg.aws.s3.S3FileIO"
+    spark.sql.catalog.iceberg.s3.endpoint: "http://lakehouse-minio:9000"
+    spark.sql.catalog.iceberg.s3.access-key-id: "minioadmin"
+    spark.sql.catalog.iceberg.s3.secret-access-key: "minioadmin"
+    spark.sql.catalog.iceberg.s3.path-style-access: "true"
+
+    # S3A para leer archivos raw desde MinIO
+    spark.hadoop.fs.s3a.endpoint: "http://lakehouse-minio:9000"
+    spark.hadoop.fs.s3a.access.key: "minioadmin"
+    spark.hadoop.fs.s3a.secret.key: "minioadmin"
+    spark.hadoop.fs.s3a.path.style.access: "true"
+    spark.hadoop.fs.s3a.impl: "org.apache.hadoop.fs.s3a.S3AFileSystem"
+    spark.hadoop.fs.s3a.connection.ssl.enabled: "false"
+
+datasets:
+  # ========== CAPA RAW ==========
+  # Ingesta de CSV a tabla Iceberg bronze
+  - name: orders_raw
+    layer: raw
+    source:
+      type: storage
+      backend: local
+      format: csv
+      uri: "s3a://raw/orders.csv"
+      options:
+        header: "true"
+        inferSchema: "true"
+    transform:
+      add_ingestion_ts: true
+    sink:
+      type: iceberg
+      catalog: iceberg
+      namespace: bronze
+      table: orders
+      partition_by:
+        - order_date
+      table_properties:
+        write.format.default: parquet
+        write.parquet.compression-codec: snappy
+    incremental:
+      mode: append
+
+  - name: customers_raw
+    layer: raw
+    source:
+      type: storage
+      backend: local
+      format: csv
+      uri: "s3a://raw/customers.csv"
+      options:
+        header: "true"
+        inferSchema: "true"
+    transform:
+      add_ingestion_ts: true
+    sink:
+      type: iceberg
+      catalog: iceberg
+      namespace: bronze
+      table: customers
+      table_properties:
+        write.format.default: parquet
+    incremental:
+      mode: append
+
+  # ========== CAPA SILVER ==========
+  # Leer desde Iceberg bronze, transformar, escribir a silver
+  - name: orders_enriched
+    layer: silver
+    source:
+      type: iceberg
+      catalog: iceberg
+      namespace: bronze
+      table: orders
+    transform:
+      sql:
+        - |
+          SELECT
+            order_id,
+            customer_id,
+            product_name,
+            quantity,
+            unit_price,
+            quantity * unit_price AS total_amount,
+            order_date,
+            CASE
+              WHEN quantity * unit_price > 1000 THEN 'high_value'
+              WHEN quantity * unit_price > 100 THEN 'medium_value'
+              ELSE 'low_value'
+            END AS order_tier,
+            _ingestion_ts
+          FROM _src
+      add_ingestion_ts: false
+    validation:
+      rules:
+        - check: expect_not_null
+          columns:
+            - order_id
+            - customer_id
+            - total_amount
+          severity: error
+        - check: expect_range
+          column: total_amount
+          params:
+            min: 0
+          severity: warn
+    sink:
+      type: iceberg
+      catalog: iceberg
+      namespace: silver
+      table: orders_enriched
+      partition_by:
+        - order_tier
+      table_properties:
+        format-version: "2"
+    incremental:
+      mode: merge
+      keys:
+        - order_id
+      order_by:
+        - "_ingestion_ts DESC"
+
+  - name: customers_cleaned
+    layer: silver
+    source:
+      type: iceberg
+      catalog: iceberg
+      namespace: bronze
+      table: customers
+    transform:
+      sql:
+        - |
+          SELECT
+            customer_id,
+            TRIM(customer_name) AS customer_name,
+            LOWER(TRIM(email)) AS email,
+            UPPER(country_code) AS country_code,
+            _ingestion_ts
+          FROM _src
+          WHERE customer_id IS NOT NULL
+      add_ingestion_ts: false
+    sink:
+      type: iceberg
+      catalog: iceberg
+      namespace: silver
+      table: customers
+      table_properties:
+        format-version: "2"
+    incremental:
+      mode: merge
+      keys:
+        - customer_id
+      order_by:
+        - "_ingestion_ts DESC"
+
+  # ========== CAPA GOLD ==========
+  # Agregaciones desde silver a gold
+  - name: sales_summary
+    layer: gold
+    source:
+      type: iceberg
+      catalog: iceberg
+      namespace: silver
+      table: orders_enriched
+    transform:
+      sql:
+        - |
+          SELECT
+            order_date,
+            order_tier,
+            COUNT(*) AS order_count,
+            SUM(total_amount) AS total_revenue,
+            AVG(total_amount) AS avg_order_value,
+            MIN(total_amount) AS min_order_value,
+            MAX(total_amount) AS max_order_value
+          FROM _src
+          GROUP BY order_date, order_tier
+    sink:
+      type: iceberg
+      catalog: iceberg
+      namespace: gold
+      table: daily_sales_summary
+      partition_by:
+        - order_date
+    incremental:
+      mode: full
+
+  - name: customer_summary
+    layer: gold
+    source:
+      - id: orders
+        type: iceberg
+        catalog: iceberg
+        namespace: silver
+        table: orders_enriched
+      - id: customers
+        type: iceberg
+        catalog: iceberg
+        namespace: silver
+        table: customers
+    transform:
+      federate:
+        strategy: join
+        join:
+          left: orders
+          right: customers
+          "on":
+            - left: customer_id
+              right: customer_id
+          join_type: inner
+          select:
+            - expr: "customers.customer_id"
+              as: customer_id
+            - expr: "customers.customer_name"
+              as: customer_name
+            - expr: "customers.country_code"
+              as: country_code
+            - expr: "orders.total_amount"
+              as: total_amount
+            - expr: "orders.order_date"
+              as: order_date
+      sql:
+        - |
+          SELECT
+            customer_id,
+            customer_name,
+            country_code,
+            COUNT(*) AS total_orders,
+            SUM(total_amount) AS lifetime_value,
+            AVG(total_amount) AS avg_order_value,
+            MIN(order_date) AS first_order_date,
+            MAX(order_date) AS last_order_date
+          FROM _src
+          GROUP BY customer_id, customer_name, country_code
+    sink:
+      type: iceberg
+      catalog: iceberg
+      namespace: gold
+      table: customer_summary
+    incremental:
+      mode: full
+
+  # ========== TIME TRAVEL EXAMPLE ==========
+  # Leer snapshot historico para auditoria
+  # Nota: Descomentar y ajustar as_of_timestamp segun necesidad
+  # - name: orders_audit
+  #   layer: gold
+  #   source:
+  #     type: iceberg
+  #     catalog: iceberg
+  #     namespace: bronze
+  #     table: orders
+  #     as_of_timestamp: "2024-01-15 00:00:00"
+  #   transform:
+  #     sql:
+  #       - SELECT *, 'historical' AS snapshot_type FROM _src
+  #   sink:
+  #     type: iceberg
+  #     catalog: iceberg
+  #     namespace: gold
+  #     table: orders_audit_history
+  #   incremental:
+  #     mode: append
