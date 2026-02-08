@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import abc
 import os
+import re
 from typing import Any
 
 from pyspark.sql import SparkSession
@@ -48,16 +49,38 @@ class PlatformBase(abc.ABC):
         """Implementado por cada plataforma para resolver secretos nativos."""
 
     def resolve_secret_reference(self, value: str) -> str:
-        """Resuelve expresiones del tipo ${ENV} o ${SECRET:NAME}."""
+        """Resuelve expresiones del tipo ${ENV} o ${SECRET:NAME}.
 
-        if value.startswith("${") and value.endswith("}"):
+        Soporta interpolación de variables dentro de cadenas:
+        - "${VAR}" -> valor completo de VAR
+        - "/path/${VAR}/file" -> variable interpolada en la cadena
+        - "SECRET:NAME" -> secreto de la plataforma
+        """
+        # Caso 1: Toda la cadena es una referencia ${VAR}
+        if value.startswith("${") and value.endswith("}") and value.count("${") == 1:
             inner = value[2:-1]
             return self.resolve_secret(inner)
+
+        # Caso 2: Referencia a secreto de plataforma
         if value.startswith("SECRET:"):
             return self.resolve_secret(value)
+
+        # Caso 3: Interpolación de múltiples variables ${VAR} dentro de la cadena
+        pattern = r'\$\{([^}]+)\}'
+        matches = re.findall(pattern, value)
+        if matches:
+            result = value
+            for var_name in matches:
+                resolved = self.resolve_secret(var_name)
+                if resolved:
+                    result = result.replace(f"${{{var_name}}}", resolved)
+            return result
+
+        # Caso 4: El valor es directamente el nombre de una variable de entorno
         env_value = os.getenv(value)
         if env_value:
             return env_value
+
         return value
 
     def normalize_uri(self, uri: str) -> str:

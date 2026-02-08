@@ -217,13 +217,30 @@
         }
       ]
     },
+    "source_iceberg": {
+      "type": "object",
+      "required": ["type", "namespace", "table"],
+      "additionalProperties": true,
+      "properties": {
+        "id": {"type": "string"},
+        "type": {"const": "iceberg"},
+        "catalog": {"type": "string"},
+        "namespace": {"type": "string"},
+        "table": {"type": "string"},
+        "snapshot_id": {"type": "integer"},
+        "as_of_timestamp": {"type": "string"},
+        "options": {"$ref": "#/definitions/string_map"},
+        "read_options": {"$ref": "#/definitions/string_map"}
+      }
+    },
     "source_def": {
       "oneOf": [
         {"$ref": "#/definitions/source_storage"},
         {"$ref": "#/definitions/source_jdbc"},
         {"$ref": "#/definitions/source_endpoint"},
         {"$ref": "#/definitions/source_shortcut"},
-        {"$ref": "#/definitions/source_generic"}
+        {"$ref": "#/definitions/source_generic"},
+        {"$ref": "#/definitions/source_iceberg"}
       ]
     },
     "source_def_with_id": {
@@ -243,7 +260,7 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["storage", "warehouse", "nosql", "kafka", "event_hubs"]
+          "enum": ["storage", "warehouse", "nosql", "kafka", "event_hubs", "iceberg"]
         },
         "format": {"type": "string"},
         "backend": {"type": "string"},
@@ -286,7 +303,10 @@
         "batch_size": {"type": "integer", "minimum": 1},
         "truncate_safe": {"type": "boolean"},
         "isolation_level": {"type": "string"},
-        "create_table_options": {"type": "string"}
+        "create_table_options": {"type": "string"},
+        "catalog": {"type": "string"},
+        "namespace": {"type": "string"},
+        "table_properties": {"$ref": "#/definitions/string_map"}
       }
     },
     "validation": {

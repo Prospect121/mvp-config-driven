@@ -12,6 +12,7 @@ from pyspark.sql.types import StructType
 
 from datacore.connectors.api import graphql, rest
 from datacore.connectors import http
+from datacore.connectors.catalog import iceberg as iceberg_connector
 from datacore.connectors.db import jdbc
 from datacore.connectors.storage import abfs, fabric, gcs, local, s3
 from datacore.platforms.base import PlatformBase
@@ -290,6 +291,35 @@ def _read_event_hubs_batch(spark: SparkSession, source: dict[str, Any]) -> DataF
     return _parse_stream_payload(df, source)
 
 
+def _read_iceberg(
+    spark: SparkSession,
+    platform: PlatformBase,
+    source: dict[str, Any],
+    *,
+    layer: str,
+    dataset: str,
+    environment: str,
+) -> DataFrame:
+    """Lee desde una tabla Iceberg con soporte para time travel."""
+    catalog = source.get("catalog", "iceberg")
+    namespace = source["namespace"]
+    table = source["table"]
+
+    snapshot_id = source.get("snapshot_id")
+    as_of_timestamp = source.get("as_of_timestamp")
+    options = _merge_read_options(source)
+
+    return iceberg_connector.read(
+        spark,
+        catalog,
+        namespace,
+        table,
+        snapshot_id=snapshot_id,
+        as_of_timestamp=as_of_timestamp,
+        options=options,
+    )
+
+
 def read_batch(
     spark: SparkSession,
     platform: PlatformBase,
@@ -326,6 +356,15 @@ def read_batch(
             source,
             platform,
             spark,
+            layer=layer,
+            dataset=dataset,
+            environment=environment,
+        )
+    if source_type == "iceberg":
+        return _read_iceberg(
+            spark,
+            platform,
+            source,
             layer=layer,
             dataset=dataset,
             environment=environment,

@@ -305,8 +305,13 @@ def _detect_dataset_issues(dataset: dict[str, Any]) -> list[str]:
         "orc",
     }:
         issues.append(f"Formato de sink {sink.get('format')} no soportado para storage")
-    if mode == "merge" and sink.get("type") not in {"storage", "warehouse", "nosql"}:
-        issues.append("incremental.merge requiere un sink de tipo storage/warehouse/nosql")
+    if mode == "merge" and sink.get("type") not in {"storage", "warehouse", "nosql", "iceberg"}:
+        issues.append("incremental.merge requiere un sink de tipo storage/warehouse/nosql/iceberg")
+    if sink.get("type") == "iceberg":
+        if not sink.get("namespace"):
+            issues.append("sink.iceberg requiere namespace definido")
+        if not sink.get("table"):
+            issues.append("sink.iceberg requiere table definido")
     return issues
 
 
@@ -481,6 +486,7 @@ def _handle_batch_dataset(
             layer=layer,
             dataset=dataset["name"],
             environment=environment,
+            run_id=run_id,
         )
 
     quarantine_sink = (validation_result.extras or {}).get("quarantine_sink")

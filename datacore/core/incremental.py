@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
 
+from datacore.connectors.catalog import iceberg as iceberg_connector
 from datacore.connectors.db import jdbc
 from datacore.platforms.base import PlatformBase
 
@@ -87,6 +90,24 @@ def merge_jdbc(df: DataFrame, sink: dict[str, Any], keys: list[str], order_by: l
     jdbc.write(deduped, overwrite_conf)
 
 
+def merge_iceberg(
+    df: DataFrame, sink: dict[str, Any], keys: list[str], order_by: list[str]
+) -> None:
+    """Ejecuta MERGE INTO en una tabla Iceberg con deduplicación previa."""
+    catalog = sink.get("catalog", "iceberg")
+    namespace = sink["namespace"]
+    table = sink["table"]
+    properties = sink.get("table_properties", {})
+    partition_by = sink.get("partition_by")
+
+    # Deduplicar antes del merge (igual que merge_storage)
+    deduped = _deduplicate(df, keys, order_by)
+
+    iceberg_connector.merge(
+        deduped, catalog, namespace, table, keys, properties, partition_by
+    )
+
+
 def _merge_with_platform(
     platform: PlatformBase | None,
     df: DataFrame,
@@ -140,5 +161,9 @@ def prepare_incremental(
         handled = platform.merge_into_nosql(df, sink, keys, order_by)  # type: ignore[attr-defined]
         if handled:
             return df, sink, True
+
+    if sink["type"] == "iceberg":
+        merge_iceberg(df, sink, keys, order_by)
+        return df, sink, True
 
     raise ValueError(f"Merge incremental no soportado para sink {sink['type']}")
