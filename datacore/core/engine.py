@@ -17,6 +17,7 @@ from pyspark.sql.window import Window
 from datacore.core import cache, federation, pushdown, transforms, validation
 from datacore.core.cdc import incremental_fetch_jdbc
 from datacore.core.incremental import prepare_incremental
+from datacore.core.planner import build_dataset_plan, resolve_references
 from datacore.io import readers, writers
 from datacore.platforms.aws_glue import AwsGluePlatform
 from datacore.platforms.azure_databricks import AzureDatabricksPlatform
@@ -573,7 +574,7 @@ def _process_dataset(
     run_id: str,
     dry_run: bool = False,
 ) -> dict[str, Any]:
-    dataset_cfg = _resolve_references(dataset, platform)
+    dataset_cfg = resolve_references(dataset, platform)
     LOGGER.info(
         "Procesando dataset",
         extra={
@@ -583,7 +584,7 @@ def _process_dataset(
         },
     )
     if dry_run:
-        plan = _build_plan(dataset_cfg)
+        plan = build_dataset_plan(dataset_cfg)
         plan["status"] = "planned"
         plan["run_id"] = run_id
         return plan
@@ -634,10 +635,40 @@ def run_layer_plan(
     fail_fast: bool = False,
 ) -> dict[str, Any]:
     platform = _resolve_platform(platform_name, config)
-    spark = _prepare_spark(platform, config)
     results: list[dict[str, Any]] = []
     env = environment or config.get("environment", "dev")
     run_id = observability.new_run_id()
+    if dry_run:
+        for dataset in config.get("datasets", []):
+            if dataset.get("layer") != layer:
+                continue
+            try:
+                dataset_cfg = resolve_references(dataset, platform)
+                plan = build_dataset_plan(dataset_cfg)
+                plan["status"] = "planned"
+                plan["run_id"] = run_id
+                results.append(plan)
+            except Exception as exc:  # pragma: no cover - control de fallos
+                LOGGER.error("Fallo en dataset %s: %s", dataset.get("name"), exc)
+                if fail_fast:
+                    raise
+                results.append(
+                    {
+                        "name": dataset.get("name"),
+                        "status": "failed",
+                        "error": str(exc),
+                        "run_id": run_id,
+                        "duration_seconds": None,
+                    }
+                )
+        created_at = datetime.utcnow().isoformat(timespec="seconds") + "Z"
+        LOGGER.info(
+            "Planificación de capa completada",
+            extra={"layer": layer, "run_id": run_id, "datasets": len(results)},
+        )
+        return {"run_id": run_id, "created_at": created_at, "datasets": results}
+
+    spark = _prepare_spark(platform, config)
     for dataset in config.get("datasets", []):
         if dataset.get("layer") != layer:
             continue

@@ -222,14 +222,24 @@ def _modern_to_rules(config: dict[str, Any]) -> list[RuleConfig]:
                     RuleConfig(check, rule_id, params, severity=severity, threshold=threshold, on_fail=on_fail)
                 )
         elif check in {"regex"}:
-            column = entry.get("column") or entry.get("col")
+            columns = _ensure_list(entry.get("columns") or entry.get("column") or entry.get("col"))
             pattern = entry.get("pattern")
-            if column is not None and pattern is not None:
-                rule_id = identifier or f"{check}:{column}"
-                params = {"col": column, "pattern": pattern}
-                rules.append(
-                    RuleConfig(check, rule_id, params, severity=severity, threshold=threshold, on_fail=on_fail)
-                )
+            if pattern is not None:
+                for column in columns:
+                    if column is None:
+                        continue
+                    rule_id = identifier or f"{check}:{column}"
+                    params = {"col": column, "pattern": pattern}
+                    rules.append(
+                        RuleConfig(
+                            check,
+                            rule_id,
+                            params,
+                            severity=severity,
+                            threshold=threshold,
+                            on_fail=on_fail,
+                        )
+                    )
         elif check in {"expect_length"}:
             column = entry.get("column") or entry.get("col")
             if column is not None:

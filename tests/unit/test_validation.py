@@ -134,3 +134,24 @@ def test_validation_email_length_and_foreign_key(spark):
     fk_rule = result.metrics["by_rule"]["expect_foreign_key:ref"]
     assert fk_rule["invalid_rows"] == 1
     assert result.quarantine_df.count() >= 1
+
+
+def test_validation_regex_supports_columns_list(spark):
+    df = spark.createDataFrame(
+        [("a@x.com", "123-45"), ("invalid", "abc")],
+        ["email", "code"],
+    )
+
+    result = apply_validation(
+        df,
+        {
+            "rules": [
+                {"check": "expect_regex", "columns": ["email"], "pattern": r".+@.+"},
+                {"check": "expect_regex", "column": "code", "pattern": r"\\d{3}-\\d{2}"},
+            ]
+        },
+    )
+
+    assert "regex:email" in result.metrics["by_rule"]
+    assert "regex:code" in result.metrics["by_rule"]
+    assert result.metrics["invalid_rows"] >= 1
