@@ -6,7 +6,7 @@ Esta guía describe cómo publicar `datacore` en un registro privado PyPI de Git
 
 El workflow `publish-private` publica artefactos `dist/*` a:
 
-`https://upload.pkg.github.com/<OWNER>/`
+`https://pypi.pkg.github.com/<OWNER>/`
 
 Puedes ejecutarlo de dos formas:
 
@@ -21,14 +21,14 @@ En el repo consumidor, agrega un token con acceso `read:packages` y configura `p
 export GH_OWNER="Prospect121"
 export GH_PKG_TOKEN="<token_con_read_packages>"
 pip install \
-  --extra-index-url "https://__token__:${GH_PKG_TOKEN}@pip.pkg.github.com/${GH_OWNER}/simple/" \
+  --extra-index-url "https://__token__:${GH_PKG_TOKEN}@pypi.pkg.github.com/${GH_OWNER}/simple/" \
   datacore==1.1.0
 ```
 
 También puedes usar `requirements.txt`:
 
 ```txt
---extra-index-url https://__token__:${GH_PKG_TOKEN}@pip.pkg.github.com/Prospect121/simple/
+--extra-index-url https://__token__:${GH_PKG_TOKEN}@pypi.pkg.github.com/Prospect121/simple/
 datacore==1.1.0
 ```
 
