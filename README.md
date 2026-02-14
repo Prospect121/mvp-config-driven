@@ -137,6 +137,7 @@ mvp-config-driven/
 - [AWS Glue](docs/deploy/aws_glue.md)
 - [GCP Dataproc](docs/deploy/gcp_dataproc.md)
 - [Microsoft Fabric](docs/fabric.md)
+- [GitHub Packages (private PyPI)](docs/deploy/github_packages.md)
 
 ## Ejemplos
 

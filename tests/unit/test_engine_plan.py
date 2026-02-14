@@ -87,6 +87,37 @@ def test_plan_streaming_contract(tmp_path):
     assert streaming_plan["watermark"]["column"] == "created_at"
 
 
+def test_dry_run_does_not_prepare_spark(monkeypatch, tmp_path):
+    config = {
+        "project": "demo",
+        "environment": "dev",
+        "platform": "local",
+        "datasets": [
+            {
+                "name": "customers_raw",
+                "layer": "bronze",
+                "source": {
+                    "type": "storage",
+                    "uri": str(tmp_path / "in"),
+                    "backend": "local",
+                },
+                "sink": {
+                    "type": "storage",
+                    "uri": str(tmp_path / "out"),
+                    "backend": "local",
+                },
+            }
+        ],
+    }
+
+    def _raise_prepare(*args, **kwargs):
+        raise AssertionError("dry_run no debe inicializar SparkSession")
+
+    monkeypatch.setattr(engine_module, "_prepare_spark", _raise_prepare)
+    plan = run_layer_plan("bronze", config, dry_run=True)
+    assert plan["datasets"][0]["status"] == "planned"
+
+
 @pytest.mark.parametrize(
     "config_rel_path, layer, dataset_name",
     [
